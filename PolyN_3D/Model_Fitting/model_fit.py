@@ -9,7 +9,6 @@ from sklearn.pipeline import make_pipeline
 def readData(data):
     pass
 
-
 n = 10
 data=np.array([[4,5,1,1,1], [4,3,1,1,1], [4,1,1,1,1], [4,2,1,1,1]])
 
@@ -23,10 +22,9 @@ def format_data(data, n):
     """
     
     #y = np.ones(len(X))
-
     # Define the degree of the polynomial and the number of polynomials of degree equal to n
     poly = PolynomialFeatures(degree=(n,n), include_bias=False)
-    X_poly = poly.fit_transform(X)
+    X_poly = poly.fit_transform(data)
     nMonN = len(poly.powers_)
     selected_indices = []
 

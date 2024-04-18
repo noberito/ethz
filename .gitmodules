@@ -1,0 +1,3 @@
+[submodule "nnYS"]
+	path = nnYS
+	url = https://github.com/stefanSCS/nnYS.git
