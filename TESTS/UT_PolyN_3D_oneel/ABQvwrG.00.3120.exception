@@ -1,0 +1,36 @@
+<Description>
+   ABAQUS/ABQvwrG rank 0 received the ABORT signal
+
+</Description>
+
+<Context>
+   ABQvwrG
+</Context>
+
+<Callstack>
+</Callstack>
+
+<Memory>
+   <Current>            0 GB </Current>
+   <Resident>           0 GB </Resident>
+   <Physical>          47 GB </Physical>
+   <Limit>              0 GB </Limit>
+   <Accessible>        47 GB </Accessible>
+   <Available>         36 GB </Available>
+   <Allocator>            DL </Allocator>
+</Memory>
+
+<Swap>
+       <Size>          54 GB </Size>
+       <Used>          12 GB </Used>
+       <Free>          42 GB </Free>
+</Swap>
+
+<Directories>
+  <current> C:\temp\TESTS\UT_PolyN_3D_oneel </current> <free>    191 GB </free>   <used>    273 GB </used> 
+     <temp> C:\Users\cnober\AppData\Local\Temp </temp>    <free>    191 GB </free>
+</Directories>
+
+<Installation>
+</Installation>
+

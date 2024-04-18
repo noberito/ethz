@@ -1,0 +1,66 @@
+Analysis initiated from SIMULIA established products
+Abaqus JOB UT_vumat
+Abaqus 2021
+Abaqus License Manager checked out the following licenses:
+Abaqus/Explicit checked out 5 tokens from Flexnet server lic-abaqus.ethz.ch.
+<949 out of 1714 licenses remain available>.
+Begin Compiling Double Precision Abaqus/Explicit User Subroutines
+Fri Apr  5 09:35:53 2024
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 18.0.1.163 Build 20171018
+Copyright (C) 1985-2017 Intel Corporation.  All rights reserved.
+
+VUMAT_explicit.f(679): warning #6371: A jump into a block from outside the block may have occurred.   [20]
+             IF (FAILflag.gt.1) GOTO 20
+-------------------------------------^
+VUMAT_explicit.f(680): warning #6371: A jump into a block from outside the block may have occurred.   [21]
+             IF (FAILflag.le.1) GOTO 21
+-------------------------------------^
+ Intel(R) Fortran 18.0-1599
+VUMAT_explicit.f(81): (col. 18) remark: vumatxtrarg_ has been targeted for automatic cpu dispatch
+VUMAT_explicit.f(904): (col. 18) remark: pmxv_ has been targeted for automatic cpu dispatch
+End Compiling Double Precision Abaqus/Explicit User Subroutines
+Begin Linking Double Precision Abaqus/Explicit User Subroutines
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 18.0.1.163 Build 20171018
+Copyright (C) 1985-2017 Intel Corporation.  All rights reserved.
+
+GNU ld (GNU Binutils) 2.28
+End Linking Double Precision Abaqus/Explicit User Subroutines
+Fri Apr  5 09:35:56 2024
+Begin Compiling Single Precision Abaqus/Package User Subroutines
+Fri Apr  5 09:35:56 2024
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 18.0.1.163 Build 20171018
+Copyright (C) 1985-2017 Intel Corporation.  All rights reserved.
+
+VUMAT_explicit.f(679): warning #6371: A jump into a block from outside the block may have occurred.   [20]
+             IF (FAILflag.gt.1) GOTO 20
+-------------------------------------^
+VUMAT_explicit.f(680): warning #6371: A jump into a block from outside the block may have occurred.   [21]
+             IF (FAILflag.le.1) GOTO 21
+-------------------------------------^
+ Intel(R) Fortran 18.0-1599
+VUMAT_explicit.f(81): (col. 18) remark: vumatxtrarg_ has been targeted for automatic cpu dispatch
+VUMAT_explicit.f(904): (col. 18) remark: pmxv_ has been targeted for automatic cpu dispatch
+End Compiling Single Precision Abaqus/Package User Subroutines
+Begin Linking Single Precision Abaqus/Package User Subroutines
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 18.0.1.163 Build 20171018
+Copyright (C) 1985-2017 Intel Corporation.  All rights reserved.
+
+GNU ld (GNU Binutils) 2.28
+End Linking Single Precision Abaqus/Package User Subroutines
+Fri Apr  5 09:35:59 2024
+Begin Analysis Input File Processor
+Fri Apr  5 09:35:59 2024
+Run pre
+Fri Apr  5 09:36:00 2024
+End Analysis Input File Processor
+Begin Abaqus/Explicit Packager
+Fri Apr  5 09:36:00 2024
+Run package
+Fri Apr  5 09:36:00 2024
+End Abaqus/Explicit Packager
+Begin Abaqus/Explicit Analysis
+Fri Apr  5 09:36:00 2024
+Run explicit_dp
+Fri Apr  5 09:36:07 2024
+End Abaqus/Explicit Analysis
+Abaqus JOB UT_vumat COMPLETED
