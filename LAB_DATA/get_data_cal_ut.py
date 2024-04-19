@@ -41,4 +41,4 @@ for material in materials:
         row = pd.DataFrame({"q": [q], "LoadAngle" : [theta], "YieldStress" : [ys], "Rval" : [rval], "Type" : [pttype]})
         ut_data = pd.concat([ut_data, row])
 
-    ut_data.to_csv('UT_cal_{}.csv'.format(material), index=False)
+    ut_data.to_csv(foldername + 'UT_cal_{}.csv'.format(material), index=False)

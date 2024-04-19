@@ -38,6 +38,6 @@ for material in materials:
         ut_rval_data[exp] = rval_exp
 
 
-    with pd.ExcelWriter('UT_exp_{}.xlsx'.format(material)) as writer:
+    with pd.ExcelWriter(foldername + 'UT_exp_{}.xlsx'.format(material)) as writer:
         ut_yf_data.to_excel(writer, sheet_name='Yield stress (MPa)', index=False)
         ut_rval_data.to_excel(writer, sheet_name='R-Values', index=False)
