@@ -3,29 +3,25 @@ import pandas as pd
 import os
 import openpyxl
 
-
+nexp = 2
  
-materials = ["AA7020-T6", "DP600"]
+materials = ["DP780"]
 
 for material in materials:
     ut_data = pd.DataFrame(columns=["q", "LoadAngle", "YieldStress", "Rval", "Type"])
     foldername = material + "_results/DATA/"
-    nexp = 1
+
     exp = "UT_EBT"
     ys_exp = np.array([])
-
-    if material == "DP780" :
-        nexp = 2
 
     for i in range(nexp):
         test = exp + "_" + str(i + 1)
         filename = test + ".csv"
         filepath = "./" + foldername + filename
 
-        db = pd.read_csv(filepath, names=["PlasticStrain_longi", "PlasticStress[MPa]"])
-        if material == "DP780" :
-            db = db.rename(columns={db.columns[0]:"PlasticStrain", db.columns[1]:"PlasticStress[MPa]"})
-        yield_stress = db[db["PlasticStrain_longi"] > 0.002]["PlasticStress[MPa]"].iloc[0]
+        db = pd.read_csv(filepath)
+        db = db.rename(columns={db.columns[0]:"PlasticStrain", db.columns[1]:"PlasticStress[MPa]"})
+        yield_stress = db[db["PlasticStrain"] > 0.002]["PlasticStress[MPa]"].iloc[0]
             
         ys_exp = np.append(ys_exp,yield_stress)
 
