@@ -9,8 +9,8 @@ nexp = "1"
 material = "DP600"
 
 filename = exp + "_" + nexp + ".csv"
-foldername = material + "_results\\DATA\\"
-filepath = ".\\" + foldername + filename
+foldername = material + "_results/DATA/"
+filepath = "./" + foldername + filename
 
 sns.set_theme()
 sns.set_style('whitegrid')
