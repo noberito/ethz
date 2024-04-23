@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 material = "DP600"
 nb_virtual_pt = 10000
+protomodel = "mises"
 current_dir = "./"  # Assuming current directory
 dir = "/"
 if os.name == "nt":
@@ -50,18 +51,6 @@ def mises_plane(s11, s22, s12):
     res = np.sqrt(0.5 * (s11 - s22)**2 + 3 * s12**2)
     return res - 1
 
-def generate_data(nb_virtual_pt):
-    us = generate_dir(nb_virtual_pt)
-    alpha = np.linspace(0, 5, 100)
-    for u in us:
-        print(u)
-        print(alpha)
-        sigmas = np.dot(u, alpha)
-        print(sigmas.shape)
-
-generate_data(10000)
-
-
 # Find points where the function is close to zero
 def plot_implicit(yf, bbox=(-3,3)):
     ''' create a plot of an implicit function
@@ -100,4 +89,31 @@ def plot_implicit(yf, bbox=(-3,3)):
     plt.show()
 
 #plot_implicit(mises_plane)
+#TODO ca peut planter etre faux ici si 0 n'est pas compris dans l'intervalle des valeurs prises
+def generate_data(nb_virtual_pt):
+    np.random.seed(99)
+    data = np.zeros((nb_virtual_pt, 6))
+    us = generate_dir(nb_virtual_pt)
+    alpha = np.linspace(0, 5, 10000)
+    alpha = alpha[np.newaxis, :]
+    for i in range(nb_virtual_pt):
+        u = np.expand_dims(us[i], axis=1)
+        sigmas = np.dot(u, alpha).T
+        yss=mises(sigmas)
+        #m = np.min(ys)
+        #M = np.max(ys)
+        #if not (m < 0 < M):
+            #print("hey")
+        k = np.argmin(np.abs(yss))
+        data[i] = sigmas[k]
+    return(data)
 
+
+data = generate_data(200)
+data = np.concatenate((data, np.full((len(data), 1), "v", dtype=str)), axis = 1)
+db = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23", "type"])
+
+filename = "virtual_data_" + material + "_" + protomodel + ".csv"
+filepath = current_dir + material + "_results" + dir + "DATA" + dir + filename
+
+db.to_csv(filepath)
