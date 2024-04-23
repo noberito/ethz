@@ -111,9 +111,9 @@ def generate_data(nb_virtual_pt):
 
 data = generate_data(200)
 data = np.concatenate((data, np.full((len(data), 1), "v", dtype=str)), axis = 1)
-db = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23", "type"])
+db = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23", "Type"])
 
 filename = "virtual_data_" + material + "_" + protomodel + ".csv"
 filepath = current_dir + material + "_results" + dir + "DATA" + dir + filename
 
-db.to_csv(filepath)
+db.to_csv(filepath, index=False)
