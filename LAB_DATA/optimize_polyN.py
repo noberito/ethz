@@ -6,9 +6,9 @@ import os
 import sklearn
 import sklearn.preprocessing 
 
-material = "AA7020-T6"
+material = "DP600"
 degree = 4
-weigth_exp = 0.8
+weigth_exp = 0.9
 protomodel = "mises"
 
 current_dir = "./"  # Assuming current directory
@@ -18,26 +18,26 @@ if os.name == "nt":
     dir = "\\"
 
 def readData(material, protomodel):
-    filename_v = "virtual_data_" + material + "_" + protomodel + ".csv"
+    filename_v = "data_virtual_" + material + "_" + protomodel + ".csv"
     filepath_v = current_dir + material + "_results" + dir + "DATA" + dir + filename_v
 
     db_v = pd.read_csv(filepath_v)
 
-    filename_ut = "UT_cal_" + material + ".csv"
-    filepath_ut = current_dir + material + "_results" + dir + "DATA" + dir + filename_ut
+    filename_e = "data_cal_" + material + ".csv"
+    filepath_e = current_dir + material + "_results" + dir + "DATA" + dir + filename_e
 
-    db_ut = pd.read_csv(filepath_ut)
+    db_e = pd.read_csv(filepath_e)
 
-    sigma0 = db_ut["YieldStress"].iloc[0]
+    sigma0 = db_e["YieldStress"].iloc[0]
 
-    db_ut["s11"] = db_ut["YieldStress"] / sigma0 * np.square(np.cos(db_ut["LoadAngle"])) + db_ut["q"] * np.square(np.sin(db_ut["LoadAngle"]))
-    db_ut["s22"] = db_ut["YieldStress"] / sigma0 * (1 - db_ut["q"]) * np.sin(db_ut["LoadAngle"]) * np.cos(db_ut["LoadAngle"]) / sigma0
-    db_ut["s33"] = db_ut["YieldStress"] * 0
-    db_ut["s12"] = db_ut["YieldStress"] / sigma0 * np.square(np.sin(db_ut["LoadAngle"])) + db_ut["q"] * np.square(np.cos(db_ut["LoadAngle"]))
-    db_ut["s13"] = db_ut["YieldStress"] * 0
-    db_ut["s23"] = db_ut["YieldStress"] * 0
+    db_e["s11"] = db_e["YieldStress"] / sigma0 * np.square(np.cos(db_e["LoadAngle"])) + db_e["q"] * np.square(np.sin(db_e["LoadAngle"]))
+    db_e["s22"] = db_e["YieldStress"] / sigma0 * np.square(np.sin(db_e["LoadAngle"])) + db_e["q"] * np.square(np.cos(db_e["LoadAngle"]))
+    db_e["s33"] = db_e["YieldStress"] * 0
+    db_e["s12"] = db_e["YieldStress"] / sigma0 * (1 - db_e["q"]) * np.sin(db_e["LoadAngle"]) * np.cos(db_e["LoadAngle"]) / sigma0
+    db_e["s13"] = db_e["YieldStress"] * 0
+    db_e["s23"] = db_e["YieldStress"] * 0
 
-    db = db_ut.loc[:, ["s11", "s22", "s33", "s12", "s13", "s23", "Type"]]
+    db = db_e.loc[:, ["s11", "s22", "s33", "s12", "s13", "s23", "Type"]]
     db = pd.concat([db, db_v])
 
     db["d11"] = (2/3) * db["s11"] - (1/3) * db["s22"] - (1/3) * db["s33"]
@@ -106,7 +106,7 @@ def optiCoeff(data, degree, weigth_exp):
     print("Optimisation terminée")
     coeff = opt.x
 
-    return(coeff, powers, nmon )
+    return(coeff, powers, nmon)
 
 coeff, powers, nmon = optiCoeff(data, degree, weigth_exp)
 

@@ -3,8 +3,8 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 
-material = "AA7020-T6"
-nb_virtual_pt = 100
+material = "DP600"
+nb_virtual_pt = 50
 protomodel = "mises"
 current_dir = "./"  # Assuming current directory
 dir = "/"
@@ -16,14 +16,6 @@ def generate_dir(nb_virtual_pt):
     u = np.random.normal(0, 1, (nb_virtual_pt,6))
     return(u)
 
-def plasticflow(material):
-    foldername = current_dir + material + "_results" + dir + "DATA" + dir
-    filename = "UT_cal_" + material + ".csv"
-    filepath = foldername + filename
-    db = pd.read_csv(filepath)
-
-    sigma0 = db[db["LoadAngle"] == 0.0]["YieldStress"].iloc[0]
-    return sigma0
 
 def mises(sigma):
     """
