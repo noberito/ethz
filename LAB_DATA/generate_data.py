@@ -91,10 +91,10 @@ def plot_implicit(yf, bbox=(-3,3)):
 #plot_implicit(mises_plane)
 #TODO ca peut planter etre faux ici si 0 n'est pas compris dans l'intervalle des valeurs prises
 def generate_data(nb_virtual_pt):
-    np.random.seed(99)
+    np.random.seed(98)
     data = np.zeros((nb_virtual_pt, 6))
     us = generate_dir(nb_virtual_pt)
-    alpha = np.linspace(0, 5, 10000)
+    alpha = np.linspace(0, 5, 100000)
     alpha = alpha[np.newaxis, :]
     for i in range(nb_virtual_pt):
         u = np.expand_dims(us[i], axis=1)
@@ -109,9 +109,19 @@ def generate_data(nb_virtual_pt):
     return(data)
 
 
-data = generate_data(200)
-data = np.concatenate((data, np.full((len(data), 1), "v", dtype=str)), axis = 1)
-db = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23", "Type"])
+data = generate_data(nb_virtual_pt)
+
+
+db = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23"])
+db["Type"] = ["v"] * len(data)
+
+stress = mises(db[["s11", "s22", "s33", "s12", "s13", "s23"]])
+print("Le max est : ", max(stress), ", Le min est : ", min(stress))
+
+tol = 1e-3
+print("Le nombre de points où l'écart à 0 est supérieur à ", tol," est : ", db[mises(db[["s11", "s22", "s33", "s12", "s13", "s23"]]) > 0.001].size)
+
+
 
 filename = "virtual_data_" + material + "_" + protomodel + ".csv"
 filepath = current_dir + material + "_results" + dir + "DATA" + dir + filename

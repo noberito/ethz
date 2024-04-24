@@ -8,7 +8,7 @@ import sklearn.preprocessing
 
 material = "DP600"
 degree = 4
-weight_exp = 0.9
+weight_exp = 0.0
 nb_virtual_pt = 10000
 protomodel = "mises"
 current_dir = "./"  # Assuming current directory
@@ -60,7 +60,7 @@ sorted_indices = np.lexsort((powers[1], powers[2], powers[3], powers[4]))
 powers = powers.T[sorted_indices]
 
 X = X[:,sorted_indices]
-weigth = np.where(db["Type"] == "e", 0.9, 0.1)
+weigth = np.where(db["Type"] == "e", weight_exp, 1-weight_exp)
 ndata, nmon = X.shape
 M = np.zeros((nmon, nmon))
 
@@ -83,7 +83,9 @@ def Grad_J(a):
 a = np.zeros(nmon)
 a[0] = 1
 
+print("Optimisation en cours")
 opt = scipy.optimize.minimize(J, a, method='BFGS', jac=Grad_J)
+print("Optimisation terminée")
 coeff = opt.x
 
 def dev(S):
@@ -114,7 +116,7 @@ def polyN_plane(s11, s12, s22):
 
 polyN_plane = np.vectorize(polyN_plane)
 
-def plot_implicit(yf, bbox=(-3,3)):
+def plot_implicit(yf, bbox=(-5,5)):
     ''' create a plot of an implicit function
     fn  ...implicit function (plot where fn==0)
     bbox ..the x,y,and z limits of plotted interval'''
@@ -125,17 +127,20 @@ def plot_implicit(yf, bbox=(-3,3)):
     B = np.linspace(xmin, xmax, 10) # number of slices
     A1,A2 = np.meshgrid(A,A) # grid on which the contour is plotted
 
+    print("Début du plot sur XY")
     for z in B: # plot contours in the XY plane
         X,Y = A1,A2
         Z = yf(X,Y,z)
         cset = ax.contour(X, Y, Z+z, [z], zdir='z')
         # [z] defines the only level to plot for this contour for this value of z
 
+    print("Début du plot sur XZ")
     for y in B: # plot contours in the XZ plane
         X,Z = A1,A2
         Y = yf(X,y,Z)
         cset = ax.contour(X, Y+y, Z, [y], zdir='y')
 
+    print("Début du plot sur YZ")
     for x in B: # plot contours in the YZ plane
         Y,Z = A1,A2
         X = yf(x,Y,Z)
@@ -149,6 +154,7 @@ def plot_implicit(yf, bbox=(-3,3)):
     ax.set_ylim3d(ymin,ymax)
 
     plt.show()
+
 
 plot_implicit(polyN_plane)
 S0 = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
