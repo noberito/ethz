@@ -3,8 +3,8 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 
-material = "DP600"
-nb_virtual_pt = 10000
+material = "AA7020-T6"
+nb_virtual_pt = 100
 protomodel = "mises"
 current_dir = "./"  # Assuming current directory
 dir = "/"
@@ -123,7 +123,7 @@ print("Le nombre de points où l'écart à 0 est supérieur à ", tol," est : ",
 
 
 
-filename = "virtual_data_" + material + "_" + protomodel + ".csv"
+filename = "data_virtual_" + material + "_" + protomodel + ".csv"
 filepath = current_dir + material + "_results" + dir + "DATA" + dir + filename
 
 db.to_csv(filepath, index=False)
