@@ -1,0 +1,8 @@
+#Coefficients poly2 for DP780 based on 1000 points from the mises protomodel
+Number of coefficients : 6
+1 : 3.423096438836664
+2 : 3.6336635778324333
+3 : 3.452338174556658
+4 : 2.8961152322823023
+5 : 2.897001076510719
+6 : 2.904841538738293

@@ -93,5 +93,5 @@ def generate_data_calibration(material, thetas):
 
     ut_data.to_csv(foldername + 'data_cal_{}.csv'.format(material), index=False)
 
-for mat in materials:
-    generate_data_calibration(mat, thetas)
+for material in materials:
+    generate_data_calibration(material, thetas)

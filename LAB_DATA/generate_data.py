@@ -3,8 +3,8 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 
-material = "DP600"
-nb_virtual_pt = 50
+material = "AA7020-T6"
+nb_virtual_pt = 1000
 protomodel = "mises"
 current_dir = "./"  # Assuming current directory
 dir = "/"
