@@ -101,6 +101,37 @@ def optiCoeff(data, degree, weigth_exp):
 
 coeff, powers, nmon = optiCoeff(data, degree, weigth_exp)
 
+a1 = 0
+a2 = 0
+a3 = 0
+a4 = 0
+a5 = 0
+a6 = 0
+a7 = 0
+a8 = 0
+a9 = 0
+a10 = 0
+a11 = 0
+a12 = 0
+a13 = 0
+a14 = 0
+a15 = 0
+a16 = 0
+a17 = 0
+a18 = 0
+a19 = 0
+a20 = 0
+a21 = 0
+a22 = 0
+
+"""----------------------------------------------------FIXING PARAMETERS-----------------------------------------------------------------------------"""
+
+##TODO
+
+def adapt_coeff():
+    pass
+
+
 """ ---------------------------------------------------POLYN DEFINITION------------------------------------------------------------------------------"""
 
 def dev(S):
@@ -175,7 +206,10 @@ def grad_polyN(S, coeff_grad=coeff_grad, powers_grad=powers_grad):
     """
         Input :
             - S (float ndarray of shape : len(data) * 6) : Stress
-            - coeff
+            - coeff_grad : coeff_grad (float ndarray of shape (5, nmon)) : coeff_grad[i] contains the 
+            coefficients of each monomial derived with respect to dev[i]¨
+            - powers_grad (float ndarray of shape (5, nmon, 5)) : powers_grad[i][j] contains
+            the monomial j derived with respect to dev[i]
     """
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
@@ -241,11 +275,11 @@ def hessian_polyN(S, coeff_hessian=coeff_hessian, powers_hessian=powers_hessian)
                 jac_grad_f[:,i,j] = jac_grad_f[:,i,j] + coeff_hessian[i][j][k] * np.prod(X ** p, axis=1)
     
     jac_d = jac_dev(S)
-    hessian_polyN = np.transpose(np.dot(jac_d.T,np.dot(jac_grad_f[:], jac_d)), (1, 2, 0))[::-1, :, :]
+    hessian_polyN = np.transpose(np.dot(jac_d.T,np.dot(jac_grad_f[:], jac_d)), (1, 2, 0))
     return(hessian_polyN)
 
 
-"""----------------------------------------------------TESTING (PLOT & CONVEXITY)-----------------------------------------------------------------"""
+"""----------------------------------------------------TESTING FUNCTIONS (PLOT & CONVEXITY)-----------------------------------------------------------------"""
 
 def generate_dir(nb_virtual_pt, dim):
     u = np.random.normal(0, 1, (nb_virtual_pt,dim))
@@ -253,13 +287,15 @@ def generate_dir(nb_virtual_pt, dim):
     u = (u.T/norms).T
     return(u)
 
+##NOT WORKING
 def cofactor_matrix(lmatrix):
     if lmatrix.ndim == 2 :
         lmatrix = np.expand_dims(lmatrix, axis = 0)
     k = lmatrix.shape[0]
     n = lmatrix.shape[1]
-    cofactors = np.zeros((k, n, n))
 
+    cofactors = np.zeros((k, n, n))
+    
     for i in range(n):
         for j in range(n):
             minor = np.delete(np.delete(lmatrix, i, axis=1), j, axis=2)
@@ -267,26 +303,29 @@ def cofactor_matrix(lmatrix):
 
     return cofactors
 
-##NOT WORKING 
-def check_convexity(f, nb_pt_check, grad_f=None, ):
+def check_convexity(f, nb_pt_check, precision=1000, grad_f=None, ):
     us = generate_dir(nb_pt_check, 6)
     data = np.zeros((nb_pt_check, 6))
-    alpha = np.linspace(0, 5, 100000)
+    alpha = np.linspace(0, 5, precision)
     alpha = alpha[np.newaxis, :]
 
     for i in range(nb_pt_check):
+        if i%100 == 0:
+            print(i)
         u = np.expand_dims(us[i], axis=1)
         sigmas = np.dot(u, alpha).T
-        yss = f(sigmas) - 1
+        yss = f(sigmas) - np.ones(precision)
         k = np.argmin(np.abs(yss))
         data[i] = sigmas[k]
 
+    print(f(data))
     K = - np.ones(nb_pt_check)
     grad_data = grad_polyN(data)
     cofactor_hessian_data = cofactor_matrix(hessian_polyN(data))
 
+    ##TODO (Gaussian curvature not well calculated)
     for i in range(nb_pt_check):
-        K[i] = K[i] * np.dot(np.dot(grad_data[i], cofactor_hessian_data[i]), grad_data[i])
+        K[i] = K[i] * np.dot(grad_data[i], np.dot(grad_data[i], cofactor_hessian_data[i]))
 
     m = min(K)
     print("The minimum of the Gaussian curvature is {}".format(m))
@@ -339,18 +378,32 @@ def plot_implicit(yf, bbox=(-1.5,1.5)):
 
     plt.show()
 
+"""---------------------------------------------------------------------TESTING-----------------------------------------------------------------------------------------"""
+
+convex_check = True
+plot = False
+
 data = db[["s11", "s22", "s33", "s12", "s13", "s23"]].values
-S = np.zeros(6)
-S[0] = 1
-S_plane = np.zeros(3)
-S_plane[0] = 1
 
-print("Start checking convexity")
-check_convexity(polyN, 100)
-print("End checking convexity")
+S0 =np.zeros(6)
 
-polyN_plane_wrap = np.vectorize(lambda x, y, z : polyN(np.array([x, y, 0, z, 0, 0])))
-plot_implicit(polyN_plane_wrap)
+S1 = np.zeros(6)
+S1[0] = 1
+
+S1_plane = np.zeros(3)
+S1_plane[0] = 1
+
+lS = np.array([S0, S1])
+B = hessian_polyN(S1)
+
+if convex_check:
+    print("Start checking convexity")
+    check_convexity(polyN, 1000)
+    print("End checking convexity")
+
+if plot:
+    polyN_plane_wrap = np.vectorize(lambda x, y, z : polyN(np.array([x, y, 0, z, 0, 0])))
+    plot_implicit(polyN_plane_wrap)
 
 """-------------------------------------------------OUTPUT---------------------------------------------------------------------------------------------"""
 
