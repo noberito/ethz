@@ -7,8 +7,8 @@ import sklearn
 import sklearn.preprocessing 
 
 material = "DP780"
-degree = 2
-weigth_exp = 0.95
+degree = 4
+weigth_exp = 0.8
 protomodel = "mises"
 
 current_dir = "./"  # Assuming current directory
@@ -241,14 +241,60 @@ def hessian_polyN(S, coeff_hessian=coeff_hessian, powers_hessian=powers_hessian)
                 jac_grad_f[:,i,j] = jac_grad_f[:,i,j] + coeff_hessian[i][j][k] * np.prod(X ** p, axis=1)
     
     jac_d = jac_dev(S)
-    hessian_polyN = np.dot(jac_d.T,np.dot(jac_grad_f[:], jac_d)).reshape((-1,6,6))
+    hessian_polyN = np.transpose(np.dot(jac_d.T,np.dot(jac_grad_f[:], jac_d)), (1, 2, 0))[::-1, :, :]
     return(hessian_polyN)
 
 
 """----------------------------------------------------TESTING (PLOT & CONVEXITY)-----------------------------------------------------------------"""
 
-def check_convexity(f, grad_f=None):
-    pass
+def generate_dir(nb_virtual_pt, dim):
+    u = np.random.normal(0, 1, (nb_virtual_pt,dim))
+    norms = np.linalg.norm(u, axis=1)
+    u = (u.T/norms).T
+    return(u)
+
+def cofactor_matrix(lmatrix):
+    if lmatrix.ndim == 2 :
+        lmatrix = np.expand_dims(lmatrix, axis = 0)
+    k = lmatrix.shape[0]
+    n = lmatrix.shape[1]
+    cofactors = np.zeros((k, n, n))
+
+    for i in range(n):
+        for j in range(n):
+            minor = np.delete(np.delete(lmatrix, i, axis=1), j, axis=2)
+            cofactors[:, i, j] = (-1) ** (i + j) * np.linalg.det(minor)
+
+    return cofactors
+
+##NOT WORKING 
+def check_convexity(f, nb_pt_check, grad_f=None, ):
+    us = generate_dir(nb_pt_check, 6)
+    data = np.zeros((nb_pt_check, 6))
+    alpha = np.linspace(0, 5, 100000)
+    alpha = alpha[np.newaxis, :]
+
+    for i in range(nb_pt_check):
+        u = np.expand_dims(us[i], axis=1)
+        sigmas = np.dot(u, alpha).T
+        yss = f(sigmas) - 1
+        k = np.argmin(np.abs(yss))
+        data[i] = sigmas[k]
+
+    K = - np.ones(nb_pt_check)
+    grad_data = grad_polyN(data)
+    cofactor_hessian_data = cofactor_matrix(hessian_polyN(data))
+
+    for i in range(nb_pt_check):
+        K[i] = K[i] * np.dot(np.dot(grad_data[i], cofactor_hessian_data[i]), grad_data[i])
+
+    m = min(K)
+    print("The minimum of the Gaussian curvature is {}".format(m))
+    M = max(K)
+    print("The maximum of the Gaussian curvature is {}".format(M))
+    bad_points = np.count_nonzero(K > 0)
+    print("The proportion of non convex spots is : {}".format(bad_points/len(K)))
+
 
 
 ### WRAP FUNCTION BEFORE USING PLOT IMPLICIT
@@ -299,10 +345,12 @@ S[0] = 1
 S_plane = np.zeros(3)
 S_plane[0] = 1
 
-print(grad_polyN(S))
-print(hessian_polyN(S))
-polyN_plane_wrap = np.vectorize(lambda x, y, z : polyN_plane(np.array([x, y, z])))
-#plot_implicit(polyN_plane_wrap)
+print("Start checking convexity")
+check_convexity(polyN, 100)
+print("End checking convexity")
+
+polyN_plane_wrap = np.vectorize(lambda x, y, z : polyN(np.array([x, y, 0, z, 0, 0])))
+plot_implicit(polyN_plane_wrap)
 
 """-------------------------------------------------OUTPUT---------------------------------------------------------------------------------------------"""
 
