@@ -6,10 +6,11 @@ import os
 import sklearn
 import sklearn.preprocessing 
 
-material = "DP780"
+material = "DP600"
 degree = 4
-weigth_exp = 0.8
+weigth_exp = 0.9
 protomodel = "mises"
+density = 7.85e-9
 
 current_dir = "./"  # Assuming current directory
 dir = "/"
@@ -56,9 +57,10 @@ def optiCoeff(data, degree, weigth_exp):
     polyN = sklearn.preprocessing.PolynomialFeatures((degree, degree), include_bias=False)
     X = polyN.fit_transform(data[:, :5],)
     powers = polyN.powers_
+    nmon_abq = len(powers)
 
     selected_indices = []
-    for i in range(len(powers)):
+    for i in range(nmon_abq):
         k,l,m,n,p = powers[i]
         if ((m==n) and (n==p)) or ((m%2==0) and (n%2==0) and (p%2==0)):
             selected_indices.append(i)
@@ -97,41 +99,61 @@ def optiCoeff(data, degree, weigth_exp):
     print("Optimisation terminée")
     coeff = opt.x
 
-    return(coeff, powers, nmon)
+    return(coeff, powers, nmon, nmon_abq)
 
-coeff, powers, nmon = optiCoeff(data, degree, weigth_exp)
+coeff, powers, nmon, nmon_abq = optiCoeff(data, degree, weigth_exp)
 
-a1 = 0
-a2 = 0
-a3 = 0
-a4 = 0
-a5 = 0
-a6 = 0
-a7 = 0
-a8 = 0
-a9 = 0
-a10 = 0
-a11 = 0
-a12 = 0
-a13 = 0
-a14 = 0
-a15 = 0
-a16 = 0
-a17 = 0
-a18 = 0
-a19 = 0
-a20 = 0
-a21 = 0
-a22 = 0
+print(powers)
+
 
 """----------------------------------------------------FIXING PARAMETERS-----------------------------------------------------------------------------"""
 
-##TODO
+adapt = False
 
-def adapt_coeff():
-    pass
+a1 = 3
+a2 = 3
+a3 = 3
+a4 = 0
+a5 = 0
+a6 = 0
+
+b1 = 0
+b2 = 0
+b3 = 0
+b4 = 0
+b5 = 0
+b6 = 0
+b7 = 0
+b8 = 0
+b9 = 1
+b10 = 0
+b11 = 0
+b12 = 0
+b13 = 1
+b14 = 1
+b15 = 0
+b16 = 0
+b17 = 0
+b18 = 0
+b19 = 0
+b20 = 1
+b21 = 1
+b22 = 1
 
 
+coeff_deg2 = np.array([a1, a2, a3, a4, a5, a6])
+coeff_deg4 = np.array([b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22])
+
+def adapt_coeff(adapt, degree, coeff):
+    if adapt :
+        if degree == 2:
+            return coeff_deg2
+        elif degree == 4:
+            return coeff_deg4
+    return coeff
+
+coeff = adapt_coeff(adapt, degree, coeff)
+print(coeff)
 """ ---------------------------------------------------POLYN DEFINITION------------------------------------------------------------------------------"""
 
 def dev(S):
@@ -259,6 +281,7 @@ def hessian_polyN_param(coeff_grad, powers_grad):
 
 coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
 
+
 def hessian_polyN(S, coeff_hessian=coeff_hessian, powers_hessian=powers_hessian):
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
@@ -287,7 +310,7 @@ def generate_dir(nb_virtual_pt, dim):
     u = (u.T/norms).T
     return(u)
 
-##NOT WORKING
+
 def cofactor_matrix(lmatrix):
     if lmatrix.ndim == 2 :
         lmatrix = np.expand_dims(lmatrix, axis = 0)
@@ -303,7 +326,7 @@ def cofactor_matrix(lmatrix):
 
     return cofactors
 
-def check_convexity(f, nb_pt_check, precision=1000, grad_f=None, ):
+def check_convexity(nb_pt_check, precision=1000, grad_f=None, ):
     us = generate_dir(nb_pt_check, 6)
     data = np.zeros((nb_pt_check, 6))
     alpha = np.linspace(0, 5, precision)
@@ -314,11 +337,11 @@ def check_convexity(f, nb_pt_check, precision=1000, grad_f=None, ):
             print(i)
         u = np.expand_dims(us[i], axis=1)
         sigmas = np.dot(u, alpha).T
-        yss = f(sigmas) - np.ones(precision)
+        yss = polyN(sigmas) - np.ones(precision)
         k = np.argmin(np.abs(yss))
         data[i] = sigmas[k]
 
-    print(f(data))
+    print(polyN(data))
     K = - np.ones(nb_pt_check)
     grad_data = grad_polyN(data)
     cofactor_hessian_data = cofactor_matrix(hessian_polyN(data))
@@ -334,6 +357,52 @@ def check_convexity(f, nb_pt_check, precision=1000, grad_f=None, ):
     bad_points = np.count_nonzero(K > 0)
     print("The proportion of non convex spots is : {}".format(bad_points/len(K)))
 
+def check_convexity2(nb_pt_check, precision=1000, grad_f=None, ):
+    us = generate_dir(nb_pt_check, 6)
+    data = np.zeros((nb_pt_check, 6))
+    alpha = np.linspace(0, 5, precision)
+    alpha = alpha[np.newaxis, :]
+
+    for i in range(nb_pt_check):
+        if i%100 == 0:
+            print(i)
+        u = np.expand_dims(us[i], axis=1)
+        sigmas = np.dot(u, alpha).T
+        yss = polyN(sigmas) - np.ones(precision)
+        k = np.argmin(np.abs(yss))
+        data[i] = sigmas[k]
+
+    print(polyN(data))
+
+    grad_data = grad_polyN(data)
+    hessian_data = hessian_polyN(data)
+    cofactor_hessian_data = cofactor_matrix(hessian_data)
+
+    K = np.ones(nb_pt_check)
+
+    for i in range(nb_pt_check):
+        K[i] = K[i] * np.dot(grad_data[i], np.dot(cofactor_hessian_data[i], grad_data[i]))
+
+    m = min(K)
+    print("The minimum of the Gaussian curvature is {}".format(m))
+    M = max(K)
+    print("The maximum of the Gaussian curvature is {}".format(M))
+    bad_points = np.count_nonzero(K > 0)
+    print("The proportion of non convex spots is : {}".format(bad_points/len(K)))
+
+    leading_minors = np.zeros((nb_pt_check, 6))
+
+    for i in range(nb_pt_check):
+        leading_minors[i] = np.linalg.eigvals(hessian_data[i])
+    
+    
+
+    """m = min(L)
+    print("The minimum of the product of eigenvalues is {}".format(m))
+    M = max(L)
+    print("The maximum of the product of eigenvalues is {}".format(M))
+    bad_points = np.count_nonzero(L > 0)
+    print("The proportion of non convex spots is : {}".format(bad_points/len(L)))"""
 
 
 ### WRAP FUNCTION BEFORE USING PLOT IMPLICIT
@@ -380,12 +449,13 @@ def plot_implicit(yf, bbox=(-1.5,1.5)):
 
 """---------------------------------------------------------------------TESTING-----------------------------------------------------------------------------------------"""
 
-convex_check = True
+convex_check1 = False
+convex_check2 = False
 plot = False
 
 data = db[["s11", "s22", "s33", "s12", "s13", "s23"]].values
 
-S0 =np.zeros(6)
+S0 = np.zeros(6)
 
 S1 = np.zeros(6)
 S1[0] = 1
@@ -393,22 +463,44 @@ S1[0] = 1
 S1_plane = np.zeros(3)
 S1_plane[0] = 1
 
-lS = np.array([S0, S1])
+lS = np.array([S0, S1, S1])
 B = hessian_polyN(S1)
 
-if convex_check:
+S2 = np.zeros(6)
+S2[0] = 1
+S2[1] = 1
+
+S3 = np.zeros(6)
+S3[5] = 1
+
+S4 = np.zeros(6)
+S4[4] = 1
+S4[5] = 1
+
+S5 = np.zeros(6)
+S5[3] = 1
+S5[4] = 1
+S5[5] = 1
+
+print(hessian_polyN(S0))
+if convex_check1:
     print("Start checking convexity")
-    check_convexity(polyN, 1000)
+    check_convexity(1000)
+    print("End checking convexity")
+
+if convex_check2:
+    print("Start checking convexity")
+    check_convexity2(10000)
     print("End checking convexity")
 
 if plot:
-    polyN_plane_wrap = np.vectorize(lambda x, y, z : polyN(np.array([x, y, 0, z, 0, 0])))
+    polyN_plane_wrap = np.vectorize(lambda x, y, z : polyN(np.array([0, 0, 0, x, y, z])))
     plot_implicit(polyN_plane_wrap)
 
 """-------------------------------------------------OUTPUT---------------------------------------------------------------------------------------------"""
 
 def export_coeff(coeff, protomodel, degree, material, nb_virtual_pt):
-    filename = "deg{}_{}.txt".format(degree, protomodel)
+    filename = "{}_deg{}_{}.txt".format(material, degree, protomodel)
     foldername = current_dir + material + "_results" + dir + "COEFF" + dir
     filepath = foldername + filename
 
@@ -420,3 +512,36 @@ def export_coeff(coeff, protomodel, degree, material, nb_virtual_pt):
             file.write("{} : {}\n".format(i + 1, coeff[i]))
 
 export_coeff(coeff, protomodel, degree, material, nb_virtual_pt)
+
+def export_coeff_abq(coeff, protomodel, degree, material):
+    filename = "{}_abq_deg{}_{}.inp".format(material, degree, protomodel)
+    foldername = current_dir + material + "_results" + dir + "COEFF" + dir
+    filepath = foldername + filename
+
+    n = len(coeff)
+    with open(filepath, "w") as file:
+        file.write("*USER MATERIAL, constants={}\n".format(7 + nmon_abq))
+        file.write("EMOD, EMU, A, B, C, {}, {}, ".format(degree, nmon_abq))
+        n0 = 0
+        n0_abq = 0
+        while n0_abq < nmon :
+            for m in range(0, degree + 1):
+                for l in range(0, degree + 1 - m):
+                    for k in range(0, degree + 1 - m - l):
+                        for j in range(0, degree + 1 - m - l - k):
+                            i = degree - m - l - k - j
+                            i0, j0, k0, l0, m0 = powers[n0]
+                            if (i==i0) and (j==j0) and (k==k0) and (l==l0) and (m==m0):
+                                file.write("{}, ".format(coeff[n0]))
+                                n0 = n0 + 1
+                            else:
+                                file.write("0, ")
+                            n0_abq = n0_abq + 1
+                            if (n0_abq + 7) % 8 == 0:
+                                file.write("\n")
+                            
+        file.write("\n")
+        file.write("*DENSITY\n")
+        file.write("{}".format(density))
+
+export_coeff_abq(coeff, protomodel, degree, material)

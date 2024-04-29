@@ -1,0 +1,15 @@
+*PARAMETER
+THICKNESS	= 1. <= 1.0>
+WIDTH		= 1. <= 1.0>
+** <ABAQUS comment>
+DISPL		= 1.0 <= 1.0>
+DTIME		= 1.0 <= 1.0>
+** <ABAQUS comment>
+DT		    = DTIME/2.E5 <= 5e-06>
+**--------------------------------------------------- <ABAQUS comment>
+** Geometry and Orientation <ABAQUS comment>
+**--------------------------------------------------- <ABAQUS comment>
+*AMPLITUDE, NAME=ccr, DEFINITION=TABULAR, SMOOTH=0.05
+0.,0.,
+<DTIME = 1.0>, <DISPL = 1.0>,
+** ----------------------------------------------------

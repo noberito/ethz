@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 
 material = "DP780"
-nb_virtual_pt = 1000
+nb_virtual_pt = 100000
 protomodel = "mises"
 current_dir = "./"  # Assuming current directory
 dir = "/"

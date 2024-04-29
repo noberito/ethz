@@ -1,0 +1,148 @@
+Abaqus/Explicit 2021                             DATE 02-Apr-2024  TIME 14:28:50
+-------------------------------------------------------------------------------
+ PREPROCESSOR WARNING MESSAGES
+-------------------------------------------------------------------------------
+
+
+***WARNING: There are 6 warning messages in the data (.dat) file.  Please
+            check the data file for possible errors in the input file.
+
+
+
+***NOTE: The internal numbering of the nodes and elements is cache friendly.
+
+-------------------------------------------------------------------------------
+           DOMAIN DECOMPOSITION INFORMATION
+-------------------------------------------------------------------------------
+
+
+     DOMAIN 1 HAS 1 ELEMENTS AND 8 NODES with WEIGHT 100.00
+
+     DOMAIN 2 HAS 0 ELEMENTS AND 0 NODES with WEIGHT 0.0000
+
+     DOMAIN 3 HAS 0 ELEMENTS AND 0 NODES with WEIGHT 0.0000
+
+     DOMAIN 4 HAS 0 ELEMENTS AND 0 NODES with WEIGHT 0.0000
+
+
+-------------------------------------------------------------------------------
+  USER SUBROUTINE VUMAT
+-------------------------------------------------------------------------------
+
+
+***WARNING: A material defined in user subroutine VUMAT must be defined as
+            purely elastic (using the initial elastic modulus) at the
+            beginning of the analysis (stepTime=0). This is an informative
+            message. It does not necessarily indicate that user subroutine
+            VUMAT is incorrectly defined.
+
+
+-------------------------------------------------------------------------------
+ MODEL INFORMATION (IN GLOBAL X-Y COORDINATES)
+-------------------------------------------------------------------------------
+
+   Total mass (unscaled) in model = 7.85000E-12
+   Center of mass of model (based on unscaled mass) = ( 5.000000E-02, 5.000000E-02, 5.000000E-02)
+
+    Moments of Inertia :
+                 About Center of Mass              About Origin
+      I(XX)          3.925000E-14                  7.850000E-14
+      I(YY)          3.925000E-14                  7.850000E-14
+      I(ZZ)          3.925000E-14                  7.850000E-14
+      I(XY)          5.759160E-22                 -1.962500E-14
+      I(YZ)          5.759160E-22                 -1.962500E-14
+      I(ZX)          5.759160E-22                 -1.962500E-14
+
+-------------------------------------------------------------------------------
+ STABLE TIME INCREMENT INFORMATION
+-------------------------------------------------------------------------------
+
+
+  The stable time increment estimate for each element is based on
+  linearization about the initial state. The stable time increment estimates
+  do not account for mass scaling.
+
+
+   Initial time increment = 1.01720E-08
+
+   Statistics for all elements:
+      Mean = 1.01720E-08
+      Standard deviation = 0.0000
+
+   Most critical elements:
+    Element number   Rank    Time increment   Increment ratio
+   ----------------------------------------------------------
+           1          1       1.017202E-08      1.000000E+00
+
+
+Abaqus/Explicit 2021                             DATE 02-Apr-2024  TIME 14:28:51
+
+The double precision Abaqus/Explicit executable will be used in this analysis.
+
+The model has been decomposed into 4 domains.
+Domain level parallelization will be used with 4 processors.
+
+-------------------------------------------------------------------------------
+ SOLUTION PROGRESS
+-------------------------------------------------------------------------------
+
+ STEP 1  ORIGIN 0.0000
+
+  Total memory used for step 1 is approximately 828.4 kilobytes.
+  Global time estimation algorithm will be used.
+  Scaling factor:  1.0000
+  Variable mass scaling factor at zero increment: 1.0000
+              STEP     TOTAL      WALL      STABLE    CRITICAL    KINETIC      TOTAL    PERCENT
+INCREMENT     TIME      TIME      TIME   INCREMENT     ELEMENT     ENERGY     ENERGY  CHNG MASS
+        0  0.000E+00 0.000E+00  00:00:00 5.000E-06           1  4.742E-09  4.742E-09  2.416E+07
+Output Field Frame Number      0 of     20 requested intervals at increment zero.
+     7552  5.000E-02 5.000E-02  00:00:00 6.654E-06           1  6.786E-09 -3.093E-02  2.416E+07
+Output Field Frame Number      1 of     20 requested intervals at  5.000245E-02
+    15111  1.000E-01 1.000E-01  00:00:01 6.576E-06           1  6.529E-09 -6.879E-02  2.416E+07
+Output Field Frame Number      2 of     20 requested intervals at  1.000060E-01
+    22761  1.500E-01 1.500E-01  00:00:01 6.495E-06           1  6.308E-09 -1.080E-01  2.416E+07
+Output Field Frame Number      3 of     20 requested intervals at  1.500027E-01
+    30509  2.000E-01 2.000E-01  00:00:02 6.412E-06           1  6.121E-09 -1.473E-01  2.416E+07
+Output Field Frame Number      4 of     20 requested intervals at  2.000051E-01
+    38357  2.500E-01 2.500E-01  00:00:02 6.329E-06           1  5.962E-09 -1.863E-01  2.416E+07
+Output Field Frame Number      5 of     20 requested intervals at  2.500000E-01
+    46311  3.000E-01 3.000E-01  00:00:03 6.245E-06           1  5.826E-09 -2.247E-01  2.416E+07
+Output Field Frame Number      6 of     20 requested intervals at  3.000045E-01
+    54371  3.500E-01 3.500E-01  00:00:03 6.162E-06           1  5.710E-09 -2.624E-01  2.416E+07
+Output Field Frame Number      7 of     20 requested intervals at  3.500020E-01
+    62541  4.000E-01 4.000E-01  00:00:04 6.079E-06           1  5.609E-09 -2.994E-01  2.416E+07
+Output Field Frame Number      8 of     20 requested intervals at  4.000039E-01
+    70822  4.500E-01 4.500E-01  00:00:04 5.998E-06           1  5.522E-09 -3.357E-01  2.416E+07
+Output Field Frame Number      9 of     20 requested intervals at  4.500057E-01
+    79215  5.000E-01 5.000E-01  00:00:05 5.917E-06           1  5.447E-09 -3.712E-01  2.416E+07
+Output Field Frame Number     10 of     20 requested intervals at  5.000054E-01
+    87721  5.500E-01 5.500E-01  00:00:05 5.839E-06           1  5.380E-09 -4.059E-01  2.416E+07
+Output Field Frame Number     11 of     20 requested intervals at  5.500024E-01
+    96342  6.000E-01 6.000E-01  00:00:06 5.762E-06           1  5.322E-09 -4.399E-01  2.416E+07
+Output Field Frame Number     12 of     20 requested intervals at  6.000037E-01
+   105078  6.500E-01 6.500E-01  00:00:06 5.686E-06           1  5.271E-09 -4.731E-01  2.416E+07
+Output Field Frame Number     13 of     20 requested intervals at  6.500054E-01
+   113929  7.000E-01 7.000E-01  00:00:07 5.612E-06           1  5.225E-09 -5.056E-01  2.416E+07
+Output Field Frame Number     14 of     20 requested intervals at  7.000051E-01
+   122895  7.500E-01 7.500E-01  00:00:07 5.540E-06           1  5.185E-09 -5.375E-01  2.416E+07
+Output Field Frame Number     15 of     20 requested intervals at  7.500012E-01
+   131978  8.000E-01 8.000E-01  00:00:08 5.470E-06           1  5.149E-09 -5.687E-01  2.416E+07
+Output Field Frame Number     16 of     20 requested intervals at  8.000038E-01
+   141176  8.500E-01 8.500E-01  00:00:08 5.402E-06           1  5.117E-09 -5.992E-01  2.416E+07
+Output Field Frame Number     17 of     20 requested intervals at  8.500016E-01
+   150490  9.000E-01 9.000E-01  00:00:09 5.335E-06           1  5.088E-09 -6.291E-01  2.416E+07
+Output Field Frame Number     18 of     20 requested intervals at  9.000002E-01
+   159920  9.500E-01 9.500E-01  00:00:09 5.270E-06           1  5.062E-09 -6.583E-01  2.416E+07
+Output Field Frame Number     19 of     20 requested intervals at  9.500004E-01
+   169466  1.000E+00 1.000E+00  00:00:10 5.207E-06           1  5.038E-09 -6.870E-01  2.416E+07
+Restart Number  1 at 1.0000
+Output Field Frame Number     20 of     20 requested intervals at  1.000000E+00
+  EXPLICIT EXECUTABLE TIME SUMMARY
+       USER TIME (SEC)      =   9.4400
+       SYSTEM TIME (SEC)    =  0.18000
+       WALLCLOCK TIME (SEC) =           10
+              INIT (SEC) =          0
+              MAIN (SEC) =         10
+
+  THE ANALYSIS HAS COMPLETED SUCCESSFULLY
+
