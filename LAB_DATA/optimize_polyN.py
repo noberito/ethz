@@ -6,9 +6,9 @@ import os
 import sklearn
 import sklearn.preprocessing 
 
-material = "DP600"
-degree = 4
-weigth_exp = 0.9
+material = "DP780"
+degree = 6
+weigth_exp = 0.99
 protomodel = "mises"
 density = 7.85e-9
 
@@ -113,9 +113,9 @@ adapt = False
 a1 = 3
 a2 = 3
 a3 = 3
-a4 = 0
-a5 = 0
-a6 = 0
+a4 = 3
+a5 = 3
+a6 = 3
 
 b1 = 0
 b2 = 0
@@ -281,7 +281,6 @@ def hessian_polyN_param(coeff_grad, powers_grad):
 
 coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
 
-
 def hessian_polyN(S, coeff_hessian=coeff_hessian, powers_hessian=powers_hessian):
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
@@ -300,7 +299,6 @@ def hessian_polyN(S, coeff_hessian=coeff_hessian, powers_hessian=powers_hessian)
     jac_d = jac_dev(S)
     hessian_polyN = np.transpose(np.dot(jac_d.T,np.dot(jac_grad_f[:], jac_d)), (1, 2, 0))
     return(hessian_polyN)
-
 
 """----------------------------------------------------TESTING FUNCTIONS (PLOT & CONVEXITY)-----------------------------------------------------------------"""
 
@@ -326,7 +324,7 @@ def cofactor_matrix(lmatrix):
 
     return cofactors
 
-def check_convexity(nb_pt_check, precision=1000, grad_f=None, ):
+def check_convexity(nb_pt_check, precision=1000,):
     us = generate_dir(nb_pt_check, 6)
     data = np.zeros((nb_pt_check, 6))
     alpha = np.linspace(0, 5, precision)
@@ -354,7 +352,7 @@ def check_convexity(nb_pt_check, precision=1000, grad_f=None, ):
     print("The minimum of the Gaussian curvature is {}".format(m))
     M = max(K)
     print("The maximum of the Gaussian curvature is {}".format(M))
-    bad_points = np.count_nonzero(K > 0)
+    bad_points = np.count_nonzero(K > -1e-5)
     print("The proportion of non convex spots is : {}".format(bad_points/len(K)))
 
 def check_convexity2(nb_pt_check, precision=1000, grad_f=None, ):
@@ -387,8 +385,8 @@ def check_convexity2(nb_pt_check, precision=1000, grad_f=None, ):
     print("The minimum of the Gaussian curvature is {}".format(m))
     M = max(K)
     print("The maximum of the Gaussian curvature is {}".format(M))
-    bad_points = np.count_nonzero(K > 0)
-    print("The proportion of non convex spots is : {}".format(bad_points/len(K)))
+    bad_points = np.count_nonzero(K > -1e-5)
+    print("The proportion of convex spots is : {}".format(bad_points/len(K)))
 
     leading_minors = np.zeros((nb_pt_check, 6))
 
@@ -450,7 +448,7 @@ def plot_implicit(yf, bbox=(-1.5,1.5)):
 """---------------------------------------------------------------------TESTING-----------------------------------------------------------------------------------------"""
 
 convex_check1 = False
-convex_check2 = False
+convex_check2 = True
 plot = False
 
 data = db[["s11", "s22", "s33", "s12", "s13", "s23"]].values
@@ -482,7 +480,22 @@ S5[3] = 1
 S5[4] = 1
 S5[5] = 1
 
-print(hessian_polyN(S0))
+A = np.zeros((6,6))
+A[0, 0] = 2
+A[1,1] = 2
+A[0, 1] = -1
+A[1, 0] = -1
+A[2,2] = 2
+A[0,2] = -1
+A[1, 2] = -1
+A[2,0] = -1
+A[2, 1] = -1
+A[3,3] = 6
+A[4,4] = 6
+A[5,5] = 6
+
+print(A)
+print(grad_polyN(S1))
 if convex_check1:
     print("Start checking convexity")
     check_convexity(1000)
@@ -490,11 +503,11 @@ if convex_check1:
 
 if convex_check2:
     print("Start checking convexity")
-    check_convexity2(10000)
+    check_convexity2(100)
     print("End checking convexity")
 
 if plot:
-    polyN_plane_wrap = np.vectorize(lambda x, y, z : polyN(np.array([0, 0, 0, x, y, z])))
+    polyN_plane_wrap = np.vectorize(lambda x, y, z : polyN(np.array([x, y, 0, z, 0, 0])))
     plot_implicit(polyN_plane_wrap)
 
 """-------------------------------------------------OUTPUT---------------------------------------------------------------------------------------------"""

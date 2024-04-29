@@ -5,10 +5,7 @@
 THICKNESS	= 1.
 WIDTH		= 1.
 **
-DISPL		= 1.0
-DTIME		= 1.0
-**
-DT		    = DTIME/2.E5
+DISPL		= 0.1
 **---------------------------------------------------
 ** Geometry and Orientation
 **---------------------------------------------------
@@ -44,17 +41,13 @@ DT		    = DTIME/2.E5
 **-----------------------------------------------------
 ** Material Data
 **-----------------------------------------------------
-*SECTION CONTROLS, NAME=SOLID_CONTROLS, ELEMENT DELETION=YES
-1.0, 1.0, 1.0, 1.0, 1.0, , , 
-*SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
-*Hourglass Stiffness
-10., , 0., 0.
+*SOLID SECTION, elset=ELALL, orientation=Ori-00, material=mat
 **
 *MATERIAL,NAME=mat
 *INCLUDE, INPUT=dp780_deg4_mises.inp
 **
 **
-*DEPVAR, DELETE=1
+*DEPVAR
 1
 **------------------------------------------------------
 ** BOUNDARY CONDITIONS
@@ -75,17 +68,13 @@ BASE, 2, 2, 0.
 YMIN, 4, 4, 0.
 ZMIN, 3, 5, 0.
 **
-*AMPLITUDE, NAME=ccr, DEFINITION=TABULAR, SMOOTH=0.05
-0.,0.,
-**<TRAMP1>, <RAMP1>,
-<DTIME>, <DISPL>,
 ** ----------------------------------------------------
-*Step, name=Step-1, nlgeom=NO
+*Step, name=Step-1, nlgeom=YES
 *Static
-0.001, 3., 1e-05, 0.001
+1e-5, 1., 1e-05, 0.1
 **
-*BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
-LOAD, 2, 2, 1.
+*BOUNDARY, TYPE=DISPLACEMENT
+LOAD, 2, 2, <DISPL>
 **-----------------------------------
 ** OUTPUT REQUESTS
 **------------------------------------------------------

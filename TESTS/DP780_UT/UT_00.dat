@@ -1,6 +1,6 @@
 1
 
-   Abaqus 2023                                  Date 29-avr.-2024   Time 16:17:53
+   Abaqus 2023                                  Date 29-avr.-2024   Time 17:34:52
    For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
 
 
@@ -72,7 +72,7 @@
 
 1
 
-   Abaqus 2023                                  Date 29-avr.-2024   Time 16:17:53
+   Abaqus 2023                                  Date 29-avr.-2024   Time 17:34:52
    For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
 
                                                                                      
@@ -85,11 +85,7 @@
                      
                      ***COMMENT: STARTING PARAMETER SUBSTITUTION
      LINE     5      
-                     ***WARNING: PARAMETER 'TRAMP1' APPEARS IN A COMMENT LINE, BUT IT IS NOT DEFINED.
-                     
-                     ***WARNING: SUBSTITUTION OF PARAMETERS FAILED
-                     
-     LINE    10      ***COMMENT: EVALUATION AND SUBSTITUTION OF PARAMETERS COMPLETED
+                     ***COMMENT: EVALUATION AND SUBSTITUTION OF PARAMETERS COMPLETED
                     --------------------------------------------------------------------------------
                         5   10   15   20   25   30   35   40   45   50   55   60   65   70   75   80
                     --------------------------------------------------------------------------------
@@ -101,7 +97,7 @@
 
 
   *Node, nset=NALL
-  *Element, type=C3D8R, elset=ELALL
+  *Element, type=C3D8, elset=ELALL
   *Nset, nset=YMAX, generate
   *Nset, nset=YMIN, generate
   *Nset, nset=XMIN, generate
@@ -123,7 +119,7 @@
   *MATERIAL,NAME=mat
   *User Material, constants=77
   *DENSITY
-  *DEPVAR, DELETE=1
+  *DEPVAR
   *ORIENTATION, name=Ori-00
   *ORIENTATION, name=Ori-15
   *ORIENTATION, name=Ori-30
@@ -131,22 +127,12 @@
   *ORIENTATION, name=Ori-60
   *ORIENTATION, name=Ori-75
   *ORIENTATION, name=Ori-90
-  *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
-  *SECTION CONTROLS, NAME=SOLID_CONTROLS, ELEMENT DELETION=YES
-  *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
-  *Hourglass Stiffness
-
- ***WARNING: THE *HOURGLASS STIFFNESS OPTION IS RELEVANT FOR THESE ELEMENTS 
-             ONLY: C3D4H, C3D8R, C3D8RH, EC3D8R, EC3D8RT, C3D10M, C3D10MH, 
-             CAX4R, CAX4RH, CAX6M, CAX6MH, CPEG4R, CPEG4RH, CPE4R, CPE4RH, 
-             CPE6M, CPE6MH, CPS4R, CPS6M, M3D4R, M3D9R, S3/S3R, S4/S4R, 
-             S4R5,S8R, S8R5, S9R5, SC6R, SC8R, STRI3, AND SAXA ELEMENTS. FOR 
-             THESE ELEMENTS ONLY THE DRILL SCALE FACTOR IS RELEVANT: STRI3, 
-             S3/S3R, S4, S8R, AND SAXA ELEMENTS.
+  *SOLID SECTION, elset=ELALL, orientation=Ori-00, material=mat
+  *SOLID SECTION, elset=ELALL, orientation=Ori-00, material=mat
   *BOUNDARY
-  *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+  *BOUNDARY, TYPE=DISPLACEMENT
   *BOUNDARY
-  *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+  *BOUNDARY, TYPE=DISPLACEMENT
   *EQUATION
   *OUTPUT, FIELD, FREQUENCY=1
   *OUTPUT, HISTORY, FREQUENCY=99
@@ -160,13 +146,13 @@
   *OUTPUT, HISTORY, FREQUENCY=99
   *ELEMENT OUTPUT
   *ELEMENT OUTPUT, ELSET=ONSET
-  *Step, name=Step-1, nlgeom=NO
+  *Step, name=Step-1, nlgeom=YES
   *OUTPUT, FIELD, FREQUENCY=1
   *OUTPUT, HISTORY, FREQUENCY=99
-  *Step, name=Step-1, nlgeom=NO
-  *Step, name=Step-1, nlgeom=NO
+  *Step, name=Step-1, nlgeom=YES
+  *Step, name=Step-1, nlgeom=YES
   *Static
-  *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+  *BOUNDARY, TYPE=DISPLACEMENT
   *OUTPUT, FIELD, FREQUENCY=1
   *ELEMENT OUTPUT
   *NODE OUTPUT
@@ -185,14 +171,11 @@
  ***WARNING: THE REQUEST FOR MISES OUTPUT WILL BE REPLACED BY A REQUEST FOR S 
              OUTPUT
 
- ***WARNING: STRAIN OUTPUT REQUEST LE IS NOT VALID FOR SOME ELEMENTS IN THIS 
-             ANALYSIS. THIS REQUEST IS SWITCHED TO THE STRAIN MEASURE, E.
-
  ***WARNING: OUTPUT REQUEST V IS NOT AVAILABLE FOR THIS TYPE OF ANALYSIS
   *BOUNDARY
-  *Step, name=Step-1, nlgeom=NO
+  *Step, name=Step-1, nlgeom=YES
   *Static
-  *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+  *BOUNDARY, TYPE=DISPLACEMENT
   *End Step
 
  ***NOTE: Boundary conditions are specified on inactive dof of 7 nodes. The 
@@ -229,13 +212,13 @@
 
 
      JOB TIME SUMMARY
-       USER TIME (SEC)      =      0.0    
+       USER TIME (SEC)      =     0.10    
        SYSTEM TIME (SEC)    =      0.0    
-       TOTAL CPU TIME (SEC) =      0.0    
-       WALLCLOCK TIME (SEC) =            1
+       TOTAL CPU TIME (SEC) =     0.10    
+       WALLCLOCK TIME (SEC) =            0
 1
 
-   Abaqus 2023                                  Date 29-avr.-2024   Time 16:17:56
+   Abaqus 2023                                  Date 29-avr.-2024   Time 17:34:55
    For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
 
                                                                                                STEP    1  INCREMENT    1
@@ -248,12 +231,14 @@
                                                                                           
 
      AUTOMATIC TIME CONTROL WITH -
-          A SUGGESTED INITIAL TIME INCREMENT OF                1.000E-03
-          AND A TOTAL TIME PERIOD OF                            3.00    
+          A SUGGESTED INITIAL TIME INCREMENT OF                1.000E-05
+          AND A TOTAL TIME PERIOD OF                            1.00    
           THE MINIMUM TIME INCREMENT ALLOWED IS                1.000E-05
-          THE MAXIMUM TIME INCREMENT ALLOWED IS                1.000E-03
+          THE MAXIMUM TIME INCREMENT ALLOWED IS                0.100    
 
      LINEAR EQUATION SOLVER TYPE         DIRECT SPARSE
+
+          LARGE DISPLACEMENT THEORY WILL BE USED
   
                    M E M O R Y   E S T I M A T E
   
@@ -296,14 +281,13 @@
 
 
                               ANALYSIS COMPLETE
-                              WITH      2 ERROR MESSAGES ON THE MSG FILE
-                              AND       9 WARNING MESSAGES ON THE DAT FILE
-                              AND     100 WARNING MESSAGES ON THE MSG FILE
+                              WITH      3 ERROR MESSAGES ON THE MSG FILE
+                              AND       7 WARNING MESSAGES ON THE DAT FILE
 
 
 
      JOB TIME SUMMARY
        USER TIME (SEC)      =     0.30    
-       SYSTEM TIME (SEC)    =     0.20    
-       TOTAL CPU TIME (SEC) =     0.50    
-       WALLCLOCK TIME (SEC) =            3
+       SYSTEM TIME (SEC)    =     0.60    
+       TOTAL CPU TIME (SEC) =     0.90    
+       WALLCLOCK TIME (SEC) =            9

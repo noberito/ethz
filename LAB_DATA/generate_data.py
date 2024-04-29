@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 
 material = "DP780"
-nb_virtual_pt = 100000
+nb_virtual_pt = 10000
 protomodel = "mises"
 current_dir = "./"  # Assuming current directory
 dir = "/"
@@ -89,6 +89,8 @@ def generate_data(nb_virtual_pt):
     alpha = np.linspace(0, 5, 100000)
     alpha = alpha[np.newaxis, :]
     for i in range(nb_virtual_pt):
+        if i % 1000 == 0:
+            print(i)
         u = np.expand_dims(us[i], axis=1)
         sigmas = np.dot(u, alpha).T
         yss=mises(sigmas)

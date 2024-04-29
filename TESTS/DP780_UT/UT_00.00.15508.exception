@@ -1,0 +1,56 @@
+<Description>
+   ABAQUS/standard rank 0 encountered a SEGMENTATION FAULT
+
+</Description>
+
+<Context>
+   ELEMENT LOOP
+</Context>
+
+<Phase>
+   Increment | Attempt | Iteration | Elgen | Elgene | Elgene_regular
+</Phase>
+
+<Callstack>
+  1)  standardU.dll               umat                                    
+  2)  standardU.dll               umat                                    
+  3)  ABQSMAStaCore.dll           matu2                                   
+  4)  ABQSMAStaCore.dll           matu1                                   
+  5)  ABQSMAStaCore.dll           std_matgen_general                      
+  6)  ABQSMAStaCore.dll           std_elssol_general                      
+  7)  ABQSMAStaCore.dll           std_elssol                              
+  8)  ABQSMAStaCore.dll           elssol                                  
+  9)  ABQSMAStaCore.dll           std_elgene_solid                        
+ 10)  ABQSMAStaCore.dll           elgene                                  
+</Callstack>
+
+<Memory>
+   <Current>            0 GB </Current>
+   <Resident>           0 GB </Resident>
+   <Physical>          47 GB </Physical>
+   <Limit>             38 GB </Limit>
+   <Accessible>        47 GB </Accessible>
+   <Available>         36 GB </Available>
+   <Allocator>            DL </Allocator>
+</Memory>
+
+<Swap>
+       <Size>          54 GB </Size>
+       <Used>          13 GB </Used>
+       <Free>          41 GB </Free>
+</Swap>
+
+<Directories>
+  <current> C:\Users\cnober\AppData\Local\Temp\cnober_UT_00_14756 </current> <free>    194 GB </free>   <used>    270 GB </used> 
+    <indir> C:\temp\TESTS\DP780_UT         </indir>   <free>    194 GB </free>  
+   <outdir> C:\temp\TESTS\DP780_UT         </outdir>  <free>    194 GB </free> 
+   <tmpdir> C:\Users\cnober\AppData\Local\Temp\cnober_UT_00_14756 </tmpdir>  <free>    194 GB </free> 
+     <temp> C:\Users\cnober\AppData\Local\Temp </temp>    <free>    194 GB </free>
+</Directories>
+
+<Installation>
+     <Version> 2023 6.23-1 </Version>
+       <Build> 2022_09_28-20.11.55 183150 </Build>
+  <Executable> C:\Users\cnober\AppData\Local\Temp\cnober_UT_00_14756\standard.exe </Executable>
+</Installation>
+

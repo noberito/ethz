@@ -10,7 +10,7 @@
       6,  0.0,  0.0,  0.1
       7,  0.0,  0.1,  0.0
       8,  0.0,  0.0,  0.0
-*Element, type=C3D8R, elset=ELALL
+*Element, type=C3D8, elset=ELALL
 1, 5, 6, 8, 7, 1, 2, 4, 3
 *Nset, nset=YMAX, generate
  1,  5,  2
@@ -59,15 +59,11 @@
 **-----------------------------------------------------
 ** Material Data
 **-----------------------------------------------------
-*SECTION CONTROLS, NAME=SOLID_CONTROLS, ELEMENT DELETION=YES
-1.0, 1.0, 1.0, 1.0, 1.0, , , 
-*SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
-*Hourglass Stiffness
-10., , 0., 0.
+*SOLID SECTION, elset=ELALL, orientation=Ori-00, material=mat
 **
 *MATERIAL,NAME=mat
 *User Material, constants=77
-70000, 0.33, 436, 222, 6.75, 4, 22, 11.553034209425174, 
+70000., 0.33, 436., 222., 6.75, 4, 22, 11.553034209425174, 
 21.161826630102883, 27.908242756356167, 21.156154194842944, 11.459781575397534, 0, 0, 0, 0, 
 15.694545349277158, 14.460534973368341, 15.796351946178024, 0, 0, 9.204976429151806, 0, 0, 
 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -81,7 +77,7 @@
 7.85E-9,
 **
 **
-*DEPVAR, DELETE=1
+*DEPVAR
 1
 **------------------------------------------------------
 ** BOUNDARY CONDITIONS
@@ -102,17 +98,13 @@ BASE, 2, 2, 0.
 YMIN, 4, 4, 0.
 ZMIN, 3, 5, 0.
 **
-*AMPLITUDE, NAME=ccr, DEFINITION=TABULAR, SMOOTH=0.05
-0.,0.,
-**%(TRAMP1)s, %(RAMP1)s,
-1.0, 1.0,
 ** ----------------------------------------------------
-*Step, name=Step-1, nlgeom=NO
+*Step, name=Step-1, nlgeom=YES
 *Static
-0.001, 3., 1e-05, 0.001
+1e-5, 1., 1e-05, 0.1
 **
-*BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
-LOAD, 2, 2, 1.
+*BOUNDARY, TYPE=DISPLACEMENT
+LOAD, 2, 2, 0.1
 **-----------------------------------
 ** OUTPUT REQUESTS
 **------------------------------------------------------

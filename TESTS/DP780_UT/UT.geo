@@ -7,7 +7,7 @@
       6,  0.0,  0.0,  0.1
       7,  0.0,  0.1,  0.0
       8,  0.0,  0.0,  0.0
-*Element, type=C3D8R, elset=ELALL
+*Element, type=C3D8, elset=ELALL
 1, 5, 6, 8, 7, 1, 2, 4, 3
 *Nset, nset=YMAX, generate
  1,  5,  2
