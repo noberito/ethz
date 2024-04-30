@@ -118,6 +118,7 @@
 	REAL(PREC),DIMENSION(NTENS,NTENS)::XIMAT
 	REAL(PREC),DIMENSION(NTENS, NTENS)::BV, IDENTITY
 	REAL(PREC),DIMENSION(NTENS)::ZZ
+    REAL(PREC)::VT
 
 !C  LOOP COUNTERS
     INTEGER::K1,K2,NRK,KK,LL,MM,II,JJ
@@ -174,14 +175,14 @@
     DO K1=1, NTENS
         TT = ZERO
         DO K2=1, NTENS
-            TT = TT + DDSDDE(K2, K1)*DSTRAN(K1)
+            TT = TT + DDSDDE(K1, K2) * DSTRAN(K2)
         END DO
         DSIGMA(K1)= TT
         SIGMA(K1) = STRESS(K1) + TT
     END DO
-    write(*,*)"DS",DSTRAN
-    write(*,*)"S",STRESS
-    write(*,*)"SIG",SIGMA
+!C  write(*,*)"DS",DSTRAN
+!C  write(*,*)"S",STRESS
+!C  write(*,*)"SIG",SIGMA
 
 !C      DO K1=1,NTENS,1
 !C      TT=DDSDDE(K1,1)*DSTRAN(1)+DDSDDE(K1,2)*DSTRAN(2)+DDSDDE(K1,3)*DSTRAN(3)
@@ -189,12 +190,22 @@
 !C      SIGMA(K1)=STRESS(K1)+TT
 !C      END DO
 
+!C!***********************TEST ZONE*********************
+    !C  write(*,*)"TEST 1", ZERO ** 2
+    !C  write(*,*)"TEST 2", ZERO ** (-1)
+    !C  write(*,*)"TEST 3", ZERO * ZERO ** (-1)
+    !C  write(*,*)"TEST 4", ZERO * ZERO ** (-1) + ONE
+    
+    VT =  ZERO * ZERO ** (-1)
+    !C  write(*,*)"VT avant", VT
+    VT = 1
+    !C  write(*,*)"VT après", VT
+
 !C CHECK YIELDING CONDITION
     CALL KHARD(HF,HPF,EPBAR,AA,BB,CC)
     CALL YFUNCTION(SIGMA,NTENS,YF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
-    
-    write(*,*)"HF",HF
-    write(*,*)"YF",YF
+!C  write(*,*)"HF",HF
+!C  write(*,*)"YF",YF
 
 !C  ELASTIC STEP :  UPDATE STRESS
 	IF (YF <= HF) THEN
@@ -205,6 +216,13 @@
         RETURN
 	END IF
 
+    write(*,*)"Je passe en plastique"
+    IF (ISNAN(STRESS(1))) THEN
+        write(*,*)"Plantage"
+    END IF
+    !c write(*,*)"STRESS", STRESS
+    !c write(*,*)"SIGMA", SIGMA
+
 !C***********************************************
 !C MAIN LOOP : RETURN MAPPING ALGORITHM
 
@@ -213,7 +231,7 @@
     TTA=1.0D0/EMOD
 	TTB=-ENU/EMOD 
     TT=TWO*(ONE+ENU)/EMOD
-
+    SCOMP = ZERO
     DO K1=1, NDI
         DO K2=1, NDI
             SCOMP(K2, K1) = TTB
@@ -223,6 +241,7 @@
     DO K1=NDI+1, NTENS
         SCOMP(K1, K1)=TT
     END DO
+!C  SCOMP CHECKED
     
 	
 !C  SCOMP(1,1)=TTA
@@ -242,6 +261,8 @@
 	CALL GYFUNCTION(SIGMA,NTENS,YF,GYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
 	F1=YF-HF
 
+    !C  write(*,*)"GYF",GYF
+
 !C  ASSEMBLE XIMAT MATRIX AND Y-VECTOR
     DO K1=1,NTENS,1
 	    YVECTOR(K1)=-F1*GYF(K1)
@@ -252,11 +273,14 @@
 	    END DO
 	END DO
 
+
+
     DO K1=1, NTENS, 1
         DO K2=1, NTENS, 1
             BV(K1,K2)=XIMAT(K1,K2)
         END DO
     END DO
+
 
 !C  SOLVE FOR STRESS NR-INCREMENT USING CHOLESKY ALGORITHM
     DO JJ=1, NTENS, 1
@@ -271,6 +295,8 @@
             BV(II,JJ)=BV(II,JJ)/BV(JJ,JJ)
         END DO
     END DO
+
+
     
 	DO II=1, NTENS, 1
         ZZ(II) = YVECTOR(II)
@@ -288,6 +314,8 @@
         D2SIGMA(II) = D2SIGMA(II) / BV(II, II)
     END DO
 
+    
+
 !C  CALCULATE EQUIVALENT PLASTIC STRAIN NR-INCREMENT 
     D2EPBAR=F1
 	DO K1=1,NTENS,1
@@ -303,8 +331,13 @@
 	             SCOMP,KMATERIAL,NKMAT,AA,BB,CC,ZALPHA,DEGREE,NCOEFF,NMON)
 
 !C  UPDATE
+
     DEPBAR=ZALPHA*D2EPBAR
 	DSIGMA=DSIGMA+ZALPHA*D2SIGMA
+
+    !C  write(*,*)"YF", YF
+    !C  write(*,*)"GYF", GYF
+    !C  write(*,*)"HYF", HYF
 	
 !C    THE REST OF N-R ITERATIONS
 !C******************************************************	     
@@ -315,6 +348,10 @@
 	    SIGMA=STRESS+DSIGMA
 	    CALL HYFUNCTION(SIGMA,NTENS,YF,GYF,HYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
 		
+        !C  write(*,*)"YF", NRK, YF
+        !C  write(*,*)"GYF", NRK, GYF
+        !C  write(*,*)"HYF", NRK, HYF
+
 	    F1=YF-HF
 	    FZERO=F1*F1
 	    DO K1=1,NTENS,1
@@ -330,6 +367,11 @@
 !C        IF ((DABS(F1)<TOL1).AND.(DSQRT(TTB)<TOL2)) EXIT
         IF(FZERO<TOL1) EXIT
 
+        !C  write(*,*)"ZZ PRE", NRK, ZZ
+        
+        !C  write(*,*)"YVECTOR PRE", NRK, XIMAT
+        !C  write(*,*)"XIMAT PRE", NRK, XIMAT
+
 !C      ASSEMBLE XIMAT MATRIX AND Y-VECTOR
         DO K1=1,NTENS,1
 	        YVECTOR(K1)=-(F1*GYF(K1)+HPF*F2(K1))
@@ -340,12 +382,24 @@
             END DO
 	    END DO
 
+        DO K1=1, NTENS, 1
+            DO K2=1, NTENS, 1
+                BV(K1,K2)=XIMAT(K1,K2)
+            END DO
+        END DO
+
+        !C  write(*,*)"BV PRE", NRK, BV
+        
 !C      SOLVE FOR STRESS NR-INCREMENT USING CHOLESKY ALGORITHM
         DO JJ=1, NTENS, 1
+            !C  write(*,*)"JJ, NRK, BV(JJ,JJ) PRE BOUCLE", JJ, NRK, BV(JJ, JJ)
             DO KK=1, JJ-1, 1
+                !C  write(*,*)"JJ,KK", JJ, KK
                 BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
             END DO
-            BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
+            !C  write(*,*)"JJ, NRK, BV(JJ,JJ) POST BOUCLE", JJ, NRK, BV(JJ, JJ)
+            BV(JJ,JJ) = DSQRT(ABS(BV(JJ,JJ)))
+            !C  write(*,*)"JJ, NRK, BV(JJ,JJ) POST BOUCLE ET SQRT", JJ, NRK, BV(JJ, JJ)
             DO II=(JJ+1), NTENS, 1
                 DO KK=1, JJ-1, 1
                     BV(II,JJ)=BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
@@ -354,6 +408,7 @@
             END DO
         END DO
         
+        !C  write(*,*)"BV POST", NRK, BV
         DO II=1, NTENS, 1
             ZZ(II) = YVECTOR(II)
             DO JJ = 1, II-1, 1
@@ -362,6 +417,12 @@
             ZZ(II) = ZZ(II) / BV(II, II)
         END DO
         
+        !C  write(*,*)"ZZ POST", NRK, ZZ
+        !C  write(*,*)"BV POST", NRK, BV
+        !C  write(*,*)"YVECTOR POST", NRK, XIMAT
+        !C  write(*,*)"XIMAT POST", NRK, XIMAT
+
+
         DO II=NTENS, 1, -1
             D2SIGMA(II) = ZZ(II)
             DO JJ =II+1 , NTENS, 1
@@ -372,6 +433,12 @@
 
 !C      CALCULATE EQUIVALENT PLASTIC STRAIN NR-INCREMENT 
         D2EPBAR=F1
+        !C  write(*,*),"D2PBAR PRE", NRK, D2EPBAR
+        !C  write(*,*)"GYF", NRK, GYF
+        !C  write(*,*)"D2SIGMA POST", NRK, D2SIGMA
+        !C  write(*,*)"HPF", NRK, HPF
+
+
 	    DO K1=1,NTENS,1
 	        D2EPBAR=D2EPBAR+GYF(K1)*D2SIGMA(K1)
 	    END DO
@@ -380,12 +447,18 @@
 !C      DO LINE SEARCH
         TDEPBAR=DEPBAR+D2EPBAR
 	    TDSIGMA=DSIGMA+D2SIGMA
+
+        !C  write(*,*),"D2PBAR POST", NRK, D2EPBAR
+
         CALL LSEARCH(NTENS,STRESS,TDSIGMA,DSTRAN,EPBAR,TDEPBAR,FZERO, &
 	             SCOMP,KMATERIAL,NKMAT,AA,BB,CC,ZALPHA,DEGREE,NCOEFF,NMON)
 
 !C      UPDATE
+
         DEPBAR=DEPBAR+ZALPHA*D2EPBAR
 	    DSIGMA=DSIGMA+ZALPHA*D2SIGMA
+
+        !C  write(*,*),"DEPBAR", NRK, DEPBAR
 
 	END DO !!! END OF NEWTON-RAPHSON ITERATIONS
         
@@ -394,7 +467,7 @@
 
 !C  UPDATE STRESS
     STRESS = STRESS+DSIGMA
-
+    !C  write(*,*)"DSIGMA", DSIGMA
 !C************************************** COMPUTE TANGENT MODULUS: DDSDDE
 
 !C  COMPUTE XIMAT MATRIX 
@@ -406,6 +479,7 @@
 	    END DO
 	END DO
 
+    !C  write(*,*)"XIMAT", XIMAT
 !C  INVERT XIMAT AND STORE XIMAT^(-1) INTO SCOMP (NO LONGER NEEDED)
     DO JJ=1, NTENS, 1
         DO KK=1, JJ-1, 1
@@ -420,7 +494,8 @@
         END DO
     END DO
     
-   IDENTITY=ZERO
+    !C  write(*,*)"BV", BV
+    IDENTITY=ZERO
     
     DO II=1, NTENS, 1
         IDENTITY(II,II)=ONE
@@ -489,6 +564,7 @@
 	    DDSDDE(K1,K1)=SCOMP(K1,K1)-DSIGMA(K1)*DSIGMA(K1)/TT
 	END DO
 
+    write(*,*)"DDSDDE", DDSDDE
     DEALLOCATE(KMATERIAL)	
     RETURN
     END SUBROUTINE  UMAT
@@ -604,12 +680,35 @@
     DEVIA(4)=SIGMA(4)
     DEVIA(5)=SIGMA(5)
     DEVIA(6)=SIGMA(6)
-    
-    
+
+    IF (ABS(DEVIA(1)) < ZTOL) THEN 
+        !C  write(*,*)"hey1"
+        DEVIA(1) = ZERO
+    END IF
+    IF (ABS(DEVIA(2)) < ZTOL) THEN 
+        !C  write(*,*)"hey2"
+        DEVIA(2) = ZERO
+    END IF
+    IF (ABS(DEVIA(3)) < ZTOL) THEN 
+        !C  write(*,*)"hey3"
+        DEVIA(3) = ZERO
+    END IF
+    IF (ABS(DEVIA(4)) < ZTOL) THEN 
+        !C  write(*,*)"hey4"
+        DEVIA(4) = ZERO
+    END IF
+    IF (ABS(DEVIA(5)) < ZTOL) THEN 
+        !C  write(*,*)"hey5"
+        DEVIA(5) = ZERO
+    END IF
+    IF (ABS(DEVIA(6)) < ZTOL) THEN 
+        !C  write(*,*)"hey6"
+        DEVIA(6) = ZERO
+    END IF
     
 	YF = 0.0D0
 	
-    N0 = 0
+    N0 = 1
 	DO MM=0,DEGREE,1
         DO LL=0, DEGREE - MM, 1
             DO KK=0, DEGREE - MM - LL, 1
@@ -631,6 +730,7 @@
         END DO
     END DO
     
+    YF = YF**(1.0D0/DBLE(DEGREE)) 
 	RETURN
 	END SUBROUTINE YFUNCTION
 
@@ -642,9 +742,8 @@
 	REAL(PREC),DIMENSION(NTENS)::SIGMA, GYF
     REAL(PREC),DIMENSION(NTENS)::DEVIA
 	REAL(PREC),DIMENSION(NKMAT)::KMATERIAL
-	REAL(PREC)::YF,ZZTT,ZZRHO,ZZGAMM,MSX,MSY
-	REAL(PREC),PARAMETER::ZTOL=1.0E-007
-	REAL(PREC)::BB
+	REAL(PREC)::YF,ZYF
+    REAL(PREC),PARAMETER::ZTOL=1.0E-007
     
     REAL(PREC), PARAMETER::ZERO=0.0D0
     REAL(PREC), PARAMETER::ONE=1.0D0
@@ -652,7 +751,7 @@
     REAL(PREC), PARAMETER::THREE=3.0D0
     REAL(PREC), PARAMETER::SIX=6.0D0
     
-	INTEGER::II,JJ,KK,MM,LL,N0
+	INTEGER::II,JJ,KK,LL,MM,N0
 	
     DEVIA(1)=SIGMA(1) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
                 + SIGMA(3))
@@ -663,10 +762,37 @@
     DEVIA(4)=SIGMA(4)
     DEVIA(5)=SIGMA(5)
     DEVIA(6)=SIGMA(6)
+
+    IF (ABS(DEVIA(1)) < ZTOL) THEN 
+        !C  write(*,*)"hey1"
+        DEVIA(1) = ZERO
+    END IF
+    IF (ABS(DEVIA(2)) < ZTOL) THEN 
+        !C  write(*,*)"hey2"
+        DEVIA(2) = ZERO
+    END IF
+    IF (ABS(DEVIA(3)) < ZTOL) THEN 
+        !C  write(*,*)"hey3"
+        DEVIA(3) = ZERO
+    END IF
+    IF (ABS(DEVIA(4)) < ZTOL) THEN 
+        !C  write(*,*)"hey4"
+        DEVIA(4) = ZERO
+    END IF
+    IF (ABS(DEVIA(5)) < ZTOL) THEN 
+        !C  write(*,*)"hey5"
+        DEVIA(5) = ZERO
+    END IF
+    IF (ABS(DEVIA(6)) < ZTOL) THEN 
+        !C  write(*,*)"hey6"
+        DEVIA(6) = ZERO
+    END IF
     
     YF = 0.0D0
 	GYF = 0.0D0
     
+    !c  write(*,*)"DEVIA", DEVIA
+    N0 = 1
     DO MM=0,DEGREE,1
         DO LL=0, DEGREE - MM, 1
             DO KK=0, DEGREE - LL - MM, 1
@@ -735,12 +861,32 @@
                             * DEVIA(4) ** KK &
                             * DEVIA(5) ** LL &
                             * MM * DEVIA(6) ** (MM-1)
+                        !C write(*,*)"DEVIA", DEVIA
+                        !C write(*,*)"II, JJ, KK, LL, MM", II, JJ, KK, LL, MM
+                        !C write(*,*)"DEVIA(1) ** II", DEVIA(1) ** II
+                        !C write(*,*)"DEVIA(2) ** JJ", DEVIA(2) ** JJ
+                        !C write(*,*)"DEVIA(4) ** KK", DEVIA(4) ** KK
+                        !C write(*,*)"DEVIA(5) ** LL", DEVIA(5) ** LL
+                        !C write(*,*)"DEVIA(6) ** (MM-1)", DEVIA(6) ** (MM-1)
+                        !C write(*,*)"GYF(6)", GYF(6)
                         N0 = N0 + 1
                     END IF
                 END DO
             END DO
         END DO
     END DO
+    ZYF = YF ** (ONE/DBLE(DEGREE))
+
+    DO II = 1, NTENS
+        IF (ISNAN(GYF(II))) THEN
+            GYF(II) = 0
+        ELSE
+            GYF(II) = GYF(II) * (ZYF/(DBLE(DEGREE) * YF))
+        END IF
+    END DO
+    
+    YF = ZYF
+
 	RETURN
     
 	END SUBROUTINE GYFUNCTION
@@ -755,7 +901,7 @@
 	REAL(PREC),DIMENSION(NTENS,NTENS)::HYF
 	REAL(PREC),DIMENSION(NKMAT)::KMATERIAL
 	REAL(PREC)::YF,ZZTT,ZZRHO,ZZGAMM,MSX,MSY
-    REAL(PREC),PARAMETER::ZTOL=1.0E-007
+    REAL(PREC),PARAMETER::ZTOL=1.0E-005
 	REAL(PREC)::ZYF,YVAL,Y2VAL,ATT,TMP,BB,D1BB,D2BB,D11BB,D22BB,D12BB
 	INTEGER::II,JJ,KK,MM,LL,N0
     REAL(PREC),DIMENSION(NCOEFF)::VD1,VD2,VD11,VD22,VD12
@@ -777,10 +923,37 @@
     DEVIA(4)=SIGMA(4)
     DEVIA(5)=SIGMA(5)
     DEVIA(6)=SIGMA(6)
+
     YF = 0.0D0
 	GYF = 0.0D0
     HYF=0.0D0
+
+    IF (ABS(DEVIA(1)) < ZTOL) THEN 
+        !C  write(*,*)"hey1"
+        DEVIA(1) = ZERO
+    END IF
+    IF (ABS(DEVIA(2)) < ZTOL) THEN 
+        !C  write(*,*)"hey2"
+        DEVIA(2) = ZERO
+    END IF
+    IF (ABS(DEVIA(3)) < ZTOL) THEN 
+        !C  write(*,*)"hey3"
+        DEVIA(3) = ZERO
+    END IF
+    IF (ABS(DEVIA(4)) < ZTOL) THEN 
+        !C  write(*,*)"hey4"
+        DEVIA(4) = ZERO
+    END IF
+    IF (ABS(DEVIA(5)) < ZTOL) THEN 
+        !C  write(*,*)"hey5"
+        DEVIA(5) = ZERO
+    END IF
+    IF (ABS(DEVIA(6)) < ZTOL) THEN 
+        !C  write(*,*)"hey6"
+        DEVIA(6) = ZERO
+    END IF
     
+    N0 = 1
     DO MM=0,DEGREE,1
         DO LL=0, DEGREE - MM, 1
             DO KK=0, DEGREE - LL - MM, 1
@@ -1140,6 +1313,40 @@
             END DO
         END DO
     END DO
+
+    ZYF = YF**(1.0D0/DBLE(DEGREE))
+	YVAL = ZYF/(DBLE(DEGREE)*YF)
+    Y2VAL  =DBLE(DEGREE-1)/ZYF
+
+    !C  write(*,*)"YF", YF
+    !C  write(*,*)"GYF PRE", GYF
+
+    !C TO CHECK AGAIN WITH FORMULA OF COMPOSED FUNCTION
+    DO II = 1, NTENS
+        IF (ISNAN(GYF(II))) THEN
+            GYF(II) = 0
+        ELSE 
+            GYF(II) = GYF(II) * (ZYF/(DBLE(DEGREE) * YF))
+        END IF
+    END DO
+
+    !C  write(*,*)"GYF POST", GYF
+    !C  write(*,*)"Y2VAL", Y2VAL
+    !C  write(*,*)"HYF PRE", HYF
+    DO II = 1, NTENS
+        DO JJ = II, NTENS
+            IF (ISNAN(HYF(II,JJ))) THEN
+                HYF(II, JJ) = - GYF(II) * GYF(JJ) * Y2VAL
+            ELSE
+                HYF(II, JJ) = HYF(II, JJ) * YVAL - GYF(II) * GYF(JJ) * Y2VAL
+            END IF
+            HYF(JJ, II) = HYF(II, JJ)
+        END DO
+    END DO
+
+    !C  write(*,*)"HYF POST", HYF
+    YF = ZYF
+
 	RETURN
     
 	END SUBROUTINE HYFUNCTION
