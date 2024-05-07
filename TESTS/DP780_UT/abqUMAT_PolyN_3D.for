@@ -85,6 +85,7 @@
 	REAL(PREC), PARAMETER::TWO=2.0D0
 	REAL(PREC), PARAMETER::THREE=3.0D0
 	REAL(PREC), PARAMETER::SIX=6.0D0
+    REAL(PREC), PARAMETER::ZTOL=1.0e-10
 
 !C  elastic constants
 	REAL(PREC) :: EMOD, ENU
@@ -195,6 +196,7 @@
     !C  write(*,*)"TEST 2", ZERO ** (-1)
     !C  write(*,*)"TEST 3", ZERO * ZERO ** (-1)
     !C  write(*,*)"TEST 4", ZERO * ZERO ** (-1) + ONE
+    !C  write(*,*)"TEST 5", 1.0E-10 ** (-2) * ZERO
     
     VT =  ZERO * ZERO ** (-1)
     !C  write(*,*)"VT avant", VT
@@ -216,10 +218,10 @@
         RETURN
 	END IF
 
-    write(*,*)"Je passe en plastique"
-    IF (ISNAN(STRESS(1))) THEN
-        write(*,*)"Plantage"
-    END IF
+    !c  write(*,*)"Je passe en plastique"
+    !c  IF (ISNAN(STRESS(1))) THEN
+    !c    write(*,*)"Plantage"
+    !c  END IF
     !c write(*,*)"STRESS", STRESS
     !c write(*,*)"SIGMA", SIGMA
 
@@ -261,6 +263,7 @@
 	CALL GYFUNCTION(SIGMA,NTENS,YF,GYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
 	F1=YF-HF
 
+    !C  write(*,*)"YF", YF
     !C  write(*,*)"GYF",GYF
 
 !C  ASSEMBLE XIMAT MATRIX AND Y-VECTOR
@@ -273,7 +276,7 @@
 	    END DO
 	END DO
 
-
+    !C  write(*,*)"XIMAT", XIMAT
 
     DO K1=1, NTENS, 1
         DO K2=1, NTENS, 1
@@ -281,13 +284,12 @@
         END DO
     END DO
 
-
 !C  SOLVE FOR STRESS NR-INCREMENT USING CHOLESKY ALGORITHM
     DO JJ=1, NTENS, 1
         DO KK=1, JJ-1, 1
             BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
         END DO
-        BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
+        BV(JJ,JJ) = DSQRT(ABS(BV(JJ,JJ)))
         DO II=(JJ+1), NTENS, 1
             DO KK=1, JJ-1, 1
                 BV(II,JJ)=BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
@@ -296,7 +298,7 @@
         END DO
     END DO
 
-
+    !C  write(*,*)"BV", BV
     
 	DO II=1, NTENS, 1
         ZZ(II) = YVECTOR(II)
@@ -305,6 +307,8 @@
         END DO
         ZZ(II) = ZZ(II) / BV(II, II)
     END DO
+
+    !C  write(*,*)"ZZ", ZZ
     
     DO II=NTENS, 1, -1
         D2SIGMA(II) = ZZ(II)
@@ -313,6 +317,8 @@
         END DO
         D2SIGMA(II) = D2SIGMA(II) / BV(II, II)
     END DO
+
+    !C  write(*,*)"D2SIGMA", D2SIGMA
 
     
 
@@ -349,8 +355,6 @@
 	    CALL HYFUNCTION(SIGMA,NTENS,YF,GYF,HYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
 		
         !C  write(*,*)"YF", NRK, YF
-        !C  write(*,*)"GYF", NRK, GYF
-        !C  write(*,*)"HYF", NRK, HYF
 
 	    F1=YF-HF
 	    FZERO=F1*F1
@@ -382,6 +386,8 @@
             END DO
 	    END DO
 
+        !C  write(*,*)"XIMAT", NRK, XIMAT
+
         DO K1=1, NTENS, 1
             DO K2=1, NTENS, 1
                 BV(K1,K2)=XIMAT(K1,K2)
@@ -402,13 +408,14 @@
             !C  write(*,*)"JJ, NRK, BV(JJ,JJ) POST BOUCLE ET SQRT", JJ, NRK, BV(JJ, JJ)
             DO II=(JJ+1), NTENS, 1
                 DO KK=1, JJ-1, 1
-                    BV(II,JJ)=BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
+                    BV(II,JJ) = BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
                 END DO
                 BV(II,JJ)=BV(II,JJ)/BV(JJ,JJ)
             END DO
         END DO
         
         !C  write(*,*)"BV POST", NRK, BV
+
         DO II=1, NTENS, 1
             ZZ(II) = YVECTOR(II)
             DO JJ = 1, II-1, 1
@@ -463,6 +470,8 @@
 	END DO !!! END OF NEWTON-RAPHSON ITERATIONS
         
 !C  UPDATE STATE VARIABLE
+
+    !C  write(*,*)"EPBAR, DEPBAR", EPBAR, DEPBAR
     STATEV(1)=EPBAR+DEPBAR
 
 !C  UPDATE STRESS
@@ -479,13 +488,20 @@
 	    END DO
 	END DO
 
+    DO K1=1, NTENS, 1
+        DO K2=1, NTENS, 1
+            BV(K1,K2)=XIMAT(K1,K2)
+        END DO
+    END DO
+
     !C  write(*,*)"XIMAT", XIMAT
 !C  INVERT XIMAT AND STORE XIMAT^(-1) INTO SCOMP (NO LONGER NEEDED)
     DO JJ=1, NTENS, 1
         DO KK=1, JJ-1, 1
             BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
         END DO
-        BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
+        !C  write(*,*)"BV(JJ,JJ)", JJ, BV(JJ,JJ)
+        BV(JJ,JJ) = DSQRT(ABS(BV(JJ,JJ)))
         DO II=(JJ+1), NTENS, 1
             DO KK=1, JJ-1, 1
                 BV(II,JJ)=BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
@@ -509,6 +525,8 @@
             END DO
             ZZ(II) = ZZ(II) / BV(II, II)
         END DO
+    
+    !C  write(*,*)"ZZ", ZZ
         
         DO II=NTENS, 1, -1
             SCOMP(II, LL) = ZZ(II)
@@ -518,6 +536,8 @@
             SCOMP(II, LL) = SCOMP(II, LL) / BV(II, II)
         END DO
     END DO
+
+    !C  write(*,*)"SCOMP", SCOMP
     
     SCOMP(1,2)=SCOMP(2,1)
     SCOMP(1,3)=SCOMP(3,1)
@@ -538,6 +558,7 @@
 	
 !C  CALCULATE  SCOMP[GYF] AND STORE IT INTO DSIGMA
 !C  DSIGMA=(/ZERO,ZERO,ZERO/)
+
 	DSIGMA=ZERO
     DO K1=1,NTENS,1
 	    DO K2=1,NTENS,1
@@ -556,18 +577,22 @@
 	    DO K2=K1,NTENS,1
 	        TTB=SCOMP(K1,K2)-DSIGMA(K1)*DSIGMA(K2)/TT
 	        DDSDDE(K1,K2)=TTB
-	        DDSDDE(K2,K1)=TTB
+            DDSDDE(K2,K1)=TTB
 	    END DO
 	END DO
     
+    !C  write(*,*)"SCOMP", SCOMP
+    !C  write(*,*)"DSIGMA", DSIGMA
+
 	DO K1=1,NTENS,1
 	    DDSDDE(K1,K1)=SCOMP(K1,K1)-DSIGMA(K1)*DSIGMA(K1)/TT
 	END DO
 
-    write(*,*)"DDSDDE", DDSDDE
+
+    !C  write(*,*)"DDSDDE", DDSDDE
     DEALLOCATE(KMATERIAL)	
     RETURN
-    END SUBROUTINE  UMAT
+    END SUBROUTINE UMAT
 
 
 !C**************************HARDENING***************************
@@ -660,7 +685,7 @@
     REAL(PREC),DIMENSION(NTENS)::DEVIA
 	REAL(PREC),DIMENSION(NKMAT)::KMATERIAL
 	REAL(PREC)::YF
-	REAL(PREC),PARAMETER::ZTOL=1.0E-007
+	REAL(PREC),PARAMETER::ZTOL=1.0E-010
 	REAL(PREC)::BB
 	INTEGER::II,JJ,KK,MM,LL,N0
     
@@ -670,7 +695,6 @@
     REAL(PREC), PARAMETER::THREE=3.0D0
     REAL(PREC), PARAMETER::SIX=6.0D0
 	
-    
     DEVIA(1)=SIGMA(1) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
                 + SIGMA(3))
     DEVIA(2)=SIGMA(2) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
@@ -680,31 +704,6 @@
     DEVIA(4)=SIGMA(4)
     DEVIA(5)=SIGMA(5)
     DEVIA(6)=SIGMA(6)
-
-    IF (ABS(DEVIA(1)) < ZTOL) THEN 
-        !C  write(*,*)"hey1"
-        DEVIA(1) = ZERO
-    END IF
-    IF (ABS(DEVIA(2)) < ZTOL) THEN 
-        !C  write(*,*)"hey2"
-        DEVIA(2) = ZERO
-    END IF
-    IF (ABS(DEVIA(3)) < ZTOL) THEN 
-        !C  write(*,*)"hey3"
-        DEVIA(3) = ZERO
-    END IF
-    IF (ABS(DEVIA(4)) < ZTOL) THEN 
-        !C  write(*,*)"hey4"
-        DEVIA(4) = ZERO
-    END IF
-    IF (ABS(DEVIA(5)) < ZTOL) THEN 
-        !C  write(*,*)"hey5"
-        DEVIA(5) = ZERO
-    END IF
-    IF (ABS(DEVIA(6)) < ZTOL) THEN 
-        !C  write(*,*)"hey6"
-        DEVIA(6) = ZERO
-    END IF
     
 	YF = 0.0D0
 	
@@ -743,7 +742,7 @@
     REAL(PREC),DIMENSION(NTENS)::DEVIA
 	REAL(PREC),DIMENSION(NKMAT)::KMATERIAL
 	REAL(PREC)::YF,ZYF
-    REAL(PREC),PARAMETER::ZTOL=1.0E-007
+    REAL(PREC),PARAMETER::ZTOL=1.0E-010
     
     REAL(PREC), PARAMETER::ZERO=0.0D0
     REAL(PREC), PARAMETER::ONE=1.0D0
@@ -765,27 +764,27 @@
 
     IF (ABS(DEVIA(1)) < ZTOL) THEN 
         !C  write(*,*)"hey1"
-        DEVIA(1) = ZERO
+        DEVIA(1) = ZTOL
     END IF
     IF (ABS(DEVIA(2)) < ZTOL) THEN 
         !C  write(*,*)"hey2"
-        DEVIA(2) = ZERO
+        DEVIA(2) = ZTOL
     END IF
     IF (ABS(DEVIA(3)) < ZTOL) THEN 
         !C  write(*,*)"hey3"
-        DEVIA(3) = ZERO
+        DEVIA(3) = ZTOL
     END IF
     IF (ABS(DEVIA(4)) < ZTOL) THEN 
         !C  write(*,*)"hey4"
-        DEVIA(4) = ZERO
+        DEVIA(4) = ZTOL
     END IF
     IF (ABS(DEVIA(5)) < ZTOL) THEN 
         !C  write(*,*)"hey5"
-        DEVIA(5) = ZERO
+        DEVIA(5) = ZTOL
     END IF
     IF (ABS(DEVIA(6)) < ZTOL) THEN 
         !C  write(*,*)"hey6"
-        DEVIA(6) = ZERO
+        DEVIA(6) = ZTOL
     END IF
     
     YF = 0.0D0
@@ -901,7 +900,7 @@
 	REAL(PREC),DIMENSION(NTENS,NTENS)::HYF
 	REAL(PREC),DIMENSION(NKMAT)::KMATERIAL
 	REAL(PREC)::YF,ZZTT,ZZRHO,ZZGAMM,MSX,MSY
-    REAL(PREC),PARAMETER::ZTOL=1.0E-005
+    REAL(PREC),PARAMETER::ZTOL=1.0E-010
 	REAL(PREC)::ZYF,YVAL,Y2VAL,ATT,TMP,BB,D1BB,D2BB,D11BB,D22BB,D12BB
 	INTEGER::II,JJ,KK,MM,LL,N0
     REAL(PREC),DIMENSION(NCOEFF)::VD1,VD2,VD11,VD22,VD12
@@ -926,31 +925,31 @@
 
     YF = 0.0D0
 	GYF = 0.0D0
-    HYF=0.0D0
+    HYF = 0.0D0
 
     IF (ABS(DEVIA(1)) < ZTOL) THEN 
         !C  write(*,*)"hey1"
-        DEVIA(1) = ZERO
+        DEVIA(1) = ZTOL
     END IF
     IF (ABS(DEVIA(2)) < ZTOL) THEN 
         !C  write(*,*)"hey2"
-        DEVIA(2) = ZERO
+        DEVIA(2) = ZTOL
     END IF
     IF (ABS(DEVIA(3)) < ZTOL) THEN 
         !C  write(*,*)"hey3"
-        DEVIA(3) = ZERO
+        DEVIA(3) = ZTOL
     END IF
     IF (ABS(DEVIA(4)) < ZTOL) THEN 
         !C  write(*,*)"hey4"
-        DEVIA(4) = ZERO
+        DEVIA(4) = ZTOL
     END IF
     IF (ABS(DEVIA(5)) < ZTOL) THEN 
         !C  write(*,*)"hey5"
-        DEVIA(5) = ZERO
+        DEVIA(5) = ZTOL
     END IF
     IF (ABS(DEVIA(6)) < ZTOL) THEN 
         !C  write(*,*)"hey6"
-        DEVIA(6) = ZERO
+        DEVIA(6) = ZTOL
     END IF
     
     N0 = 1

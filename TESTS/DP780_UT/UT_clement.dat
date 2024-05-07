@@ -1,6 +1,6 @@
 1
 
-   Abaqus 2023                                  Date 30-avr.-2024   Time 17:10:59
+   Abaqus 2023                                  Date 07-mai-2024   Time 11:47:59
    For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
 
 
@@ -160,7 +160,7 @@
        WALLCLOCK TIME (SEC) =            0
 1
 
-   Abaqus 2023                                  Date 30-avr.-2024   Time 17:11:02
+   Abaqus 2023                                  Date 07-mai-2024   Time 11:48:02
    For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
 
                                                                                                STEP    1  INCREMENT    1
@@ -173,10 +173,10 @@
                                                                                           
 
      AUTOMATIC TIME CONTROL WITH -
-          A SUGGESTED INITIAL TIME INCREMENT OF                5.000E-02
+          A SUGGESTED INITIAL TIME INCREMENT OF                2.000E-02
           AND A TOTAL TIME PERIOD OF                            1.00    
           THE MINIMUM TIME INCREMENT ALLOWED IS                1.000E-05
-          THE MAXIMUM TIME INCREMENT ALLOWED IS                5.000E-02
+          THE MAXIMUM TIME INCREMENT ALLOWED IS                3.000E-02
 
      LINEAR EQUATION SOLVER TYPE         DIRECT SPARSE
 
@@ -221,19 +221,18 @@
       (6) USING "*RESTART, WRITE" CAN GENERATE A LARGE AMOUNT OF DATA WRITTEN IN THE WORK DIRECTORY.
 
 
-          THE ANALYSIS IS ENDED BECAUSE OF THE PROBLEMS ENCOUNTERED
-          LOOK AT THE MSG FILE FOR THE CAUSE OF THE TERMINATION
+          THE ANALYSIS HAS BEEN COMPLETED
 
 
 
-                              ANALYSIS IS ENDED
-                              WITH      1 ERROR MESSAGES ON THE MSG FILE
-                              AND       1 WARNING MESSAGES ON THE DAT FILE
+                              ANALYSIS COMPLETE
+                              WITH      1 WARNING MESSAGES ON THE DAT FILE
+                              AND       3 WARNING MESSAGES ON THE MSG FILE
 
 
 
      JOB TIME SUMMARY
-       USER TIME (SEC)      =     0.10    
-       SYSTEM TIME (SEC)    =      0.0    
-       TOTAL CPU TIME (SEC) =     0.10    
-       WALLCLOCK TIME (SEC) =            1
+       USER TIME (SEC)      =      2.0    
+       SYSTEM TIME (SEC)    =     0.20    
+       TOTAL CPU TIME (SEC) =      2.2    
+       WALLCLOCK TIME (SEC) =            6
