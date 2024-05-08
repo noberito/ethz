@@ -1,4 +1,4 @@
-#Coefficients poly4 for DP780 based on 10000 points from the mises protomodel
+Deg4 convex
 Number of coefficients : 22
 1 : 9.0
 2 : 18.0

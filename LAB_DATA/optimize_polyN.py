@@ -32,13 +32,13 @@ degree = 4
 weigth_exp = 0
 protomodel = "mises"
 
-gen_v_data = False
+gen_v_data = True
 gen_e_data = False
 adapt = False
 export_coeff_abq = True
 export_coeff_user = True
 convex_check1 = False
-convex_check2 = False
+convex_check2 = True
 plot = False
 
 a1 = 3
@@ -173,7 +173,7 @@ def optiCoeff(data, degree, weigth_exp):
 
 coeff, powers, nmon, nmon_abq = optiCoeff(data, degree, weigth_exp)
 
-
+coeff = np.round(coeff)
 """----------------------------------------------------FIXING PARAMETERS-----------------------------------------------------------------------------"""
 
 
@@ -203,7 +203,7 @@ def dev(S):
     D[:,2] = S[:,2] - (1/3) * trace_dev
     return(D)
 
-def polyN(S):
+def polyN(S, coeff=coeff):
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
     D = dev(S)
@@ -362,7 +362,7 @@ def cofactor_matrix(lmatrix):
 
     return cofactors
 
-def check_convexity(nb_pt_check, precision=1000,):
+def check_convexity(nb_pt_check, precision=100):
     us = generate_dir(nb_pt_check, 6)
     data = np.zeros((nb_pt_check, 6))
     alpha = np.linspace(0, 5, precision)
