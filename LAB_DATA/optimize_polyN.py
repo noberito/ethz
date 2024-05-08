@@ -5,19 +5,89 @@ import scipy.optimize
 import os
 import sklearn
 import sklearn.preprocessing 
-
-material = "DP780"
-degree = 6
-weigth_exp = 0.99
-protomodel = "mises"
-density = 7.85e-9
+from generate_data import export_virtual_data
+from get_data_cal_ut import generate_data_calibration
+from protomodels import mises, tresca
 
 current_dir = "./"  # Assuming current directory
 dir = "/"
 if os.name == "nt":
     current_dir = ".\\"
     dir = "\\"
-""" ---------------------------------------- READ DATA --------------------------------------------------------------------------------------------------------"""
+
+
+
+"----------------------------------------------------------------VARIABLES---------------------------------------------------------------------------------------------"
+material = "DP780"
+a = 500. 
+b = 140
+c = 200
+
+emod = 70000.
+enu = 0.3
+density = 7.85e-9
+
+nb_virtual_pt = 10000
+degree = 4
+weigth_exp = 0
+protomodel = "mises"
+
+gen_v_data = False
+gen_e_data = False
+adapt = False
+export_coeff_abq = True
+export_coeff_user = True
+convex_check1 = False
+convex_check2 = False
+plot = False
+
+a1 = 3
+a2 = 3
+a3 = 3
+a4 = 3
+a5 = 3
+a6 = 3
+
+b1 = 0
+b2 = 0
+b3 = 0
+b4 = 0
+b5 = 0
+b6 = 0
+b7 = 0
+b8 = 0
+b9 = 1
+b10 = 0
+b11 = 0
+b12 = 0
+b13 = 1
+b14 = 1
+b15 = 0
+b16 = 0
+b17 = 0
+b18 = 0
+b19 = 0
+b20 = 1
+b21 = 1
+b22 = 1
+
+"""----------------------------------------------------------------- GENERATING DATA ----------------------------------------------------------------------------------"""
+
+thetas = ["00", "15", "30", "45", "60", "75", "90"]
+materials = ["AA7020-T6", "DP600", "DP780"]
+
+
+if gen_v_data :
+    print("Génération du data virtuel en cours")
+    if protomodel == "mises":
+        export_virtual_data(mises, protomodel, material, nb_virtual_pt)
+    if protomodel == "tresca":
+        export_virtual_data(tresca, protomodel, material, nb_virtual_pt)
+    print("Génération du data virtuel terminé")
+if gen_e_data:
+    generate_data_calibration(material, thetas)
+
+""" ----------------------------------------------------------- READ DATA ----------------------------------------------------------------------------------------------"""
 
 def readData(material, protomodel):
     filename_v = "data_virtual_" + material + "_" + protomodel + ".csv"
@@ -32,15 +102,15 @@ def readData(material, protomodel):
 
     sigma0 = db_e["YieldStress"].iloc[0]
 
-    db_e["s11"] = db_e["YieldStress"] / sigma0 * np.square(np.cos(db_e["LoadAngle"])) + db_e["q"] * np.square(np.sin(db_e["LoadAngle"]))
-    db_e["s22"] = db_e["YieldStress"] / sigma0 * np.square(np.sin(db_e["LoadAngle"])) + db_e["q"] * np.square(np.cos(db_e["LoadAngle"]))
+    db_e["s11"] = db_e["YieldStress"] / sigma0 * (np.square(np.cos(db_e["LoadAngle"])) + db_e["q"] * np.square(np.sin(db_e["LoadAngle"])))
+    db_e["s22"] = db_e["YieldStress"] / sigma0 * (np.square(np.sin(db_e["LoadAngle"])) + db_e["q"] * np.square(np.cos(db_e["LoadAngle"])))
     db_e["s33"] = db_e["YieldStress"] * 0
     db_e["s12"] = db_e["YieldStress"] / sigma0 * (1 - db_e["q"]) * np.sin(db_e["LoadAngle"]) * np.cos(db_e["LoadAngle"]) / sigma0
     db_e["s13"] = db_e["YieldStress"] * 0
     db_e["s23"] = db_e["YieldStress"] * 0
+    db_e.loc[db_e["Rval"] == "*", "Rval"] = 10
 
-    db = db_e.loc[:, ["s11", "s22", "s33", "s12", "s13", "s23", "Type"]]
-    db = pd.concat([db, db_v])
+    db = pd.concat([db_e, db_v])
 
     db["d11"] = (2/3) * db["s11"] - (1/3) * db["s22"] - (1/3) * db["s33"]
     db["d22"] = - (1/3) * db["s11"] + (2/3) * db["s22"] - (1/3) * db["s33"]
@@ -49,7 +119,7 @@ def readData(material, protomodel):
 
 db = readData(material, protomodel)
 nb_virtual_pt = len(db[db["Type"] == "v"])
-data = db[["d11", "d22", "s12", "s13", "s23"]].values
+data = db[["d11", "d22", "s12", "s13", "s23","LoadAngle", "Rval"]].values
 
 """ ---------------------------------------------PARAMETERS OPTIMIZATION-----------------------------------------------------------------------------"""
 
@@ -91,7 +161,7 @@ def optiCoeff(data, degree, weigth_exp):
     def Grad_J(a):
         return 2 * np.dot(M, a) - V
 
-    a = np.zeros(nmon)
+    a = np.zeros(len(powers))
     a[0] = 1
 
     print("Optimisation en cours")
@@ -103,42 +173,8 @@ def optiCoeff(data, degree, weigth_exp):
 
 coeff, powers, nmon, nmon_abq = optiCoeff(data, degree, weigth_exp)
 
-print(powers)
-
 
 """----------------------------------------------------FIXING PARAMETERS-----------------------------------------------------------------------------"""
-
-adapt = False
-
-a1 = 3
-a2 = 3
-a3 = 3
-a4 = 3
-a5 = 3
-a6 = 3
-
-b1 = 0
-b2 = 0
-b3 = 0
-b4 = 0
-b5 = 0
-b6 = 0
-b7 = 0
-b8 = 0
-b9 = 1
-b10 = 0
-b11 = 0
-b12 = 0
-b13 = 1
-b14 = 1
-b15 = 0
-b16 = 0
-b17 = 0
-b18 = 0
-b19 = 0
-b20 = 1
-b21 = 1
-b22 = 1
 
 
 coeff_deg2 = np.array([a1, a2, a3, a4, a5, a6])
@@ -153,7 +189,8 @@ def adapt_coeff(adapt, degree, coeff):
     return coeff
 
 coeff = adapt_coeff(adapt, degree, coeff)
-print(coeff)
+
+
 """ ---------------------------------------------------POLYN DEFINITION------------------------------------------------------------------------------"""
 
 def dev(S):
@@ -187,6 +224,7 @@ def polyN_plane(S_plane):
     return(polyN(S))
 
 """----------------------------------------------GRADIENT AND HESSIAN OF POLYN DEFINITION-----------------------------------------------------------"""
+
 def jac_dev(S):
     jac = np.zeros((5, 6))
     jac[0] = np.array([2/3, -1/3, -1/3, 0, 0, 0])
@@ -447,10 +485,6 @@ def plot_implicit(yf, bbox=(-1.5,1.5)):
 
 """---------------------------------------------------------------------TESTING-----------------------------------------------------------------------------------------"""
 
-convex_check1 = False
-convex_check2 = True
-plot = False
-
 data = db[["s11", "s22", "s33", "s12", "s13", "s23"]].values
 
 S0 = np.zeros(6)
@@ -494,8 +528,9 @@ A[3,3] = 6
 A[4,4] = 6
 A[5,5] = 6
 
-print(A)
-print(grad_polyN(S1))
+#print(A)
+#print(grad_polyN(S1))
+
 if convex_check1:
     print("Start checking convexity")
     check_convexity(1000)
@@ -503,7 +538,7 @@ if convex_check1:
 
 if convex_check2:
     print("Start checking convexity")
-    check_convexity2(100)
+    check_convexity2(10000)
     print("End checking convexity")
 
 if plot:
@@ -512,7 +547,7 @@ if plot:
 
 """-------------------------------------------------OUTPUT---------------------------------------------------------------------------------------------"""
 
-def export_coeff(coeff, protomodel, degree, material, nb_virtual_pt):
+def write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt):
     filename = "{}_deg{}_{}.txt".format(material, degree, protomodel)
     foldername = current_dir + material + "_results" + dir + "COEFF" + dir
     filepath = foldername + filename
@@ -524,9 +559,7 @@ def export_coeff(coeff, protomodel, degree, material, nb_virtual_pt):
         for i in range(n):
             file.write("{} : {}\n".format(i + 1, coeff[i]))
 
-export_coeff(coeff, protomodel, degree, material, nb_virtual_pt)
-
-def export_coeff_abq(coeff, protomodel, degree, material):
+def write_coeff_abq(coeff, protomodel, degree, material):
     filename = "{}_abq_deg{}_{}.inp".format(material, degree, protomodel)
     foldername = current_dir + material + "_results" + dir + "COEFF" + dir
     filepath = foldername + filename
@@ -534,7 +567,7 @@ def export_coeff_abq(coeff, protomodel, degree, material):
     n = len(coeff)
     with open(filepath, "w") as file:
         file.write("*USER MATERIAL, constants={}\n".format(7 + nmon_abq))
-        file.write("EMOD, EMU, A, B, C, {}, {}, ".format(degree, nmon_abq))
+        file.write("{}, {}, {}, {}, {}, {}, {}, ".format(emod, enu, a, b, c, degree, nmon_abq))
         n0 = 0
         n0_abq = 0
         while n0_abq < nmon :
@@ -557,4 +590,7 @@ def export_coeff_abq(coeff, protomodel, degree, material):
         file.write("*DENSITY\n")
         file.write("{}".format(density))
 
-export_coeff_abq(coeff, protomodel, degree, material)
+if export_coeff_user:
+    write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt)
+if export_coeff_abq:
+    write_coeff_abq(coeff, protomodel, degree, material)

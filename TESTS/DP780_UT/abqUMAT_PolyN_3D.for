@@ -95,7 +95,7 @@
 !C  HARDENING PARAMETERS
 	REAL(PREC)::AA,BB,CC
 !C  HARDENING VALUES
-	REAL(PREC):: HF, HPF
+	REAL(PREC):: HF, HPF, HFS
 
 !C  STRESS TENSOR AND ITS INCREMENTS
 	REAL(PREC),DIMENSION(NTENS)::SIGMA, DSIGMA, D2SIGMA
@@ -104,7 +104,7 @@
 	REAL(PREC):: EPBAR, DEPBAR, D2EPBAR
 
 !C  YIELD FUNCTION VALUE, GRADIENT AND HESSIAN
-	REAL(PREC):: YF
+	REAL(PREC):: YF, YFS
 	REAL(PREC),DIMENSION(NTENS)::GYF
 	REAL(PREC),DIMENSION(NTENS,NTENS)::HYF
 
@@ -147,6 +147,12 @@
 !C!********************************************
 !C RECOVER THE EQUIVALENT PLASTIC STRAIN AT THE BEGINING OF THE INCREMENT
     EPBAR = STATEV(1)
+!C**********************************************************************
+!C     WRITE TO A FILE
+!C**********************************************************************
+
+       OPEN(80, FILE = 'C:\temp\TESTS\DP780_UT\output.txt')
+    1 FORMAT(30F30.8)
       
 !C!********************************************
 !C INITIALIZE THE STIFFNESS TENSOR (IT WILL BE STORED IN DDSDDE)
@@ -206,11 +212,13 @@
 !C CHECK YIELDING CONDITION
     CALL KHARD(HF,HPF,EPBAR,AA,BB,CC)
     CALL YFUNCTION(SIGMA,NTENS,YF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
-!C  write(*,*)"HF",HF
-!C  write(*,*)"YF",YF
+
+    HFS = HF
+    YFS = YF
 
 !C  ELASTIC STEP :  UPDATE STRESS
 	IF (YF <= HF) THEN
+        write(80,1)TIME, 0, SIGMA(1),YFS,HFS,AA, BB, CC
 	    STRESS = SIGMA
 !C  DDSDDE HAS BEEN DEFINED ABOVE
 !C  THE EQUIVALENT PLASTIC STRAIN, STATEV(1), REMAINS UNCHANGED
@@ -590,6 +598,7 @@
 
 
     !C  write(*,*)"DDSDDE", DDSDDE
+    write(80,1)TIME, EPBAR, SIGMA(1),YFS, HFS, AA, BB, CC
     DEALLOCATE(KMATERIAL)	
     RETURN
     END SUBROUTINE UMAT
@@ -877,11 +886,7 @@
     ZYF = YF ** (ONE/DBLE(DEGREE))
 
     DO II = 1, NTENS
-        IF (ISNAN(GYF(II))) THEN
-            GYF(II) = 0
-        ELSE
-            GYF(II) = GYF(II) * (ZYF/(DBLE(DEGREE) * YF))
-        END IF
+        GYF(II) = GYF(II) * (ZYF/(DBLE(DEGREE) * YF))
     END DO
     
     YF = ZYF
@@ -1322,11 +1327,7 @@
 
     !C TO CHECK AGAIN WITH FORMULA OF COMPOSED FUNCTION
     DO II = 1, NTENS
-        IF (ISNAN(GYF(II))) THEN
-            GYF(II) = 0
-        ELSE 
-            GYF(II) = GYF(II) * (ZYF/(DBLE(DEGREE) * YF))
-        END IF
+        GYF(II) = GYF(II) * (ZYF/(DBLE(DEGREE) * YF))
     END DO
 
     !C  write(*,*)"GYF POST", GYF
@@ -1334,11 +1335,7 @@
     !C  write(*,*)"HYF PRE", HYF
     DO II = 1, NTENS
         DO JJ = II, NTENS
-            IF (ISNAN(HYF(II,JJ))) THEN
-                HYF(II, JJ) = - GYF(II) * GYF(JJ) * Y2VAL
-            ELSE
-                HYF(II, JJ) = HYF(II, JJ) * YVAL - GYF(II) * GYF(JJ) * Y2VAL
-            END IF
+            HYF(II, JJ) = HYF(II, JJ) * YVAL - GYF(II) * GYF(JJ) * Y2VAL
             HYF(JJ, II) = HYF(II, JJ)
         END DO
     END DO

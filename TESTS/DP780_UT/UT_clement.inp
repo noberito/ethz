@@ -55,18 +55,16 @@
 ** MATERIALS
 ** 
 *Material, name=mat
-*INCLUDE, INPUT=dp780_deg4_mises.inp
+*INCLUDE, INPUT=DP780_abq_deg4_mises.inp
 *DEPVAR
 1
-*Density
- 7e-85,
 ** ----------------------------------------------------------------
 ** 
 ** STEP: Step-1
 ** 
 *Step, name=Step-1, nlgeom=YES
 *Static
-0.02, 1., 1e-05, 0.03
+0.1, 1., 1e-05, 0.1
 ** 
 ** BOUNDARY CONDITIONS
 ** 

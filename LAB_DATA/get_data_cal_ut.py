@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import os
-import openpyxl
 
 current_dir = "./"  # Assuming current directory
 dir = "/"
