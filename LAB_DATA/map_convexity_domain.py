@@ -1,9 +1,10 @@
+from tabnanny import check
 import numpy as np
 import sklearn
 import sklearn.preprocessing
 import matplotlib.pyplot as plt
 
-degree = 4
+degree = 2
 nb_dir = 1
 kg_min = 1e-5
 kg_max = 5e-4
@@ -172,6 +173,7 @@ def hessian_polyN(S, coeff_hessian, powers_hessian):
 """-----------------------------------------------------------------------------------------"""
 
 def generate_dir(n, dim):
+    np.random.seed(6)
     dirs = np.random.normal(0, 1, (n, dim))
     norms = np.linalg.norm(dirs, axis=1)
     dirs = (dirs.T/norms).T
@@ -192,8 +194,7 @@ def cofactor_matrix(lmatrix):
 
     return cofactors
 
-def check_convexity(f, grad_f, hessian_f, nb_pt_check):
-
+def gauss_curv(f, grad_f, hessian_f, nb_pt_check):
     dirs = generate_dir(nb_pt_check, 6)
     tol = 0.01
     itermax = 20
@@ -228,17 +229,90 @@ def check_convexity(f, grad_f, hessian_f, nb_pt_check):
     
     K = - np.ones(nb_pt_check)
     grad_data = grad_f(data)
+    norm_grad_data = np.linalg.norm(grad_data, axis = 1)
     hessian_data = hessian_f(data)
 
     cofactor_hessian_data = cofactor_matrix(hessian_data)
 
     for i in range(nb_pt_check):
-        K[i] = K[i] * np.dot(grad_data[i], np.dot(grad_data[i], cofactor_hessian_data[i]))
+        K[i] = K[i] // (norm_grad_data[i] ** 7) * np.dot(grad_data[i], np.dot(grad_data[i], cofactor_hessian_data[i]))
 
-    m = min(K)
+    return(K)
+
+def check_convexity(coeff, nb_pt_check):
+    coeff_grad, powers_grad = jac_polyN_param(coeff, powers)
+    coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
+
+    def f(S):
+        return(polyN(S, coeff))
+                
+    def grad_f(S):
+        return(grad_polyN(S, coeff_grad, powers_grad))
+                
+    def hessian_f(S):
+        return(hessian_polyN(S, coeff_hessian, powers_hessian))
+
+    m = np.min(gauss_curv(f, grad_f, hessian_f, nb_pt_check))
+
     return(m)
 
-def plot_implicit(yf, bbox=(-1.5,1.5)):
+def gauss_curv_coeff(coeff, nb_pt_check):
+    coeff_grad, powers_grad = jac_polyN_param(coeff, powers)
+    coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
+
+    def f(S):
+        return(polyN(S, coeff))
+                
+    def grad_f(S):
+        return(grad_polyN(S, coeff_grad, powers_grad))
+                
+    def hessian_f(S):
+        return(hessian_polyN(S, coeff_hessian, powers_hessian))
+    
+    return(gauss_curv(f, grad_f, hessian_f, nb_pt_check))
+
+
+def plot_implicit2(yf, bbox=(-1.5,1.5)):
+    ''' create a plot of an implicit function
+    fn  ...implicit function (plot where fn==0)
+    bbox ..the x,y,and z limits of plotted interval'''
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox*3
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    A = np.linspace(xmin, xmax, 100) # resolution of the contour
+    B = np.linspace(xmin, xmax, 20) # number of slices
+    A1,A2 = np.meshgrid(A,A) # grid on which the contour is plotted
+
+    print("Début du plot sur XY")
+    for z in B: # plot contours in the XY plane
+        X,Y = A1,A2
+        Z = yf(X,Y,z) - 1
+        cset = ax.contour(X, Y, Z+z, [z], zdir='z')
+        # [z] defines the only level to plot for this contour for this value of z
+    print("Fin du plot sur XY")
+    print("Début du plot sur XZ")
+    for y in B: # plot contours in the XZ plane
+        X,Z = A1,A2
+        Y = yf(X,y,Z) - 1
+        cset = ax.contour(X, Y+y, Z, [y], zdir='y')
+
+    print("Fin du plot sur XZ")
+    print("Début du plot sur YZ")
+    for x in B: # plot contours in the YZ plane
+        Y,Z = A1,A2
+        X = yf(x,Y,Z) - 1
+        cset = ax.contour(X+x, Y, Z, [x], zdir='x')
+    print("Fin du plot sur YZ")
+    # must set plot limits because the contour will likely extend
+    # way beyond the displayed level.  Otherwise matplotlib extends the plot limits
+    # to encompass all values in the contour.
+    ax.set_zlim3d(zmin,zmax)
+    ax.set_xlim3d(xmin,xmax)
+    ax.set_ylim3d(ymin,ymax)
+
+    plt.show()
+
+def plot_implicit(yf, bbox=(-5,5)):
     ''' create a plot of an implicit function
     fn  ...implicit function (plot where fn==0)
     bbox ..the x,y,and z limits of plotted interval'''
@@ -283,9 +357,11 @@ def dc(M, nb_dir, powers):
     dirs = generate_dir(nb_dir, nb_coeff)
     tol = 10e-4
 
-    pt_set = np.array([])
-    print(pt_set)
-    kg_set = np.array([])
+    nb_pt_check_1 = 10
+    nb_pt_check_2 = 10000
+
+    pt_set = np.empty((0, nb_coeff))
+    kg_set = np.empty(0)
 
     for i in range(nb_dir):
         for j in [1, -1]:
@@ -297,54 +373,32 @@ def dc(M, nb_dir, powers):
             it = 0
 
             while kg > - tol :
-                print(i, j, it, lamb)
                 coeff = M + lamb * u
-                coeff_grad, powers_grad = jac_polyN_param(coeff, powers)
-                coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
+                kg = check_convexity(coeff, nb_pt_check_1)
 
-                def f(S):
-                    return(polyN(S, coeff))
-                
-                def grad_f(S):
-                    return(grad_polyN(S, coeff_grad, powers_grad))
-                
-                def hessian_f(S):
-                    return(hessian_polyN(S, coeff_hessian, powers_hessian))
-                
-                kg = check_convexity(f, grad_f, hessian_f, nb_pt_check=10)
+                print(i, j, it, lamb)
                 print("kg", kg)
 
                 lamb = lamb * 2
-
                 it = it + 1
+
             S = M
             E = coeff
 
-            pt_set = np.append(pt_set, E)
+            pt_set = np.concatenate((pt_set, np.atleast_2d(E)))
             kg_set = np.append(kg_set, kg)
 
             it = 0
 
-            while abs(kg) > kg_max and it < itermax:
+            while (kg > kg_max or kg < kg_min) and it < itermax:
 
                 print(kg, it)
 
                 I = (S+E)/2
-                coeff_grad, powers_grad = jac_polyN_param(I, powers)
-                coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
+                
+                kg = check_convexity(I, nb_pt_check_2)
 
-                def f(S):
-                    return(polyN(S, I))
-                
-                def grad_f(S):
-                    return(grad_polyN(S, coeff_grad, powers_grad))
-                
-                def hessian_f(S):
-                    return(hessian_polyN(S, coeff_hessian, powers_hessian))
-                
-                kg = check_convexity(f, grad_f, hessian_f, nb_pt_check=10000)
-
-                pt_set = np.append(pt_set, I, axis=0)
+                pt_set = np.concatenate((pt_set, np.atleast_2d(I)), axis=0)
                 kg_set = np.append(kg_set, kg)
 
                 if kg > 0 :
@@ -362,4 +416,41 @@ def dc(M, nb_dir, powers):
         
         return(pt_set, kg_set)
 
-print(dc(M, nb_dir, powers))
+
+"""coeff = np.ones(22)
+coeff[1] = -1
+coeff[2] = -1
+coeff[]
+K = gauss_curv_coeff(coeff, 100000)
+def f(S):
+        return(polyN(S, coeff))
+f_wrap = np.vectorize(lambda x, y, z : f(np.array([x, y, 0, z, 0, 0])))
+
+print(max(K))
+print(min(K))
+plt.boxplot(K)
+plt.show()
+plot_implicit(f_wrap)"""
+
+def g(S):
+    if S.ndim==1:
+        S = np.expand_dims(S, axis=0)
+    return(np.sum(S**2, axis = 1))
+
+def grad_g(S):
+    if S.ndim==1:
+        S = np.expand_dims(S, axis=0)
+    return(2 * S)
+
+def hessian_g(S):
+    if S.ndim==1:
+        S = np.expand_dims(S, axis=0)
+    A = 2 * np.eye(6,6)
+    res = np.tile(A, (len(S), 1, 1))
+    return(res)
+
+K = gauss_curv(g, grad_g, hessian_g, 10000)
+g_wrap = np.vectorize(lambda x, y, z : g(np.array([x, y, z, 0, 0, 0])))
+print(max(K))
+print(min(K))
+plot_implicit(g_wrap)
