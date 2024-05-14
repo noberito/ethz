@@ -8,7 +8,7 @@ from keras.layers import Dense, Input
 
 n_test = 10000
 k = 100
-good_data = False
+good_data = True
 gseed=99
 
 def custom_activation(x):

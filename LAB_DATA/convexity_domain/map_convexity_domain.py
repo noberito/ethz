@@ -3,16 +3,23 @@ import sklearn
 import sklearn.preprocessing
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 degree = 4
 nb_dir = 1
+itermax_data = 10
+t = time.time()
 
-
-kg_max = 1e-4
-kg_min = -5e-4
-tol_kg = 1e-4
+tol_kg = 1e-7
 tol_yf = 0.01
-tol_minor = 1e-4
+tol_minor = 1e-7
+
+kg_max = tol_kg
+kg_min = -5e-4
+minor_min = - tol_minor
+minor_max = tol_minor
+
+np.random.seed(6)
 
 if degree==2:
     M = np.array([3, 3, 3, 3, 3, 3])
@@ -181,7 +188,6 @@ def hessian_polyN(S, coeff_hessian, powers_hessian):
 """-----------------------------------------------------------------------------------------"""
 
 def generate_dir(n, dim):
-    np.random.seed(6)
     dirs = np.random.normal(0, 1, (n, dim))
     norms = np.linalg.norm(dirs, axis=1)
     dirs = (dirs.T/norms).T
@@ -214,6 +220,43 @@ def leading_principal_minors(lmatrix):
         lead_minors[:, i] = np.linalg.det(lmatrix[:, :i, :i])
 
     return lead_minors
+
+
+def data_yf_sphere(f, itermax, nb_pt_check):
+    data = np.zeros((nb_pt_check, 6))
+    j = 0
+
+    while j < nb_pt_check:
+
+        E = np.zeros(6)
+        m = -1
+        u = generate_dir(1, 6)[0]
+        it = 0
+        lamb = 0.01
+
+        while m < tol_yf and it < itermax :
+
+            E = E + lamb * u
+            m = f(E) - 1
+            lamb = lamb * 2
+            it = it + 1
+        if it != itermax :
+            
+            S = np.zeros(6)
+            res = f(E) - 1
+            it = 0
+            while abs(res) > tol_yf and it < itermax:
+                I = (S+E)/2
+                res = f(I) - 1
+                if res > 0 :
+                    E = I
+                else:
+                    S = I
+                it = it + 1
+            data[j] = I
+            j = j + 1
+    
+    return(data)
 
 
 def gauss_curv(f, grad_f, hessian_f, nb_pt_check):
@@ -262,10 +305,6 @@ def gauss_curv(f, grad_f, hessian_f, nb_pt_check):
     pos_L = np.empty(j)
 
     for i in range(j):
-        """print(i)
-        print(norm_grad_data[i], np.dot(grad_data[i], grad_data[i]), cofactor_hessian_data[i])
-        print(np.dot(grad_data[i], np.dot(grad_data[i], cofactor_hessian_data[i])))
-        print(np.dot(grad_data[i], np.dot(grad_data[i], cofactor_hessian_data[i])) / (norm_grad_data[i] ** 7) )"""
         #print(i, grad_data[i], norm_grad_data[i], cofactor_hessian_data[i])
         K[i] = K[i] * np.dot(grad_data[i], np.dot(grad_data[i], cofactor_hessian_data[i])) / (norm_grad_data[i] ** 7)
         
@@ -281,7 +320,7 @@ def gauss_curv(f, grad_f, hessian_f, nb_pt_check):
 
     return(K)
 
-def check_convexity(coeff, nb_pt_check):
+def check_convexity_kg(coeff, nb_pt_check):
     coeff_grad, powers_grad = jac_polyN_param(coeff, powers)
     coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
 
@@ -297,9 +336,11 @@ def check_convexity(coeff, nb_pt_check):
     K = gauss_curv(f, grad_f, hessian_f, nb_pt_check)
     M, m = np.max(K), np.min(K)
     moy = np.mean(K)
+    n_pos = np.count_nonzero(K > 0)
+    n_neg = np.count_nonzero(K < 0)
 
 
-    return(M, m, moy)
+    return(M, m, moy, n_pos, n_neg)
 
 def gauss_curv_coeff(coeff, nb_pt_check, val_test=np.array([2, 1, 0, 1, 1, 1])):
     coeff_grad, powers_grad = jac_polyN_param(coeff, powers)
@@ -315,6 +356,28 @@ def gauss_curv_coeff(coeff, nb_pt_check, val_test=np.array([2, 1, 0, 1, 1, 1])):
         return(hessian_polyN(S, coeff_hessian, powers_hessian))
     
     return(gauss_curv(f, grad_f, hessian_f, nb_pt_check))
+
+def check_convexity_lpm(coeff, itermax, nb_pt_check):
+    coeff_grad, powers_grad = jac_polyN_param(coeff, powers)
+    coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
+
+    def f(S):
+        return(polyN(S, coeff))
+                
+    def grad_f(S):
+        return(grad_polyN(S, coeff_grad, powers_grad))
+                
+    def hessian_f(S):
+        return(hessian_polyN(S, coeff_hessian, powers_hessian))
+
+    print("gen data")
+    data = data_yf_sphere(f, itermax, nb_pt_check)
+    print("fini")
+    hessian_data = hessian_f(data)
+    L = leading_principal_minors(hessian_data)
+    print("ici")
+    m = min(L.flatten())
+    return(m)
 
 def plot_implicit(yf, bbox=(-5,5)):
     ''' create a plot of an implicit function
@@ -355,11 +418,11 @@ def plot_implicit(yf, bbox=(-5,5)):
     ax.set_ylim3d(ymin,ymax)
     plt.show()
 
-def dc(M, nb_dir):
+def dc_kg(M, nb_dir):
     nb_coeff = len(M)
     dirs = generate_dir(nb_dir, nb_coeff)
     nb_pt_check_1 = 100
-    nb_pt_check_2 = 100
+    nb_pt_check_2 = 1000
 
     pt_set = np.empty((0, nb_coeff))
     kg_set = np.empty(0)
@@ -376,12 +439,14 @@ def dc(M, nb_dir):
             """Find coefficients where polyN not convex by trial and error"""
             while kg < kg_max :
                 coeff = M + lamb * u
-                kg, kgm, kgmoy = check_convexity(coeff, nb_pt_check_1)
+                kg, kgm, kgmoy, n_pos, n_neg = check_convexity_kg(coeff, nb_pt_check_1)
                 print(i, j, it, lamb)
                 print("kg max", kg)
-                print("kg max", kgm)
+                print("kg min", kgm)
                 print("kg moy", kgmoy)
-                lamb = lamb * 1.01
+                print("pos", n_pos)
+                print("neg", n_neg)
+                lamb = lamb * 1.5
                 it = it + 1
 
             S = M
@@ -394,7 +459,7 @@ def dc(M, nb_dir):
             while (kg > kg_max or kg < kg_min) and it < itermax:
                 
                 I = (S+E)/2
-                kg, kgM = check_convexity(I, nb_pt_check_2)
+                kg, kgM, p, d, u = check_convexity_kg(I, nb_pt_check_2)
                 print(kg, it)
                 pt_set = np.concatenate((pt_set, np.atleast_2d(I)), axis=0)
                 kg_set = np.append(kg_set, kg)
@@ -407,8 +472,69 @@ def dc(M, nb_dir):
         return(pt_set, kg_set)
     
 
-dc(M, nb_dir)
+def dc_lpm(M, nb_dir, itermax):
+    nb_coeff = len(M)
+    dirs = generate_dir(nb_dir, nb_coeff)
+    nb_pt_check_1 = 100
+    nb_pt_check_2 = 1000
 
+    pt_set = np.empty((0, nb_coeff))
+    #0 if not-convex, 1 if convex
+    convex_set = np.empty(0, dtype=int)
+
+    print(nb_dir)
+
+    for i in range(nb_dir):
+        print(i)
+        for j in [1, -1]:
+
+            u = dirs[i] * j
+            lamb = 1
+            lpm = 1
+            it = 0
+
+            """Find coefficients where polyN not convex by trial and error"""
+            while lpm > - tol_minor :
+                coeff = M + lamb * u
+                lpm = check_convexity_lpm(coeff, itermax, nb_pt_check_1)
+                #print(i, j, it, lamb)
+                print("lpm", lpm)
+                lamb = lamb * 3
+                it = it + 1
+
+
+            S = M
+            E = coeff
+            pt_set = np.concatenate((pt_set, np.atleast_2d(E)))
+            convex_set = np.append(convex_set, 0)
+            it = 0
+            
+
+            """Find coefficients such as polyN in on the border of the convexity domain"""
+            while (lpm < minor_min or lpm > minor_max):
+                
+                I = (S+E)/2
+                print(I)
+
+                lpm = check_convexity_lpm(I, itermax, nb_pt_check_2)
+                pt_set = np.concatenate((pt_set, np.atleast_2d(I)), axis=0)
+                
+                if lpm > 0 :
+                    convex_set = np.append(convex_set, 1)
+                    S = I
+                else:
+                    convex_set = np.append(convex_set, 0)
+                    E = I
+                it = it + 1
+            convex_set[-1] = 1
+    return(pt_set, convex_set)
+
+
+X, Y = dc_lpm(M, nb_dir, itermax_data)
+np.save("X_convex.npy", X)
+np.save("Y_convex.npy", Y)
+
+print(time.time() - t, ":", len(X),"points")
 
 
 """print(max(K))
