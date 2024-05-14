@@ -9,7 +9,8 @@ from keras.layers import Dense, Input
 n_test = 10000
 k = 100
 good_data = True
-gseed=99
+gseed = 6
+degree = 4
 
 def custom_activation(x):
     return 0.5 * (1 + tf.math.sign(x)) * (x + 1/100) +  0.5 * (1 - tf.math.sign(x)) * tf.math.exp(tf.math.minimum(0.0,x)) / 100
@@ -18,8 +19,8 @@ def custom2_activation(x):
     return tf.where(x < 0, tf.exp(tf.math.minimum(0.0, x) * k) / k, x + 1/k)
 
 if good_data:
-    X = np.load("X_convex.npy")
-    Y = np.load("Y_convex.npy")
+    X = np.load("X_convex_{}.npy".format(degree))
+    Y = np.load("Y_convex_{}.npy".format(degree))
 else :
     X = np.random.randint(0, 100, size=(n_test * 2, 22))
     Y = np.random.randint(0, 2, size=(n_test * 2))
@@ -50,7 +51,7 @@ model.compile(optimizer='adam',
 
 model.summary()
 
-history = model.fit(X_train, Y_train, epochs=20, batch_size=64,)
+history = model.fit(X_train, Y_train, epochs=20, batch_size=1,)
 
 print(X_valid, Y_valid)
 # Evaluate the model

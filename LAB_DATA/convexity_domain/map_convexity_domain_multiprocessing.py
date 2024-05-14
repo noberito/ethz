@@ -4,10 +4,10 @@ import sklearn.preprocessing
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import multiprocessing
 
 degree = 4
-nb_dir = 1
-t = time.time()
+nb_dir = 100
 
 tol_kg = 1e-7
 tol_yf = 0.001
@@ -25,6 +25,7 @@ if degree==2:
 if degree==4:
     M = np.array([9, 18, 27, 18, 9, 18, 18, 18, 9, 18, 18, 18, 18, 9, 0, 0, 18, 18, 18, 18, 18, 9])
 
+nb_coeff = len(M)
 
 """-----------------------------------PARAMETERS FOR POLYN------------------------------------------"""
 def get_param_polyN(degree):
@@ -471,9 +472,8 @@ def dc_kg(M, nb_dir):
         return(pt_set, kg_set)
     
 
-def dc_lpm(M, nb_dirs):
+def dc_lpm(direction, M=M):
     nb_coeff = len(M)
-    dirs = generate_dir(nb_dir, nb_coeff)
     itermax = 5
     nb_pt_check_1 = 100
     nb_pt_check_2 = 1000
@@ -482,61 +482,74 @@ def dc_lpm(M, nb_dirs):
     #0 if not-convex, 1 if convex
     convex_set = np.empty(0, dtype=int)
 
-    print(nb_dir)
+    for j in [1, -1]:
 
-    for i in range(nb_dir):
-        print(i)
-        for j in [1, -1]:
+        u = direction * j
+        lamb = 1
+        lpm = 1
+        it = 0
 
-            u = dirs[i] * j
-            lamb = 1
-            lpm = 1
-            it = 0
-
-            """Find coefficients where polyN not convex by trial and error"""
-            while lpm > - tol_minor :
-                coeff = M + lamb * u
-                lpm = check_convexity_lpm(coeff, itermax, nb_pt_check_1)
-                #print(i, j, it, lamb)
-                print("lpm", lpm)
-                lamb = lamb * 3
-                it = it + 1
+        """Find coefficients where polyN not convex by trial and error"""
+        while lpm > - tol_minor :
+            coeff = M + lamb * u
+            lpm = check_convexity_lpm(coeff, itermax, nb_pt_check_1)
+            #print(i, j, it, lamb)
+            print("lpm", lpm)
+            lamb = lamb * 3
+            it = it + 1
 
 
-            S = M
-            E = coeff
-            pt_set = np.concatenate((pt_set, np.atleast_2d(E)))
-            convex_set = np.append(convex_set, 0)
-            it = 0
+        S = M
+        E = coeff
+        pt_set = np.concatenate((pt_set, np.atleast_2d(E)))
+        convex_set = np.append(convex_set, 0)
+        it = 0
             
 
-            """Find coefficients such as polyN in on the border of the convexity domain"""
-            while (lpm < minor_min or lpm > minor_max):
+        """Find coefficients such as polyN in on the border of the convexity domain"""
+        while (lpm < minor_min or lpm > minor_max):
                 
-                I = (S+E)/2
-                print(I)
+            I = (S+E)/2
+            print(I)
 
-                lpm = check_convexity_lpm(I, itermax, nb_pt_check_2)
-                pt_set = np.concatenate((pt_set, np.atleast_2d(I)), axis=0)
+            lpm = check_convexity_lpm(I, itermax, nb_pt_check_2)
+            pt_set = np.concatenate((pt_set, np.atleast_2d(I)), axis=0)
                 
-                if lpm > 0 :
-                    convex_set = np.append(convex_set, 1)
-                    S = I
-                else:
-                    convex_set = np.append(convex_set, 0)
-                    E = I
-                it = it + 1
-            convex_set[-1] = 1
+            if lpm > 0 :
+                convex_set = np.append(convex_set, 1)
+                S = I
+            else:
+                convex_set = np.append(convex_set, 0)
+                E = I
+            it = it + 1
+        convex_set[-1] = 1
     return(pt_set, convex_set)
 
 
+if __name__ == "__main__":
 
-X, Y = dc_lpm(M, nb_dir)
-print("saving")
-np.save("X_convex_{}.npy".format(degree), X)
-np.save("Y_convex_{}.npy".format(degree), Y)
+    t = time.time()
+    dirs = generate_dir(nb_dir, nb_coeff)
 
-print(time.time() - t, ":", len(X),"points")
+    pool = multiprocessing.Pool()
+
+    results = pool.map(dc_lpm, dirs)
+
+    pool.close()
+    pool.join()
+
+    X = np.empty((0, nb_coeff))
+    Y = np.empty(0)
+
+    for i in range(nb_dir):
+        X = np.concatenate((X, results[i][0]), axis = 0)
+        Y = np.concatenate((Y, results[i][1]), axis = 0)
+    
+    np.save("X_convex_{}.npy".format(degree), X)
+    np.save("Y_convex_{}.npy".format(degree), Y)
+
+    print(time.time() - t, ":", len(X),"points")
+    
 
 
 """print(max(K))

@@ -1,12 +1,26 @@
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     formats: ipynb,py:light
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.16.2
+# ---
+
 import numpy as np
 import pandas as pd
 import sklearn 
 import sklearn.preprocessing
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
+import multiprocessing
 
 degree = 4
 bbox=(-3,3)
+
 """----------------------------------------------DEF POLYN-----------------------------------------------------------------------------"""
 
 def get_param_polyN(degree):
@@ -61,20 +75,17 @@ Y_coeff = np.load("Y_convex_{}.npy".format(degree))
 
 n_samples = len(X_coeff)
 
-j_max = n_samples // 3 + 1
+j_max = (n_samples - 1) // 3 + 1
 k_max = 3
 
-fig, ax = plt.subplots(j_max, k_max,subplot_kw={'projection':'3d'})
-ax = np.atleast_2d(ax)
-print(ax.shape)
-for i in range(n_samples):
-    ''' create a plot of an implicit function
-    fn  ...implicit function (plot where fn==0)
-    bbox ..the x,y,and z limits of plotted interval'''
+# fig, ax = plt.subplots(j_max, k_max,subplot_kw={'projection':'3d'})
+# ax = np.atleast_2d(ax)
 
-    j, k = i // 3, i % 3
+def plot_subplot(i):
+
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    
     coeff = X_coeff[i]
-    print(coeff, j, k)
 
     def f(S):
         return polyN(S, coeff)
@@ -91,33 +102,48 @@ for i in range(n_samples):
     for z in B: # plot contours in the XY plane
         X,Y = A1,A2
         Z = f_plane(X,Y,z) - 1
-        cset = ax[j, k].contour(X, Y, Z+z, [z], zdir='z')
+        cset = ax.contour(X, Y, Z+z, [z], zdir='z')
         # [z] defines the only level to plot for this contour for this value of z
     print("Fin du plot sur XY")
     print("Début du plot sur XZ")
     for y in B: # plot contours in the XZ plane
         X,Z = A1,A2
         Y = f_plane(X,y,Z) - 1
-        cset = ax[j, k].contour(X, Y+y, Z, [y], zdir='y')
+        cset = ax.contour(X, Y+y, Z, [y], zdir='y')
 
     print("Fin du plot sur XZ")
     print("Début du plot sur YZ")
     for x in B: # plot contours in the YZ plane
         Y,Z = A1,A2
         X = f_plane(x,Y,Z) - 1
-        cset = ax[j, k].contour(X+x, Y, Z, [x], zdir='x')
+        cset = ax.contour(X+x, Y, Z, [x], zdir='x')
     print("Fin du plot sur YZ")
     # must set plot limits because the contour will likely extend
     # way beyond the displayed level.  Otherwise matplotlib extends the plot limits
     # to encompass all values in the contour.
-    ax[j, k].set_zlim3d(zmin,zmax)
-    ax[j, k].set_xlim3d(xmin,xmax)
-    ax[j, k].set_ylim3d(ymin,ymax)
+    ax.set_zlim3d(zmin,zmax)
+    ax.set_xlim3d(xmin,xmax)
+    ax.set_ylim3d(ymin,ymax)
 
     val = Y_coeff[i]
     if val: 
-        ax[j, k].set_title("CONVEX")
+        ax.set_title("CONVEX")
     else:
-        ax[j, k].set_title("NOT CONVEX")
+        ax.set_title("NOT CONVEX")
+    
+    plt.show()
 
-plt.show()
+
+if __name__ == "__main__":
+
+    # Create a pool of processes
+    pool = multiprocessing.Pool()
+
+    # Map the plotting function to the range of samples
+    results = pool.map(plot_subplot, range(n_samples))
+    # Close the pool to free up resources
+    pool.close()
+    pool.join()
+        
+
+    # Show the plot
