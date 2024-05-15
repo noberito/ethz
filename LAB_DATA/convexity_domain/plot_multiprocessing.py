@@ -96,6 +96,9 @@ k_max = 3
 
 n_plots = 3
 
+if(1):
+    X_coeff = np.array([[9, 18, 27, 18, 9, 18, 18, 18, 9, 18, 18, 18, 18, 9, 0, 0, 18, 18, 18, 18, 18, 9]])
+    Y_coeff = np.array([[1]])
 # fig, ax = plt.subplots(j_max, k_max,subplot_kw={'projection':'3d'})
 # ax = np.atleast_2d(ax)
 

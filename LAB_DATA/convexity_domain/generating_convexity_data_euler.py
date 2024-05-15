@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import multiprocessing
+import os
 
 degree = 4
-nb_dir = 10
+nb_dir = 100
 
 tol_kg = 1e-7
 tol_yf = 0.001
@@ -32,7 +33,7 @@ nb_coeff = len(M)
 """-----------------------------------PARAMETERS FOR POLYN------------------------------------------"""
 def get_param_polyN(degree):
     x0 = np.zeros((2,5))
-    polyN = sklearn.preprocessing.PolynomialFeatures((degree, degree), include_bias=False)
+    polyN = sklearn.preprocessing.PolynomialFeatures(degree, include_bias=False)
     X = polyN.fit_transform(x0)
     powers = polyN.powers_
     nmon_abq = len(powers)
@@ -40,7 +41,7 @@ def get_param_polyN(degree):
     selected_indices = []
     for i in range(nmon_abq):
         k,l,m,n,p = powers[i]
-        if ((m==n) and (n==p)) or ((m%2==0) and (n%2==0) and (p%2==0)):
+        if (k + l + m + n + p == degree) and (((m==n) and (n==p)) or ((m%2==0) and (n%2==0) and (p%2==0))) :
             selected_indices.append(i)
 
     powers = powers[selected_indices].T
@@ -374,7 +375,7 @@ def check_convexity_lpm(coeff, itermax, nb_pt_check):
     def hessian_f(S):
         return(hessian_polyN(S, coeff_hessian, powers_hessian))
 
-    print("gen data")
+    #print("gen data")
     data = data_yf_sphere(f, itermax, nb_pt_check)
     hessian_data = hessian_f(data)
     L = leading_principal_minors(hessian_data)
@@ -462,7 +463,7 @@ def dc_kg(M, nb_dir):
                 
                 I = (S+E)/2
                 kg, kgM, p, d, u = check_convexity_kg(I, nb_pt_check_2)
-                print(kg, it)
+                #print(kg, it)
                 pt_set = np.concatenate((pt_set, np.atleast_2d(I)), axis=0)
                 kg_set = np.append(kg_set, kg)
                 if kg < 0 :
@@ -496,7 +497,7 @@ def dc_lpm(direction, M=M):
             coeff = M + lamb * u
             lpm = check_convexity_lpm(coeff, itermax, nb_pt_check_1)
             #print(i, j, it, lamb)
-            print("lpm", lpm)
+            #print("lpm", lpm)
             lamb = lamb * 3
             it = it + 1
 
@@ -512,7 +513,6 @@ def dc_lpm(direction, M=M):
         while (lpm < minor_min or lpm > minor_max):
                 
             I = (S+E)/2
-            print(I)
 
             lpm = check_convexity_lpm(I, itermax, nb_pt_check_2)
             pt_set = np.concatenate((pt_set, np.atleast_2d(I)), axis=0)
@@ -547,8 +547,17 @@ if __name__ == "__main__":
         X = np.concatenate((X, results[i][0]), axis = 0)
         Y = np.concatenate((Y, results[i][1]), axis = 0)
     
-    np.save("X_convex_{}.npy".format(degree), X)
-    np.save("Y_convex_{}.npy".format(degree), Y)
+    number = 0
+    filename_X = "X_convex_{}_euler_{}.npy".format(degree, number)
+    filename_Y = "Y_convex_{}_euler_{}.npy".format(degree, number)
+
+    while os.path.exists(filename_X):
+        number = number + 1
+        filename_X = "X_convex_{}_euler_{}.npy".format(degree, number)
+        filename_Y = "Y_convex_{}_euler_{}.npy".format(degree, number)
+
+    np.save(filename_X, X)
+    np.save(filename_Y, Y)
 
     print(time.time() - t, ":", len(X),"points")
     

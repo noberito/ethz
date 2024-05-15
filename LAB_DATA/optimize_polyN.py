@@ -1,8 +1,25 @@
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     formats: ipynb,py:light
+#     text_representation:
+#       extension: .py
+#       format_name: light
+#       format_version: '1.5'
+#       jupytext_version: 1.16.2
+# ---
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize
 import os
+import tensorflow as tf
+from tensorflow import keras
+from keras import Sequential
+from tensorflow.keras.layers import Dense, Input
+from keras.models import load_model
 import sklearn
 import sklearn.preprocessing 
 from generate_data import export_virtual_data
@@ -15,13 +32,14 @@ if os.name == "nt":
     current_dir = ".\\"
     dir = "\\"
 
-
-
 "----------------------------------------------------------------VARIABLES---------------------------------------------------------------------------------------------"
 material = "DP780"
-a = 500. 
+
+a = 500
 b = 140
 c = 200
+
+gseed = 6
 
 emod = 70000.
 enu = 0.3
@@ -32,13 +50,11 @@ degree = 4
 weigth_exp = 0
 protomodel = "mises"
 
-gen_v_data = True
+gen_v_data = False
 gen_e_data = False
 adapt = False
-export_coeff_abq = True
-export_coeff_user = True
-convex_check1 = False
-convex_check2 = True
+export_coeff_abq = False
+export_coeff_user = False
 plot = False
 
 a1 = 3
@@ -123,6 +139,22 @@ data = db[["d11", "d22", "s12", "s13", "s23","LoadAngle", "Rval"]].values
 
 """ ---------------------------------------------PARAMETERS OPTIMIZATION-----------------------------------------------------------------------------"""
 
+def create_model():
+    def custom_activation(x):
+        return 0.5 * (1 + tf.math.sign(x)) * (x + 1/100) +  0.5 * (1 - tf.math.sign(x)) * tf.math.exp(tf.math.minimum(0.0,x)) / 100
+
+    model = Sequential([])
+    model.add(Input(shape=(22,)))
+    model.add(Dense(200, activation=custom_activation, kernel_initializer=tf.keras.initializers.RandomUniform(minval=-7.0, maxval=7.0, seed=gseed)))
+    model.add(Dense(200, activation=custom_activation))
+    model.add(Dense(1, activation="sigmoid"))
+
+    model.compile(optimizer='adam',
+                loss='binary_crossentropy',
+                metrics=["accuracy"])
+
+    return(model)
+
 def optiCoeff(data, degree, weigth_exp):
     polyN = sklearn.preprocessing.PolynomialFeatures((degree, degree), include_bias=False)
     X = polyN.fit_transform(data[:, :5],)
@@ -146,6 +178,9 @@ def optiCoeff(data, degree, weigth_exp):
     ndata, nmon = X.shape
     M = np.zeros((nmon, nmon))
 
+    model = create_model()
+    model.load_weights("model_0.keras")
+
     for i in range(ndata):
         Xi = np.expand_dims(X[i], axis=0)
         M = M + weigth[i] * np.dot(Xi.T, Xi)
@@ -168,14 +203,15 @@ def optiCoeff(data, degree, weigth_exp):
     opt = scipy.optimize.minimize(J, a, method='BFGS', jac=Grad_J)
     print("Optimisation terminée")
     coeff = opt.x
+    print(model.summary())
 
+    print(model.predict(coeff))
     return(coeff, powers, nmon, nmon_abq)
 
 coeff, powers, nmon, nmon_abq = optiCoeff(data, degree, weigth_exp)
 
 coeff = np.round(coeff)
 """----------------------------------------------------FIXING PARAMETERS-----------------------------------------------------------------------------"""
-
 
 coeff_deg2 = np.array([a1, a2, a3, a4, a5, a6])
 coeff_deg4 = np.array([b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22])
@@ -340,108 +376,8 @@ def hessian_polyN(S, coeff_hessian=coeff_hessian, powers_hessian=powers_hessian)
 
 """----------------------------------------------------TESTING FUNCTIONS (PLOT & CONVEXITY)-----------------------------------------------------------------"""
 
-def generate_dir(nb_virtual_pt, dim):
-    u = np.random.normal(0, 1, (nb_virtual_pt,dim))
-    norms = np.linalg.norm(u, axis=1)
-    u = (u.T/norms).T
-    return(u)
 
-
-def cofactor_matrix(lmatrix):
-    if lmatrix.ndim == 2 :
-        lmatrix = np.expand_dims(lmatrix, axis = 0)
-    k = lmatrix.shape[0]
-    n = lmatrix.shape[1]
-
-    cofactors = np.zeros((k, n, n))
-    
-    for i in range(n):
-        for j in range(n):
-            minor = np.delete(np.delete(lmatrix, i, axis=1), j, axis=2)
-            cofactors[:, i, j] = (-1) ** (i + j) * np.linalg.det(minor)
-
-    return cofactors
-
-def check_convexity(nb_pt_check, precision=100):
-    us = generate_dir(nb_pt_check, 6)
-    data = np.zeros((nb_pt_check, 6))
-    alpha = np.linspace(0, 5, precision)
-    alpha = alpha[np.newaxis, :]
-
-    for i in range(nb_pt_check):
-        if i%100 == 0:
-            print(i)
-        u = np.expand_dims(us[i], axis=1)
-        sigmas = np.dot(u, alpha).T
-        yss = polyN(sigmas) - np.ones(precision)
-        k = np.argmin(np.abs(yss))
-        data[i] = sigmas[k]
-
-    print(polyN(data))
-    K = - np.ones(nb_pt_check)
-    grad_data = grad_polyN(data)
-    cofactor_hessian_data = cofactor_matrix(hessian_polyN(data))
-
-    ##TODO (Gaussian curvature not well calculated)
-    for i in range(nb_pt_check):
-        K[i] = K[i] * np.dot(grad_data[i], np.dot(grad_data[i], cofactor_hessian_data[i]))
-
-    m = min(K)
-    print("The minimum of the Gaussian curvature is {}".format(m))
-    M = max(K)
-    print("The maximum of the Gaussian curvature is {}".format(M))
-    bad_points = np.count_nonzero(K > -1e-5)
-    print("The proportion of non convex spots is : {}".format(bad_points/len(K)))
-
-def check_convexity2(nb_pt_check, precision=1000, grad_f=None, ):
-    us = generate_dir(nb_pt_check, 6)
-    data = np.zeros((nb_pt_check, 6))
-    alpha = np.linspace(0, 5, precision)
-    alpha = alpha[np.newaxis, :]
-
-    for i in range(nb_pt_check):
-        if i%100 == 0:
-            print(i)
-        u = np.expand_dims(us[i], axis=1)
-        sigmas = np.dot(u, alpha).T
-        yss = polyN(sigmas) - np.ones(precision)
-        k = np.argmin(np.abs(yss))
-        data[i] = sigmas[k]
-
-    print(polyN(data))
-
-    grad_data = grad_polyN(data)
-    hessian_data = hessian_polyN(data)
-    cofactor_hessian_data = cofactor_matrix(hessian_data)
-
-    K = np.ones(nb_pt_check)
-
-    for i in range(nb_pt_check):
-        K[i] = K[i] * np.dot(grad_data[i], np.dot(cofactor_hessian_data[i], grad_data[i]))
-
-    m = min(K)
-    print("The minimum of the Gaussian curvature is {}".format(m))
-    M = max(K)
-    print("The maximum of the Gaussian curvature is {}".format(M))
-    bad_points = np.count_nonzero(K > -1e-5)
-    print("The proportion of convex spots is : {}".format(bad_points/len(K)))
-
-    leading_minors = np.zeros((nb_pt_check, 6))
-
-    for i in range(nb_pt_check):
-        leading_minors[i] = np.linalg.eigvals(hessian_data[i])
-    
-    
-
-    """m = min(L)
-    print("The minimum of the product of eigenvalues is {}".format(m))
-    M = max(L)
-    print("The maximum of the product of eigenvalues is {}".format(M))
-    bad_points = np.count_nonzero(L > 0)
-    print("The proportion of non convex spots is : {}".format(bad_points/len(L)))"""
-
-
-### WRAP FUNCTION BEFORE USING PLOT IMPLICIT
+# ## WRAP FUNCTION BEFORE USING PLOT IMPLICIT
 
 def plot_implicit(yf, bbox=(-1.5,1.5)):
     ''' create a plot of an implicit function
@@ -528,18 +464,8 @@ A[3,3] = 6
 A[4,4] = 6
 A[5,5] = 6
 
-#print(A)
-#print(grad_polyN(S1))
-
-if convex_check1:
-    print("Start checking convexity")
-    check_convexity(1000)
-    print("End checking convexity")
-
-if convex_check2:
-    print("Start checking convexity")
-    check_convexity2(10000)
-    print("End checking convexity")
+# print(A)
+# print(grad_polyN(S1))
 
 if plot:
     polyN_plane_wrap = np.vectorize(lambda x, y, z : polyN(np.array([x, y, 0, z, 0, 0])))
