@@ -51,7 +51,7 @@ X_valid = X_normalized[n_test:,:22]
 Y_valid = Y[n_test:]
 
 model = Sequential([])
-model.add(Input(shape=(22,)))
+model.add(Input(shape=(22)))
 model.add(Dense(200, activation=custom_activation, kernel_initializer=tf.keras.initializers.RandomUniform(minval=-7.0, maxval=7.0, seed=gseed)))
 model.add(Dense(200, activation=custom_activation))
 model.add(Dense(1, activation="sigmoid"))

@@ -50,7 +50,7 @@ degree = 4
 weigth_exp = 0
 protomodel = "mises"
 
-gen_v_data = False
+gen_v_data = True
 gen_e_data = False
 adapt = False
 export_coeff_abq = False
@@ -139,21 +139,6 @@ data = db[["d11", "d22", "s12", "s13", "s23","LoadAngle", "Rval"]].values
 
 """ ---------------------------------------------PARAMETERS OPTIMIZATION-----------------------------------------------------------------------------"""
 
-def create_model():
-    def custom_activation(x):
-        return 0.5 * (1 + tf.math.sign(x)) * (x + 1/100) +  0.5 * (1 - tf.math.sign(x)) * tf.math.exp(tf.math.minimum(0.0,x)) / 100
-
-    model = Sequential([])
-    model.add(Input(shape=(22,)))
-    model.add(Dense(200, activation=custom_activation, kernel_initializer=tf.keras.initializers.RandomUniform(minval=-7.0, maxval=7.0, seed=gseed)))
-    model.add(Dense(200, activation=custom_activation))
-    model.add(Dense(1, activation="sigmoid"))
-
-    model.compile(optimizer='adam',
-                loss='binary_crossentropy',
-                metrics=["accuracy"])
-
-    return(model)
 
 def optiCoeff(data, degree, weigth_exp):
     polyN = sklearn.preprocessing.PolynomialFeatures((degree, degree), include_bias=False)
@@ -178,9 +163,6 @@ def optiCoeff(data, degree, weigth_exp):
     ndata, nmon = X.shape
     M = np.zeros((nmon, nmon))
 
-    model = create_model()
-    model.load_weights("model_0.keras")
-
     for i in range(ndata):
         Xi = np.expand_dims(X[i], axis=0)
         M = M + weigth[i] * np.dot(Xi.T, Xi)
@@ -203,9 +185,6 @@ def optiCoeff(data, degree, weigth_exp):
     opt = scipy.optimize.minimize(J, a, method='BFGS', jac=Grad_J)
     print("Optimisation terminée")
     coeff = opt.x
-    print(model.summary())
-
-    print(model.predict(coeff))
     return(coeff, powers, nmon, nmon_abq)
 
 coeff, powers, nmon, nmon_abq = optiCoeff(data, degree, weigth_exp)
