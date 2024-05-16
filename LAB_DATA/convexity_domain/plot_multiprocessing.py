@@ -24,6 +24,15 @@ bbox=(-1.5,1.5)
 """----------------------------------------------DEF POLYN-----------------------------------------------------------------------------"""
 
 def get_param_polyN(degree):
+    """
+        Returns the parameters of polyN according to the degree
+        Input :
+            - degree : integer, degree of the polyN function
+        Output :
+            - nmon : integer, number of monomials im the polyN function of degree n
+            - nmon_abq : integer, number of monomials of degree n in a homogeneous function of degree n
+            - powers : ndarray of shape (nmon, 5), powers[i, j] is the power of the variable j in the monomial i
+    """
     data = np.zeros((2,5))
     polyN = sklearn.preprocessing.PolynomialFeatures((degree, degree), include_bias=False)
     X = polyN.fit_transform(data)
@@ -45,11 +54,19 @@ def get_param_polyN(degree):
 
     ndata, nmon = X.shape
 
-    return(powers, nmon, nmon_abq)
+    return(nmon, nmon_abq, powers)
 
-powers, nmon, nmon_abq = get_param_polyN(degree)
+nmon, nmon_abq, powers = get_param_polyN(degree)
 
 def dev(S):
+    """
+        Returns the deviatoric stress.
+        Input :
+            - S : ndarray of shape (n,6) or (6,), stress components in 3D
+        Output :
+            - D : ndarray of shape (n,6), deviatoric stress components in 3D
+    
+    """
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
     D = S.copy()
@@ -60,6 +77,14 @@ def dev(S):
     return(D)
 
 def polyN(S, coeff):
+    """
+        Compute the polyN function.
+        Input :
+            - S : ndarray of shape (n,6) or (6,), stress components in 3D
+            - coeff : ndarray of shape (nmon,), coefficients of the polyN function
+        Output :
+            - res : float, result of polyN
+    """
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
     D = dev(S)
@@ -70,6 +95,7 @@ def polyN(S, coeff):
         res = res + coeff[i] * np.prod(X ** p, axis=1)
     return(res)
 
+#If you need a specific condition other than just a range in the dataset : set specific to True
 specific = True
 
 start = 200
@@ -83,19 +109,8 @@ if specific :
 else:
     indexes = range(start, end)
 
-print(indexes)
-
-
 X_coeff = X_coeff[indexes]
 Y_coeff = Y_coeff[indexes]
-
-if(0):
-    X_coeff = np.array([[  26.27862798,   28.68633655,  -11.02929422,   54.18822268,   35.87268121,
-   -1.92995333,  118.31023142,    4.25333686,   10.2044597,    -4.58677493,
-  -62.81019232,   30.18904981,   19.38584653,    8.06985757,   30.42751476,
-   23.10478954,  -10.93398416, -105.62100354,  -47.87805359,   36.40199966,
-    9.7030355,    21.38137562]])
-    Y_coeff = np.array([[0]])
 
 n_samples = len(X_coeff)
 
@@ -109,7 +124,13 @@ n_plots = 3
 # ax = np.atleast_2d(ax)
 
 def plot_subplot(i):
-
+    """
+        Plot the polyN function for coefficients given at index i of the X_coeff array on the SxxSyySxy, SxxSyySxz, SxxSyySxz plane.
+        Input : 
+            - i : integer, index of the coefficients in the X_coeff array
+        Output :
+            None
+    """
     fig, ax = plt.subplots(nrows=1, ncols=n_plots, subplot_kw={'projection':'3d'})
     coeff = X_coeff[i]
     convex_bool = Y_coeff[i]
@@ -138,26 +159,23 @@ def plot_subplot(i):
         B = np.linspace(xmin, xmax, 15) # number of slices
         A1,A2 = np.meshgrid(A,A) # grid on which the contour is plotted
 
-        print("Début du plot sur XY du plan {}".format(j))
+        print("Start plotting on the XY plane {}".format(j))
         for z in B: 
             X,Y = A1,A2
             Z = f_plane(X,Y,z) - 1
             ax[j].contour(X, Y, Z+z, [z], zdir='z')
-        print("Fin du plot sur XY du plan {}".format(j))
 
-        print("Début du plot sur XZ du plan {}".format(j))
+        print("Start plotting on the XZ plane {}".format(j))
         for y in B: 
             X,Z = A1,A2
             Y = f_plane(X,y,Z) - 1
             ax[j].contour(X, Y+y, Z, [y], zdir='y')
-        print("Fin du plot sur XZ du plan {}".format(j))
 
-        print("Début du plot sur YZ du plan {}".format(j))
+        print("Start plotting on the YZ plane {}".format(j))
         for x in B: 
             Y,Z = A1,A2
             X = f_plane(x,Y,Z) - 1
             ax[j].contour(X+x, Y, Z, [x], zdir='x')
-        print("Fin du plot sur YZ du plan {}".format(j))
 
         ax[j].set_zlim3d(zmin,zmax)
         ax[j].set_xlim3d(xmin,xmax)
