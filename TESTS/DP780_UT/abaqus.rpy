@@ -2,7 +2,7 @@
 #
 # Abaqus/Viewer Release 2023 replay file
 # Internal Version: 2022_09_28-20.11.55 183150
-# Run by cnober on Wed May  8 09:39:29 2024
+# Run by cnober on Fri May 17 14:46:19 2024
 #
 
 # from driverUtils import executeOnCaeGraphicsStartup
@@ -28,25 +28,9 @@ o2 = session.openOdb(name='UT_00.odb')
 #: Number of Steps:              1
 session.viewports['Viewport: 1'].setValues(displayedObject=o2)
 session.viewports['Viewport: 1'].makeCurrent()
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=TIME_HISTORY)
-session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    SYMBOLS_ON_DEF, ))
+#: Warning: The selected Symbol Variable is not available in the current frame for any elements in the current display group.
 session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
     CONTOURS_ON_DEF, ))
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=TIME_HISTORY)
-session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
-session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
-    variableLabel='TRIAX', outputPosition=INTEGRATION_POINT, )
-session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
-    variableLabel='U', outputPosition=NODAL, refinement=(INVARIANT, 
-    'Magnitude'), )
-session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
-    variableLabel='LE', outputPosition=INTEGRATION_POINT, refinement=(
-    INVARIANT, 'Max. Principal'), )
-session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
-    variableLabel='S', outputPosition=INTEGRATION_POINT, refinement=(INVARIANT, 
-    'Mises'), )
-#: Warning: The output database 'C:/temp/TESTS/DP780_UT/UT_00.odb' disk file has changed.
-#: 
-#: The current plot operation has been canceled, re-open the file to view the results
+#: Warning: The selected Primary Variable is not available in the current frame for any elements in the current display group.

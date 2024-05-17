@@ -297,7 +297,7 @@
         DO KK=1, JJ-1, 1
             BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
         END DO
-        BV(JJ,JJ) = DSQRT(ABS(BV(JJ,JJ)))
+        BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
         DO II=(JJ+1), NTENS, 1
             DO KK=1, JJ-1, 1
                 BV(II,JJ)=BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
@@ -412,7 +412,7 @@
                 BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
             END DO
             !C  write(*,*)"JJ, NRK, BV(JJ,JJ) POST BOUCLE", JJ, NRK, BV(JJ, JJ)
-            BV(JJ,JJ) = DSQRT(ABS(BV(JJ,JJ)))
+            BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
             !C  write(*,*)"JJ, NRK, BV(JJ,JJ) POST BOUCLE ET SQRT", JJ, NRK, BV(JJ, JJ)
             DO II=(JJ+1), NTENS, 1
                 DO KK=1, JJ-1, 1
@@ -509,7 +509,7 @@
             BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
         END DO
         !C  write(*,*)"BV(JJ,JJ)", JJ, BV(JJ,JJ)
-        BV(JJ,JJ) = DSQRT(ABS(BV(JJ,JJ)))
+        BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
         DO II=(JJ+1), NTENS, 1
             DO KK=1, JJ-1, 1
                 BV(II,JJ)=BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
@@ -627,9 +627,10 @@
     
     IMPLICIT NONE
     INTEGER, PARAMETER :: PREC = 8
-    REAL(PREC) :: HF, HPF, EPBAR, AAZ, BBZ, CCZ
-    HF=BBZ/EXP(CCZ*EPBAR)
-	HPF = CCZ*HF
+    REAL(PREC) :: HF, HPF, EPBAR, AAZ, BBZ, CCZ, ONE
+    ONE = 1.0D0
+    HF= BBZ * (ONE - EXP(-CCZ*EPBAR))
+	HPF = -CCZ * BBZ * EXP(-CCZ * EPBAR)
     HF  = AAZ-HF
     RETURN
     END SUBROUTINE  KHARD
