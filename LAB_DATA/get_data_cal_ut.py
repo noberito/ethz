@@ -12,7 +12,7 @@ thetas = ["00", "15", "30", "45", "60", "75", "90"]
 materials = ["AA7020-T6", "DP600", "DP780"]
 
 def generate_data_calibration(material, thetas):
-    ut_data = pd.DataFrame(columns=["q", "LoadAngle", "YieldStress", "Rval", "Type"])
+    ut_data = pd.DataFrame(columns=["q", "LoadAngle", "YieldStress", "Rval", "Type", "YoungMod", "Width", "Thickness"])
     foldername = material + "_results" + dir + "DATA" + dir
 
     if material == "AA7020-T6" :
