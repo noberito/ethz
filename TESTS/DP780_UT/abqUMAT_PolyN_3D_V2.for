@@ -125,7 +125,7 @@
     INTEGER::K1,K2,NRK,KK,LL,MM,II,JJ
 
 !C  NEWTON-RAPHSON MAXIMUM NUMBER OF ITERATIONS
-    INTEGER,PARAMETER:: NRMAX=1000
+    INTEGER,PARAMETER:: NRMAX=100
 	
 !C PolyN interface variables 
     INTEGER::DEGREE,NCOEFF,NMON	
@@ -157,6 +157,7 @@
 !C!********************************************
 !C INITIALIZE THE STIFFNESS TENSOR (IT WILL BE STORED IN DDSDDE)
     DDSDDE = ZERO
+	write(80,1)TIME, EPBAR, SIGMA(1),YF, HF, AA, BB, CC
 
 !C ELASTIC PROPERTIES (3D STRESS)
     EBULK3 = EMOD/(ONE - TWO*ENU)
@@ -213,12 +214,9 @@
     CALL KHARD(HF,HPF,EPBAR,AA,BB,CC)
     CALL YFUNCTION(SIGMA,NTENS,YF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
 
-    HFS = HF
-    YFS = YF
-
 !C  ELASTIC STEP :  UPDATE STRESS
 	IF (YF <= HF) THEN
-        write(80,1)TIME, EPBAR, SIGMA(1),YF, HF, AA, BB, CC
+        !C****write(80,1)TIME, EPBAR, SIGMA(1),YF, HF, AA, BB, CC
 	    STRESS = SIGMA
 !C  DDSDDE HAS BEEN DEFINED ABOVE
 !C  THE EQUIVALENT PLASTIC STRAIN, STATEV(1), REMAINS UNCHANGED
@@ -598,7 +596,6 @@
 
 
     !C  write(*,*)"DDSDDE", DDSDDE
-    write(80,1)TIME, EPBAR, SIGMA(1),YF, HF, AA, BB, CC
     DEALLOCATE(KMATERIAL)	
     RETURN
     END SUBROUTINE UMAT
@@ -692,10 +689,10 @@
 
     INTEGER::NTENS,NKMAT,DEGREE,NCOEFF,NMON
 	REAL(PREC),DIMENSION(NTENS)::SIGMA
-    REAL(PREC),DIMENSION(NTENS)::DEVIA
+    REAL(PREC),DIMENSION(NTENS - 1)::DEVIA
 	REAL(PREC),DIMENSION(NKMAT)::KMATERIAL
 	REAL(PREC)::YF
-	REAL(PREC),PARAMETER::ZTOL=1.0E-010
+	REAL(PREC),PARAMETER::ZTOL=1.0E-10
 	REAL(PREC)::BB
 	INTEGER::II,JJ,KK,MM,LL,N0
     
@@ -709,11 +706,9 @@
                 + SIGMA(3))
     DEVIA(2)=SIGMA(2) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
                 + SIGMA(3))
-    DEVIA(3)=SIGMA(3) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
-                + SIGMA(3))
-    DEVIA(4)=SIGMA(4)
-    DEVIA(5)=SIGMA(5)
-    DEVIA(6)=SIGMA(6)
+    DEVIA(3)=SIGMA(4)
+    DEVIA(4)=SIGMA(5)
+    DEVIA(5)=SIGMA(6)
     
 	YF = 0.0D0
 	
@@ -729,9 +724,9 @@
                         YF = YF + KMATERIAL(N0) &
                         * DEVIA(1) ** II &
                         * DEVIA(2) ** JJ &
-                        * DEVIA(4) ** KK &
-                        * DEVIA(5) ** LL &
-                        * DEVIA(6) ** MM
+                        * DEVIA(3) ** KK &
+                        * DEVIA(4) ** LL &
+                        * DEVIA(5) ** MM
                         N0 = N0 + 1
                     END IF
                 END DO
@@ -743,16 +738,18 @@
 	RETURN
 	END SUBROUTINE YFUNCTION
 
-    SUBROUTINE GYFUNCTION(SIGMA,NTENS,YF,GYF, KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
+    SUBROUTINE GYFUNCTION(SIGMA,NTENS,YF,GYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
     IMPLICIT NONE
 	INTEGER,PARAMETER::PREC=8
 
     INTEGER::NTENS,NKMAT,DEGREE,NCOEFF,NMON
 	REAL(PREC),DIMENSION(NTENS)::SIGMA, GYF
-    REAL(PREC),DIMENSION(NTENS)::DEVIA
+	REAL(PREC),DIMENSION(NTENS - 1)::GYFP
+    REAL(PREC),DIMENSION(NTENS - 1)::DEVIA
+	REAL(PREC),DIMENSION(NTENS - 1, NTENS)::GDEV
 	REAL(PREC),DIMENSION(NKMAT)::KMATERIAL
 	REAL(PREC)::YF,ZYF
-    REAL(PREC),PARAMETER::ZTOL=1.0E-010
+    REAL(PREC),PARAMETER::ZTOL=1.0E-10
     
     REAL(PREC), PARAMETER::ZERO=0.0D0
     REAL(PREC), PARAMETER::ONE=1.0D0
@@ -760,46 +757,31 @@
     REAL(PREC), PARAMETER::THREE=3.0D0
     REAL(PREC), PARAMETER::SIX=6.0D0
     
-	INTEGER::II,JJ,KK,LL,MM,N0
+	INTEGER::II,JJ,KK,LL,MM,K1,K2,N0
 	
     DEVIA(1)=SIGMA(1) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
                 + SIGMA(3))
     DEVIA(2)=SIGMA(2) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
                 + SIGMA(3))
-    DEVIA(3)=SIGMA(3) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
-                + SIGMA(3))
-    DEVIA(4)=SIGMA(4)
-    DEVIA(5)=SIGMA(5)
-    DEVIA(6)=SIGMA(6)
-
-    IF (ABS(DEVIA(1)) < ZTOL) THEN 
-        !C  write(*,*)"hey1"
-        DEVIA(1) = ZTOL
-    END IF
-    IF (ABS(DEVIA(2)) < ZTOL) THEN 
-        !C  write(*,*)"hey2"
-        DEVIA(2) = ZTOL
-    END IF
-    IF (ABS(DEVIA(3)) < ZTOL) THEN 
-        !C  write(*,*)"hey3"
-        DEVIA(3) = ZTOL
-    END IF
-    IF (ABS(DEVIA(4)) < ZTOL) THEN 
-        !C  write(*,*)"hey4"
-        DEVIA(4) = ZTOL
-    END IF
-    IF (ABS(DEVIA(5)) < ZTOL) THEN 
-        !C  write(*,*)"hey5"
-        DEVIA(5) = ZTOL
-    END IF
-    IF (ABS(DEVIA(6)) < ZTOL) THEN 
-        !C  write(*,*)"hey6"
-        DEVIA(6) = ZTOL
-    END IF
-    
+    DEVIA(3)=SIGMA(4)
+    DEVIA(4)=SIGMA(5)
+    DEVIA(5)=SIGMA(6)
+	
     YF = 0.0D0
 	GYF = 0.0D0
-    
+	GYFP = 0.0D0
+	GDEV = 0.0D0
+	
+	GDEV(1,1) = TWO / THREE
+	GDEV(1,2) = - ONE / THREE
+	GDEV(1,3) = - ONE / THREE
+	GDEV(2,1) = - ONE / THREE
+	GDEV(2,2) = TWO / THREE
+	GDEV(2,3) = - ONE / THREE
+	GDEV(3,4) = ONE
+	GDEV(4,5) = ONE
+	GDEV(5,6) = ONE
+	
     !c  write(*,*)"DEVIA", DEVIA
     N0 = 1
     DO MM=0,DEGREE,1
@@ -813,63 +795,52 @@
                         YF = YF + KMATERIAL(N0) &
                             * DEVIA(1) ** II &
                             * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        GYF(1) = GYF(1) + KMATERIAL(N0) &
-                            *(TWO/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM 
-                        GYF(2) = GYF(2) + KMATERIAL(N0) &
-                            * (-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (TWO/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM 
-                        GYF(3) = GYF(3) + KMATERIAL(N0) &
-                            * (-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM 
-                        GYF(4) = GYF(4) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        GYF(5) = GYF(5) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * DEVIA(6) ** MM
-                        GYF(6) = GYF(6) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * MM * DEVIA(6) ** (MM-1)
+                            * DEVIA(3) ** KK &
+                            * DEVIA(4) ** LL &
+                            * DEVIA(5) ** MM
+							
+							
+							
+						IF ((DEVIA(1) > ZTOL) .OR. (II > 0)) THEN
+							GYFP(1) = GYFP(1) + KMATERIAL(N0) &
+								* II * DEVIA(1) ** (II-1) &
+								* DEVIA(2) ** JJ &
+								* DEVIA(3) ** KK &
+								* DEVIA(4) ** LL &
+								* DEVIA(5) ** MM
+						END IF
+						IF ((DEVIA(2) > ZTOL) .OR. (JJ > 0)) THEN
+							GYFP(2) = GYFP(2) + KMATERIAL(N0) &
+								* DEVIA(1) ** II &
+								* JJ * DEVIA(2) ** (JJ-1) &
+								* DEVIA(3) ** KK &
+								* DEVIA(4) ** LL &
+								* DEVIA(5) ** MM
+						END IF
+						IF ((DEVIA(3) > ZTOL) .OR. (KK > 0)) THEN
+							GYFP(3) = GYFP(3) + KMATERIAL(N0) &
+								* DEVIA(1) ** II &
+								* DEVIA(2) ** JJ &
+								* KK * DEVIA(3) ** (KK-1) &
+								* DEVIA(4) ** LL &
+								* DEVIA(5) ** MM
+						END IF
+						IF ((DEVIA(4) > ZTOL) .OR. (LL > 0)) THEN
+							GYFP(4) = GYFP(4) + KMATERIAL(N0) &
+								* DEVIA(1) ** II &
+								* DEVIA(2) ** JJ &
+								* DEVIA(3) ** KK &
+								* LL * DEVIA(4) ** (LL-1) &
+								* DEVIA(5) ** MM
+						END IF
+						IF ((DEVIA(5) > ZTOL) .OR. (MM > 0)) THEN
+							GYFP(5) = GYFP(5) + KMATERIAL(N0) &
+								* DEVIA(1) ** II &
+								* DEVIA(2) ** JJ &
+								* DEVIA(3) ** KK &
+								* DEVIA(4) ** LL &
+								* MM * DEVIA(5) ** (MM-1)
+						END IF
                         !C write(*,*)"DEVIA", DEVIA
                         !C write(*,*)"II, JJ, KK, LL, MM", II, JJ, KK, LL, MM
                         !C write(*,*)"DEVIA(1) ** II", DEVIA(1) ** II
@@ -884,6 +855,13 @@
             END DO
         END DO
     END DO
+	
+	DO K1=1, NTENS
+		DO K2= 1, NTENS - 1
+			GYF(K1) = GYF(K1) + GYFP(K2) * GDEV(K2, K1)
+		END DO
+	END DO
+	
     ZYF = YF ** (ONE/DBLE(DEGREE))
 
     DO II = 1, NTENS
@@ -902,17 +880,17 @@
 	INTEGER,PARAMETER::PREC=8
 
 	INTEGER::NTENS,NKMAT,DEGREE,NCOEFF,NMON
-	REAL(PREC),DIMENSION(NTENS)::SIGMA,GYF,DEVIA
+	REAL(PREC),DIMENSION(NTENS)::SIGMA,GYF
+	REAL(PREC),DIMENSION(NTENS - 1)::GYFP
+	REAL(PREC),DIMENSION(NTENS - 1)::DEVIA
+	REAL(PREC),DIMENSION(NTENS - 1, NTENS)::GDEV
 	REAL(PREC),DIMENSION(NTENS,NTENS)::HYF
+	REAL(PREC),DIMENSION(NTENS -1,NTENS -1)::HYFP
 	REAL(PREC),DIMENSION(NKMAT)::KMATERIAL
-	REAL(PREC)::YF,ZZTT,ZZRHO,ZZGAMM,MSX,MSY
-    REAL(PREC),PARAMETER::ZTOL=1.0E-010
-	REAL(PREC)::ZYF,YVAL,Y2VAL,ATT,TMP,BB,D1BB,D2BB,D11BB,D22BB,D12BB
-	INTEGER::II,JJ,KK,MM,LL,N0
-    REAL(PREC),DIMENSION(NCOEFF)::VD1,VD2,VD11,VD22,VD12
-!    REAL(PREC),DIMENSION(NMON)::VD3,VD13,VD23,VD33
-	REAL(PREC),DIMENSION(NMON)::VD3(0:NMON-1),VD13(0:NMON-1),VD23(0:NMON-1),VD33(0:NMON-1)
-	
+	REAL(PREC)::YF
+    REAL(PREC),PARAMETER::ZTOL=1.0E-10
+	REAL(PREC)::ZYF,YVAL,Y2VAL
+	INTEGER::II,JJ,KK,MM,LL,K1,K2,K3,K4,N0
     REAL(PREC), PARAMETER::ZERO=0.0D0
     REAL(PREC), PARAMETER::ONE=1.0D0
     REAL(PREC), PARAMETER::TWO=2.0D0
@@ -923,40 +901,25 @@
                 + SIGMA(3))
     DEVIA(2)=SIGMA(2) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
                 + SIGMA(3))
-    DEVIA(3)=SIGMA(3) - ONE/THREE * (SIGMA(1) + SIGMA(2)&
-                + SIGMA(3))
-    DEVIA(4)=SIGMA(4)
-    DEVIA(5)=SIGMA(5)
-    DEVIA(6)=SIGMA(6)
+    DEVIA(3)=SIGMA(4)
+    DEVIA(4)=SIGMA(5)
+    DEVIA(5)=SIGMA(6)
 
     YF = 0.0D0
 	GYF = 0.0D0
+	GYFP = 0.0D0
     HYF = 0.0D0
-
-    IF (ABS(DEVIA(1)) < ZTOL) THEN 
-        !C  write(*,*)"hey1"
-        DEVIA(1) = ZTOL
-    END IF
-    IF (ABS(DEVIA(2)) < ZTOL) THEN 
-        !C  write(*,*)"hey2"
-        DEVIA(2) = ZTOL
-    END IF
-    IF (ABS(DEVIA(3)) < ZTOL) THEN 
-        !C  write(*,*)"hey3"
-        DEVIA(3) = ZTOL
-    END IF
-    IF (ABS(DEVIA(4)) < ZTOL) THEN 
-        !C  write(*,*)"hey4"
-        DEVIA(4) = ZTOL
-    END IF
-    IF (ABS(DEVIA(5)) < ZTOL) THEN 
-        !C  write(*,*)"hey5"
-        DEVIA(5) = ZTOL
-    END IF
-    IF (ABS(DEVIA(6)) < ZTOL) THEN 
-        !C  write(*,*)"hey6"
-        DEVIA(6) = ZTOL
-    END IF
+	HYFP = 0.0D0
+	
+	GDEV(1,1) = TWO / THREE
+	GDEV(1,2) = - ONE / THREE
+	GDEV(1,3) = - ONE / THREE
+	GDEV(2,1) = - ONE / THREE
+	GDEV(2,2) = TWO / THREE
+	GDEV(2,3) = - ONE / THREE
+	GDEV(3,4) = ONE
+	GDEV(4,5) = ONE
+	GDEV(5,6) = ONE
     
     N0 = 1
     DO MM=0,DEGREE,1
@@ -970,355 +933,215 @@
                         YF = YF + KMATERIAL(N0) &
                             * DEVIA(1) ** II &
                             * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        GYF(1) = GYF(1) + KMATERIAL(N0) &
-                            *(TWO/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM 
-                        GYF(2) = GYF(2) + KMATERIAL(N0) &
-                            * (-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (TWO/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM 
-                        GYF(3) = GYF(3) + KMATERIAL(N0) &
-                            * (-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM 
-                        GYF(4) = GYF(4) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        GYF(5) = GYF(5) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * DEVIA(6) ** MM
-                        GYF(6) = GYF(6) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * MM * DEVIA(6) ** (MM-1)
-                        HYF(1,1) = HYF(1,1) + KMATERIAL(N0) &
-                            *(TWO/THREE)* (TWO/THREE) * II * (II-1) * DEVIA(1) ** (II-2) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * (-ONE/THREE) * JJ * (JJ-1) * DEVIA(2) ** (JJ-2) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + TWO * KMATERIAL(N0) &
-                            *(TWO/THREE) * II * DEVIA(1) ** (II-1) &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        HYF(2,2) = HYF(2,2) + KMATERIAL(N0) &
-                            *(-ONE/THREE)* (-ONE/THREE) * II * (II-1) * DEVIA(1) ** (II-2) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (TWO/THREE) * (TWO/THREE) * JJ * (JJ-1) * DEVIA(2) ** (JJ-2) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + TWO * KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * (TWO/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        HYF(3,3) = HYF(3,3) + KMATERIAL(N0) &
-                            *(-ONE/THREE)* (-ONE/THREE) * II * (II-1) * DEVIA(1) ** (II-2) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * (-ONE/THREE) * JJ * (JJ-1) * DEVIA(2) ** (JJ-2) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + TWO * KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        HYF(1,2) = HYF(1,2) + KMATERIAL(N0) &
-                            *(TWO/THREE)* (-ONE/THREE) * II * (II-1) * DEVIA(1) ** (II-2) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * (TWO/THREE) * JJ * (JJ-1) * DEVIA(2) ** (JJ-2) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            *(TWO/THREE) * II * DEVIA(1) ** (II-1) &
-                            * (TWO/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        HYF(1,3) = HYF(1,3) + KMATERIAL(N0) &
-                            *(TWO/THREE)* (-ONE/THREE) * II * (II-1) * DEVIA(1) ** (II-2) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * (TWO/THREE) * JJ * (JJ-1) * DEVIA(2) ** (JJ-2) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            *(TWO/THREE) * II * DEVIA(1) ** (II-1) &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        HYF(2,3) = HYF(2,3) + KMATERIAL(N0) &
-                            *(-ONE/THREE)* (-ONE/THREE) * II * (II-1) * DEVIA(1) ** (II-2) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (TWO/THREE) * (-ONE/THREE) * JJ * (JJ-1) * DEVIA(2) ** (JJ-2) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * (TWO/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        HYF(1,4) = HYF(1,4) + KMATERIAL(N0) &
-                            *(TWO/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM 
-                        HYF(1,5) = HYF(1,5) + KMATERIAL(N0) &
-                            *(TWO/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * DEVIA(6) ** MM 
-                        HYF(1,6) = HYF(1,6) + KMATERIAL(N0) &
-                            *(TWO/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * MM * DEVIA(6) ** (MM-1) &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * MM * DEVIA(6) ** (MM-1)
-                        HYF(2,4) = HYF(2,4) + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * DEVIA(5) ** MM &
-                            * DEVIA(6) ** LL &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (TWO/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        HYF(2,5) = HYF(2,5) + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (TWO/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * DEVIA(6) ** MM 
-                        HYF(2,6) = HYF(2,6) + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * MM * DEVIA(6) ** (MM-1) &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (TWO/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * MM * DEVIA(6) ** (MM-1)
-                        HYF(3,4) = HYF(3,4) + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * DEVIA(5) ** MM &
-                            * DEVIA(6) ** LL &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        HYF(3,5) = HYF(3,5) + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * DEVIA(6) ** MM &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * DEVIA(6) ** MM 
-                        HYF(3,6) = HYF(2,6) + KMATERIAL(N0) &
-                            *(-ONE/THREE) * II * DEVIA(1) ** (II-1) &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * MM * DEVIA(6) ** (MM-1) &
-                            + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * (-ONE/THREE) * JJ * DEVIA(2) ** (JJ-1) &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * MM * DEVIA(6) ** (MM-1)
-                        HYF(4,4) = HYF(4,4) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * KK * (KK-1) * DEVIA(4) ** (KK-2) &
-                            * DEVIA(5) ** LL &
-                            * DEVIA(6) ** MM
-                        HYF(5,5) = HYF(5,5) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * LL * (LL-1) * DEVIA(5) ** (LL-2) &
-                            * DEVIA(6) ** MM
-                        HYF(6,6) = HYF(6,6) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * DEVIA(5) ** LL &
-                            * MM * (MM-1) * DEVIA(6) ** (MM-2)
-                        HYF(4,5) = HYF(4,5) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * DEVIA(6) ** MM
-                        HYF(4,6) = HYF(4,6) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * KK * DEVIA(4) ** (KK-1) &
-                            * DEVIA(5) ** LL &
-                            * MM * DEVIA(6) ** (MM-1)
-                        HYF(5,6) = HYF(5,6) + KMATERIAL(N0) &
-                            * DEVIA(1) ** II &
-                            * DEVIA(2) ** JJ &
-                            * DEVIA(4) ** KK &
-                            * LL * DEVIA(5) ** (LL-1) &
-                            * MM * DEVIA(6) ** (MM-1)
-                        HYF(2,1) = HYF(1,2)
-                        HYF(3,1) = HYF(1,3)
-                        HYF(3,2) = HYF(2,3)
-                        HYF(4,1) = HYF(1,4)
-                        HYF(5,1) = HYF(1,5)
-                        HYF(6,1) = HYF(1,6)
-                        HYF(4,2) = HYF(2,4)
-                        HYF(5,2) = HYF(2,5)
-                        HYF(6,2) = HYF(2,6)
-                        HYF(4,3) = HYF(3,4)
-                        HYF(5,3) = HYF(3,5)
-                        HYF(6,3) = HYF(3,6)
-                        HYF(5,4) = HYF(4,5)
-                        HYF(6,4) = HYF(4,6)
-                        HYF(6,5) = HYF(5,6)
+                            * DEVIA(3) ** KK &
+                            * DEVIA(4) ** LL &
+                            * DEVIA(5) ** MM
+							
+							
+							
+							
+							
+							
+						IF ((DEVIA(1) > ZTOL) .OR. (II > 0)) THEN
+							GYFP(1) = GYFP(1) + KMATERIAL(N0) &
+								* II * DEVIA(1) ** (II-1) &
+								* DEVIA(2) ** JJ &
+								* DEVIA(3) ** KK &
+								* DEVIA(4) ** LL &
+								* DEVIA(5) ** MM
+							IF ((DEVIA(1) > ZTOL) .OR. (II > 1)) THEN
+								HYFP(1,1) = HYFP(1,1) + KMATERIAL(N0) &
+									* II * (II-1) * DEVIA(1) ** (II-2) &
+									* DEVIA(2) ** JJ &
+									* DEVIA(3) ** KK &
+									* DEVIA(4) ** LL &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(2) > ZTOL) .OR. (JJ > 0)) THEN
+								HYFP(1,2) = HYFP(1,2) + KMATERIAL(N0) &
+									* II * DEVIA(1) ** (II-1) &
+									* JJ * DEVIA(2) ** (JJ-1) &
+									* DEVIA(3) ** KK &
+									* DEVIA(4) ** LL &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(3) > ZTOL) .OR. (KK > 0)) THEN
+								HYFP(1,3) = HYFP(1,3) + KMATERIAL(N0) &
+									* II * DEVIA(1) ** (II-1) &
+									* DEVIA(2) ** JJ &
+									* KK * DEVIA(3) ** (KK - 1) &
+									* DEVIA(4) ** LL &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(4) > ZTOL) .OR. (LL > 0)) THEN
+								HYFP(1,4) = HYFP(1,4) + KMATERIAL(N0) &
+									* II * DEVIA(1) ** (II-1) &
+									* DEVIA(2) ** JJ &
+									* DEVIA(3) ** KK &
+									* LL * DEVIA(4) ** (LL - 1) &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(5) > ZTOL) .OR. (MM > 0)) THEN 
+								HYFP(1,5) = HYFP(1,5) + KMATERIAL(N0) &
+									* II * DEVIA(1) ** (II-1) &
+									* DEVIA(2) ** JJ &
+									* DEVIA(3) ** KK &
+									* DEVIA(4) ** LL &
+									* MM * DEVIA(5) ** (MM - 1)
+							END IF
+						END IF
+						
+						
+						
+						
+						IF ((DEVIA(2) > ZTOL) .OR. (JJ > 0)) THEN
+							GYFP(2) = GYFP(2) + KMATERIAL(N0) &
+								* DEVIA(1) ** II &
+								* JJ * DEVIA(2) ** (JJ-1) &
+								* DEVIA(3) ** KK &
+								* DEVIA(4) ** LL &
+								* DEVIA(5) ** MM
+							IF ((DEVIA(2) > ZTOL) .OR. (JJ > 1)) THEN
+								HYFP(2,2) = HYFP(2,2) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* JJ * (JJ-1) * DEVIA(2) ** (JJ-2) &
+									* DEVIA(3) ** KK &
+									* DEVIA(4) ** LL &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(3) > ZTOL) .OR. (KK > 0)) THEN
+								HYFP(2,3) = HYFP(2,3) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* JJ * DEVIA(2) ** (JJ - 1) &
+									* KK * DEVIA(3) ** (KK - 1) &
+									* DEVIA(4) ** LL &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(4) > ZTOL) .OR. (LL > 0)) THEN
+								HYFP(2,4) = HYFP(2,4) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* JJ * DEVIA(2) ** (JJ - 1) &
+									* DEVIA(3) ** KK &
+									* LL * DEVIA(4) ** (LL - 1) &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(5) > ZTOL) .OR. (MM > 0)) THEN 
+								HYFP(2,5) = HYFP(2,5) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* JJ * DEVIA(2) ** (JJ - 1)&
+									* DEVIA(3) ** KK &
+									* DEVIA(4) ** LL &
+									* MM * DEVIA(5) ** (MM - 1)
+							END IF
+						END IF
+						
+						
+						
+						
+						
+						
+						IF ((DEVIA(3) > ZTOL) .OR. (KK > 0)) THEN
+							GYFP(3) = GYFP(3) + KMATERIAL(N0) &
+								* DEVIA(1) ** II &
+								* DEVIA(2) ** JJ &
+								* KK * DEVIA(3) ** (KK-1) &
+								* DEVIA(4) ** LL &
+								* DEVIA(5) ** MM
+							IF ((DEVIA(3) > ZTOL) .OR. (KK > 1)) THEN
+								HYFP(3,3) = HYFP(3,3) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* DEVIA(2) ** JJ &
+									* KK * (KK - 1) * DEVIA(3) ** (KK - 2) &
+									* DEVIA(4) ** LL &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(4) > ZTOL) .OR. (LL > 0)) THEN
+								HYFP(3,4) = HYFP(3,4) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* DEVIA(2) ** JJ &
+									* KK * DEVIA(3) ** (KK - 1) &
+									* LL * DEVIA(4) ** (LL - 1) &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(5) > ZTOL) .OR. (MM > 0)) THEN 
+								HYFP(3,5) = HYFP(3,5) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* DEVIA(2) ** JJ&
+									* KK * DEVIA(3) ** (KK - 1) &
+									* DEVIA(4) ** LL &
+									* MM * DEVIA(5) ** (MM - 1)
+							END IF								
+						END IF
+						
+						
+						
+						
+						
+						IF ((DEVIA(4) > ZTOL) .OR. (LL > 0)) THEN
+							GYFP(4) = GYFP(4) + KMATERIAL(N0) &
+								* DEVIA(1) ** II &
+								* DEVIA(2) ** JJ &
+								* DEVIA(3) ** KK &
+								* LL * DEVIA(4) ** (LL-1) &
+								* DEVIA(5) ** MM
+							IF ((DEVIA(4) > ZTOL) .OR. (LL > 1)) THEN
+								HYFP(4,4) = HYFP(4,4) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* DEVIA(2) ** JJ &
+									* DEVIA(3) ** KK &
+									* LL * (LL - 1) * DEVIA(4) ** (LL - 2) &
+									* DEVIA(5) ** MM
+							END IF
+							IF ((DEVIA(5) > ZTOL) .OR. (MM > 0)) THEN 
+								HYFP(4,5) = HYFP(4,5) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* DEVIA(2) ** JJ &
+									* DEVIA(3) ** KK &
+									* LL * DEVIA(4) ** (LL - 1) &
+									* MM * DEVIA(5) ** (MM - 1)
+							END IF	
+						END IF
+						
+						
+						IF ((DEVIA(5) > ZTOL) .OR. (MM > 0)) THEN
+							GYFP(5) = GYFP(5) + KMATERIAL(N0) &
+								* DEVIA(1) ** II &
+								* DEVIA(2) ** JJ &
+								* DEVIA(3) ** KK &
+								* DEVIA(4) ** LL &
+								* MM * DEVIA(5) ** (MM-1)
+							IF ((DEVIA(5) > ZTOL) .OR. (MM > 1)) THEN 
+								HYFP(5,5) = HYFP(4,5) + KMATERIAL(N0) &
+									* DEVIA(1) ** II &
+									* DEVIA(2) ** JJ &
+									* DEVIA(3) ** KK &
+									* DEVIA(4) ** LL &
+									* MM * (MM - 1) * DEVIA(5) ** (MM - 2)
+							END IF	
+						END IF
                         N0 = N0 + 1
                     END IF
                 END DO
             END DO
         END DO
-    END DO
-
+	END DO
+	
+	DO K1=1, NTENS
+		DO K2= 1, NTENS - 1
+			GYF(K1) = GYF(K1) + GYFP(K2) * GDEV(K2, K1)
+		END DO
+	END DO
+	
+	DO K1=1, NTENS
+		DO K2 = 1, NTENS
+			DO K3 = 1, NTENS - 1
+				DO K4 = 1, NTENS - 1
+					HYF(K1, K2) = HYF(K1, K2) + GDEV(K4, K1) * HYFP(K4, K3) * GDEV(K3, K2)
+				END DO
+			END DO
+		END DO
+	END DO
+	
     ZYF = YF**(1.0D0/DBLE(DEGREE))
 	YVAL = ZYF/(DBLE(DEGREE)*YF)
     Y2VAL  =DBLE(DEGREE-1)/ZYF

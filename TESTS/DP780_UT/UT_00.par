@@ -2,7 +2,7 @@
 THICKNESS	= 1. <= 1.0>
 WIDTH		= 1. <= 1.0>
 ** <ABAQUS comment>
-DISPL		= 0.15 <= 0.15>
+DISPL		= 0.1 <= 0.1>
 **--------------------------------------------------- <ABAQUS comment>
 ** Geometry and Orientation <ABAQUS comment>
 **--------------------------------------------------- <ABAQUS comment>

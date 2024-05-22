@@ -1,6 +1,6 @@
 1
 
-   Abaqus 2023                                  Date 21-May-2024   Time 17:15:18
+   Abaqus 2023                                  Date 22-May-2024   Time 16:23:24
    For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
 
 
@@ -70,25 +70,6 @@
      END PROCESSING PART, INSTANCE, AND ASSEMBLY INFORMATION
    ***********************************************************
 
-1
-
-   Abaqus 2023                                  Date 21-May-2024   Time 17:15:18
-   For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
-
-                                                                                     
-
-                                      P A R A M E T E R   I N T E R P R E T A T I O N
-
-
-                     
-                     ***COMMENT: STARTING PARAMETER EVALUATION
-                     
-                     ***COMMENT: STARTING PARAMETER SUBSTITUTION
-     LINE     5      
-                     ***COMMENT: EVALUATION AND SUBSTITUTION OF PARAMETERS COMPLETED
-                    --------------------------------------------------------------------------------
-                        5   10   15   20   25   30   35   40   45   50   55   60   65   70   75   80
-                    --------------------------------------------------------------------------------
 
 
 
@@ -96,102 +77,58 @@
    ***************************
 
 
-  *Node, nset=NALL
-  *Element, type=C3D8, elset=ELALL
-  *Nset, nset=YMAX, generate
-  *Nset, nset=YMIN, generate
-  *Nset, nset=XMIN, generate
-  *Nset, nset=XMAX, generate
-  *Nset, nset=ZMIN
-  *Nset, nset=LOAD
-  *Elset, elset=ONSET
-  *Nset, nset=BASE
-  *NMAP, TYPE=RECTANGULAR, NSET=NALL
-
-     THE LOCAL ORIGIN IS LOCATED AT      0.000     0.000     0.000     IN THE GLOBAL SYSTEM
-
-     THE LOCAL 1 -AXIS HAS GLOBAL DIRECTION      1.000     0.000     0.000
-
-     THE LOCAL 2 -AXIS HAS GLOBAL DIRECTION      0.000     1.000     0.000
-
-     THE LOCAL 3 -AXIS HAS GLOBAL DIRECTION      0.000     0.000     1.000
-
-  *MATERIAL,NAME=mat
-  *USER MATERIAL, constants=77
-  *DENSITY
-  *DEPVAR
-  *ORIENTATION, name=Ori-00
-  *ORIENTATION, name=Ori-15
-  *ORIENTATION, name=Ori-30
-  *ORIENTATION, name=Ori-45
-  *ORIENTATION, name=Ori-60
-  *ORIENTATION, name=Ori-75
-  *ORIENTATION, name=Ori-90
-  *SOLID SECTION, elset=ELALL, orientation=Ori-00, material=mat
-  *SOLID SECTION, elset=ELALL, orientation=Ori-00, material=mat
-  *BOUNDARY
-  *BOUNDARY, TYPE=DISPLACEMENT
-  *BOUNDARY
-  *BOUNDARY, TYPE=DISPLACEMENT
-  *EQUATION
-  *OUTPUT, FIELD, FREQUENCY=1
-  *OUTPUT, HISTORY, FREQUENCY=99
-  *ELEMENT OUTPUT
-  *ELEMENT OUTPUT, ELSET=ONSET
-  *OUTPUT, FIELD, FREQUENCY=1
-  *OUTPUT, HISTORY, FREQUENCY=99
-  *ELEMENT OUTPUT
-  *ELEMENT OUTPUT, ELSET=ONSET
-  *OUTPUT, FIELD, FREQUENCY=1
-  *OUTPUT, HISTORY, FREQUENCY=99
-  *ELEMENT OUTPUT
-  *ELEMENT OUTPUT, ELSET=ONSET
+  *Heading
+  *Node
+  *Element, type=C3D8
+  *Nset, nset=ASSEMBLY_PART-1-1_XLOAD
+  *Nset, nset=ASSEMBLY_PART-1-1_XMIN
+  *Nset, nset=ASSEMBLY_PART-1-1_YMIN
+  *Nset, nset=ASSEMBLY_PART-1-1_ZMIN
+  *Elset, elset=ASSEMBLY_PART-1-1_ELALL
+  *Elset, elset=ASSEMBLY_PART-1-1_XLOAD
+  *Elset, elset=ASSEMBLY_PART-1-1_XMIN
+  *Elset, elset=ASSEMBLY_PART-1-1_YMIN
+  *Elset, elset=ASSEMBLY_PART-1-1_ZMIN
+  *material, name=MAT
+  *usermaterial, constants=77
+  *density
+  *depvar
+  *solidsection, elset=ASSEMBLY_PART-1-1_ELALL, material=MAT
+  *solidsection, elset=ASSEMBLY_PART-1-1_ELALL, material=MAT
+  *boundary
+  *boundary
+  *boundary
+  *boundary
+  *boundary
+  *boundary
+  *boundary
+  *boundary
+  *output, field, variable=PRESELECT
+  *output, history, variable=PRESELECT
+  *output, field, variable=PRESELECT
+  *output, history, variable=PRESELECT
+  *output, field, variable=PRESELECT
+  *output, history, variable=PRESELECT
   *Step, name=Step-1, nlgeom=YES
-  *OUTPUT, FIELD, FREQUENCY=1
-  *OUTPUT, HISTORY, FREQUENCY=99
+  *output, field, variable=PRESELECT
+  *output, history, variable=PRESELECT
   *Step, name=Step-1, nlgeom=YES
   *Step, name=Step-1, nlgeom=YES
-  *Static
-  *BOUNDARY, TYPE=DISPLACEMENT
-  *OUTPUT, FIELD, FREQUENCY=1
-  *ELEMENT OUTPUT
-  *NODE OUTPUT
-  *OUTPUT, HISTORY, FREQUENCY=99
-  *NODE OUTPUT, NSET=LOAD
-  *NODE OUTPUT, NSET=BASE
-  *ELEMENT OUTPUT, ELSET=ONSET
-  *End Step
-
- ***WARNING: THE REQUEST FOR LEP OUTPUT WILL BE REPLACED BY A REQUEST FOR LE 
-             OUTPUT
-
- ***WARNING: THE REQUEST FOR SP OUTPUT WILL BE REPLACED BY A REQUEST FOR S 
-             OUTPUT
-
- ***WARNING: THE REQUEST FOR MISES OUTPUT WILL BE REPLACED BY A REQUEST FOR S 
-             OUTPUT
-
- ***WARNING: OUTPUT REQUEST V IS NOT AVAILABLE FOR THIS TYPE OF ANALYSIS
-  *BOUNDARY
+  *static
+  *boundary
+  *boundary
+  *boundary
+  *boundary
+  *output, field, variable=PRESELECT
+  *output, history, variable=PRESELECT
+  *endstep
   *Step, name=Step-1, nlgeom=YES
-  *Static
-  *BOUNDARY, TYPE=DISPLACEMENT
-  *End Step
-
- ***NOTE: Boundary conditions are specified on inactive dof of 7 nodes. The 
-          nodes have been identified in node set WarnNodeBCInactiveDof.
-
- ***WARNING: DEGREE OF FREEDOM 2 IS NOT ACTIVE ON NODE 2 - THIS BOUNDARY 
-             CONDITION IS IGNORED
-
- ***WARNING: DEGREE OF FREEDOM 2 IS NOT ACTIVE ON NODE 4 - THIS BOUNDARY 
-             CONDITION IS IGNORED
-
- ***WARNING: DEGREE OF FREEDOM 2 IS NOT ACTIVE ON NODE 6 - THIS BOUNDARY 
-             CONDITION IS IGNORED
-
- ***NOTE: Boundary conditions are specified on inactive dof of 3 nodes. The 
-          nodes have been identified in node set WarnNodeBCInactiveDof.
+  *static
+  *boundary
+  *boundary
+  *boundary
+  *boundary
+  *endstep
 
 
 
@@ -218,7 +155,7 @@
        WALLCLOCK TIME (SEC) =            0
 1
 
-   Abaqus 2023                                  Date 21-May-2024   Time 17:15:21
+   Abaqus 2023                                  Date 22-May-2024   Time 16:23:27
    For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
 
                                                                                                STEP    1  INCREMENT    1
@@ -234,7 +171,7 @@
           A SUGGESTED INITIAL TIME INCREMENT OF                1.000E-05
           AND A TOTAL TIME PERIOD OF                            1.00    
           THE MINIMUM TIME INCREMENT ALLOWED IS                1.000E-05
-          THE MAXIMUM TIME INCREMENT ALLOWED IS                5.000E-02
+          THE MAXIMUM TIME INCREMENT ALLOWED IS                0.100    
 
      LINEAR EQUATION SOLVER TYPE         DIRECT SPARSE
 
@@ -246,7 +183,7 @@
               OPERATIONS           REQUIRED          MINIMIZE I/O
              PER ITERATION           (MB)               (MB)
   
-     1          2.11E+03               17                 24
+     1          4.90E+03               17                 24
   
  NOTE:
       (1) SINCE ABAQUS DOES NOT PRE-ALLOCATE MEMORY AND ONLY ALLOCATES MEMORY AS NEEDED DURING THE ANALYSIS,
@@ -282,13 +219,12 @@
 
                               ANALYSIS COMPLETE
                               WITH      2 ERROR MESSAGES ON THE MSG FILE
-                              AND       7 WARNING MESSAGES ON THE DAT FILE
-                              AND       2 WARNING MESSAGES ON THE MSG FILE
+                              AND       1 WARNING MESSAGES ON THE MSG FILE
 
 
 
      JOB TIME SUMMARY
-       USER TIME (SEC)      =      1.6    
-       SYSTEM TIME (SEC)    =     0.40    
-       TOTAL CPU TIME (SEC) =      2.0    
-       WALLCLOCK TIME (SEC) =            6
+       USER TIME (SEC)      =      3.2    
+       SYSTEM TIME (SEC)    =     0.50    
+       TOTAL CPU TIME (SEC) =      3.7    
+       WALLCLOCK TIME (SEC) =            8
