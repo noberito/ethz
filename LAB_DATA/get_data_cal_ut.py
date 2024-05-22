@@ -63,7 +63,7 @@ def generate_data_calibration(material, thetas):
             ys_exp = np.append(ys_exp,yield_stress)
 
         ys = np.mean(ys_exp)
-        rval = "*"
+        rval = 0
         q = 1
         pttype = "e"
         theta = 0.0
@@ -82,7 +82,7 @@ def generate_data_calibration(material, thetas):
             ys_exp = np.append(ys_exp,yield_stress)
 
         ys = np.mean(ys_exp)
-        rval = "*"
+        rval = 0
         q = 1
         pttype = "e"
         theta = 0.0
