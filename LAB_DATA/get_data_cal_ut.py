@@ -91,6 +91,3 @@ def generate_data_calibration(material, thetas):
     ut_data = pd.concat([ut_data, row])
 
     ut_data.to_csv(foldername + 'data_cal_{}.csv'.format(material), index=False)
-
-for material in materials:
-    generate_data_calibration(material, thetas)

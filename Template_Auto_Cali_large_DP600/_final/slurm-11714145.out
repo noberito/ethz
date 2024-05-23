@@ -1,0 +1,68 @@
+Abaqus JOB temp_UT_00
+Abaqus 6.13-2
+Abaqus License Manager checked out the following licenses:
+Abaqus/Explicit checked out 5 tokens.
+<591 out of 1454 licenses remain available>.
+Begin Compiling Double Precision Abaqus/Explicit User Subroutines
+Sat Mar 11 15:40:56 2023
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 18.0.1.163 Build 20171018
+Copyright (C) 1985-2017 Intel Corporation.  All rights reserved.
+
+VUMAT_explicit.f(679): warning #6371: A jump into a block from outside the block may have occurred.   [20]
+             IF (FAILflag.gt.1) GOTO 20
+-------------------------------------^
+VUMAT_explicit.f(680): warning #6371: A jump into a block from outside the block may have occurred.   [21]
+             IF (FAILflag.le.1) GOTO 21
+-------------------------------------^
+ Intel(R) Fortran 18.0-1599
+End Compiling Double Precision Abaqus/Explicit User Subroutines
+Begin Linking Double Precision Abaqus/Explicit User Subroutines
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 18.0.1.163 Build 20171018
+Copyright (C) 1985-2017 Intel Corporation.  All rights reserved.
+ifort: command line remark #10148: option '-i-dynamic' not supported
+
+GNU ld version 2.27-44.base.el7_9.1
+End Linking Double Precision Abaqus/Explicit User Subroutines
+Sat Mar 11 15:41:00 2023
+Begin Compiling Single Precision Abaqus/Package User Subroutines
+Sat Mar 11 15:41:00 2023
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 18.0.1.163 Build 20171018
+Copyright (C) 1985-2017 Intel Corporation.  All rights reserved.
+
+VUMAT_explicit.f(679): warning #6371: A jump into a block from outside the block may have occurred.   [20]
+             IF (FAILflag.gt.1) GOTO 20
+-------------------------------------^
+VUMAT_explicit.f(680): warning #6371: A jump into a block from outside the block may have occurred.   [21]
+             IF (FAILflag.le.1) GOTO 21
+-------------------------------------^
+ Intel(R) Fortran 18.0-1599
+End Compiling Single Precision Abaqus/Package User Subroutines
+Begin Linking Single Precision Abaqus/Package User Subroutines
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 18.0.1.163 Build 20171018
+Copyright (C) 1985-2017 Intel Corporation.  All rights reserved.
+ifort: command line remark #10148: option '-i-dynamic' not supported
+
+GNU ld version 2.27-44.base.el7_9.1
+End Linking Single Precision Abaqus/Package User Subroutines
+Sat Mar 11 15:41:05 2023
+Begin Analysis Input File Processor
+Sat Mar 11 15:41:05 2023
+Run pre
+Sat Mar 11 15:41:06 2023
+End Analysis Input File Processor
+Begin Abaqus/Explicit Packager
+Sat Mar 11 15:41:06 2023
+Run package
+Sat Mar 11 15:41:07 2023
+End Abaqus/Explicit Packager
+Begin Abaqus/Explicit Analysis
+Sat Mar 11 15:41:07 2023
+Run explicit_dp
+Sat Mar 11 15:41:12 2023
+End Abaqus/Explicit Analysis
+Begin Selected Results Translator
+Sat Mar 11 15:41:12 2023
+Run select
+Sat Mar 11 15:41:13 2023
+End Selected Results Translator
+Abaqus JOB temp_UT_00 COMPLETED

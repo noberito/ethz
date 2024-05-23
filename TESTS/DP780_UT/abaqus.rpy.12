@@ -1,0 +1,88 @@
+# -*- coding: mbcs -*-
+#
+# Abaqus/Viewer Release 2023 replay file
+# Internal Version: 2022_09_28-20.11.55 183150
+# Run by cnober on Thu May 23 12:22:23 2024
+#
+
+# from driverUtils import executeOnCaeGraphicsStartup
+# executeOnCaeGraphicsStartup()
+#: Executing "onCaeGraphicsStartup()" in the site directory ...
+#: Warning: Permission was denied for "abaqus.rpy"; "abaqus.rpy.12" will be used for this session's replay file.
+from abaqus import *
+from abaqusConstants import *
+session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=375.819793701172, 
+    height=268.650024414062)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].maximize()
+from viewerModules import *
+from driverUtils import executeOnCaeStartup
+executeOnCaeStartup()
+o2 = session.openOdb(name='UT_polyN.odb')
+#: Model: C:/temp/TESTS/DP780_UT/UT_polyN.odb
+#: Number of Assemblies:         1
+#: Number of Assembly instances: 0
+#: Number of Part instances:     1
+#: Number of Meshes:             1
+#: Number of Element Sets:       6
+#: Number of Node Sets:          5
+#: Number of Steps:              1
+session.viewports['Viewport: 1'].setValues(displayedObject=o2)
+session.viewports['Viewport: 1'].makeCurrent()
+odb = session.odbs['C:/temp/TESTS/DP780_UT/UT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Reaction force: RF2 at Node 1 in NSET XMIN', steps=(
+    'Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xy2 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Solution dependent state variables: SDV1 at Element 1 Int Point 1 in ELSET ELALL', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c2 = session.Curve(xyData=xy2)
+xy3 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S22 at Element 1 Int Point 1 in ELSET ELALL', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c3 = session.Curve(xyData=xy3)
+xyp = session.XYPlot('XYPlot-1')
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, c2, c3, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.viewports['Viewport: 1'].setValues(displayedObject=xyp)
+session.xyPlots[session.viewports['Viewport: 1'].displayedObject.name].setValues(
+    transform=(0.593801, 0, 0, -0.116972, 0, 0.593801, 0, 0.0442395, 0, 0, 
+    0.593801, 0, 0, 0, 0, 1))
+odb = session.odbs['C:/temp/TESTS/DP780_UT/UT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Solution dependent state variables: SDV1 at Element 1 Int Point 1 in ELSET ELALL', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xy2 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 1 Int Point 1 in ELSET ELALL', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c2 = session.Curve(xyData=xy2)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, c2, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.xyPlots[session.viewports['Viewport: 1'].displayedObject.name].setValues(
+    transform=(0.498567, 0, 0, -0.0516268, 0, 0.498567, 0, -0.0373136, 0, 0, 
+    0.498567, 0, 0, 0, 0, 1))
+x0 = session.xyDataObjects['_temp_4']
+x1 = session.xyDataObjects['_temp_5']
+session.xyReportOptions.setValues(numDigits=8, numberFormat=SCIENTIFIC)
+session.writeXYReport(fileName='abaqus.rpt', appendMode=OFF, xyData=(x0, x1))
+odb = session.odbs['C:/temp/TESTS/DP780_UT/UT_polyN.odb']
+session.viewports['Viewport: 1'].setValues(displayedObject=odb)
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    UNDEFORMED, ))
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    ORIENT_ON_DEF, ))
+session.viewports['Viewport: 1'].odbDisplay.commonOptions.setValues(
+    renderStyle=HIDDEN, )
+session.viewports['Viewport: 1'].odbDisplay.commonOptions.setValues(
+    renderStyle=WIREFRAME, )
+session.viewports['Viewport: 1'].animationController.setValues(
+    animationType=TIME_HISTORY)
+session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
+session.viewports['Viewport: 1'].animationController.stop()

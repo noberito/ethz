@@ -2,7 +2,7 @@
 #
 # Abaqus/Viewer Release 2023 replay file
 # Internal Version: 2022_09_28-20.11.55 183150
-# Run by cnober on Tue May 21 16:57:42 2024
+# Run by cnober on Thu May 23 11:55:45 2024
 #
 
 # from driverUtils import executeOnCaeGraphicsStartup
@@ -11,14 +11,14 @@
 from abaqus import *
 from abaqusConstants import *
 session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=375.819793701172, 
-    height=251.640014648438)
+    height=268.650024414062)
 session.viewports['Viewport: 1'].makeCurrent()
 session.viewports['Viewport: 1'].maximize()
 from viewerModules import *
 from driverUtils import executeOnCaeStartup
 executeOnCaeStartup()
-o2 = session.openOdb(name='UT_clement.odb')
-#: Model: C:/temp/TESTS/DP780_UT/UT_clement.odb
+o2 = session.openOdb(name='UT_polyN.odb')
+#: Model: C:/temp/TESTS/DP780_UT/UT_polyN.odb
 #: Number of Assemblies:         1
 #: Number of Assembly instances: 0
 #: Number of Part instances:     1
@@ -28,34 +28,14 @@ o2 = session.openOdb(name='UT_clement.odb')
 #: Number of Steps:              1
 session.viewports['Viewport: 1'].setValues(displayedObject=o2)
 session.viewports['Viewport: 1'].makeCurrent()
-session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
-    CONTOURS_ON_DEF, ))
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=TIME_HISTORY)
-session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=NONE)
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=HARMONIC)
-session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=SCALE_FACTOR)
-session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=TIME_HISTORY)
-session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=SCALE_FACTOR)
-session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=HARMONIC)
-session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
-session.viewports['Viewport: 1'].animationController.setValues(
-    animationType=TIME_HISTORY)
-session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
-session.viewports['Viewport: 1'].view.setValues(session.views['Iso'])
-session.viewports['Viewport: 1'].view.setValues(session.views['Right'])
-session.viewports['Viewport: 1'].view.setValues(session.views['Front'])
-#: Warning: The output database 'C:/temp/TESTS/DP780_UT/UT_clement.odb' disk file has changed.
-#: 
-#: The current plot operation has been canceled, re-open the file to view the results
+odb = session.odbs['C:/temp/TESTS/DP780_UT/UT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S22 at Element 1 Int Point 1 in ELSET ELALL', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.XYPlot('XYPlot-1')
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.viewports['Viewport: 1'].setValues(displayedObject=xyp)

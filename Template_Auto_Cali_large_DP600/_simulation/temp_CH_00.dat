@@ -1,0 +1,229 @@
+1
+
+   Abaqus 6.13-2                                  Date 24-Feb-2022   Time 09:23:39
+   For use at  under license from Dassault Systemes or its subsidiary.
+
+
+
+                         The Abaqus Software is a product of:
+
+                           Dassault Systemes Simulia Corp.
+                                 Rising Sun Mills
+                                 166 Valley Street
+                           Providence, RI 02909-2499, USA
+ 
+
+
+                   Available for internal use at . 
+                   The Abaqus Online Support System is accessible
+                   through the "My Support" section of the SIMULIA
+                   Home Page at http://www.simulia.com.
+
+                   Support policies for academic licenses are described
+                   on the SIMULIA web site at
+                   http://www.3ds.com/products/simulia/academics/
+ 
+                          On machine eu-g1-032-4 
+                          you are authorized to run
+                          Abaqus/Explicit until 31-Dec-2022
+
+                          Your site id is: 200000000015423 
+
+
+ 
+                    For assistance or any other information you may
+                    obtain contact information for your local office
+                    from the world wide web at:
+
+                      http://www.3ds.com/products/simulia/locations/
+
+ 
+                * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+                *                                                         * 
+                *                   *****************                     * 
+                *                   *  N O T I C E  *                     * 
+                *                   *****************                     * 
+                *                                                         * 
+                *                                                         * 
+                *                    Abaqus 6.13-2                        * 
+                *                                                         * 
+                *          BUILD ID: 2013_07_18-13.24.06 126428           * 
+                *                                                         * 
+                *                                                         * 
+                *  Please make sure you are using release 6.13 manuals    * 
+                *  plus the notes accompanying this release.              * 
+                *                                                         * 
+                *                                                         * 
+                *                                                         * 
+                *                                                         * 
+                *                                                         * 
+                *   This program may not be used for commercial purposes  * 
+                *           without payment of a commercial fee.          * 
+                *                                                         * 
+                * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+
+
+ 
+
+
+
+     PROCESSING PART, INSTANCE, AND ASSEMBLY INFORMATION
+   *******************************************************
+
+
+     END PROCESSING PART, INSTANCE, AND ASSEMBLY INFORMATION
+   ***********************************************************
+
+1
+
+   Abaqus 6.13-2                                  Date 24-Feb-2022   Time 09:23:39
+   For use at  under license from Dassault Systemes or its subsidiary.
+
+                                                                                     
+
+                                      P A R A M E T E R   I N T E R P R E T A T I O N
+
+
+                            
+                     ***COMMENT: STARTING PARAMETER EVALUATION      
+                            
+                     ***COMMENT: STARTING PARAMETER SUBSTITUTION    
+     LINE     5             
+                     ***COMMENT: EVALUATION AND SUBSTITUTION OF PARAMETERS COMPLETED
+                    --------------------------------------------------------------------------------
+                        5   10   15   20   25   30   35   40   45   50   55   60   65   70   75   80
+                    --------------------------------------------------------------------------------
+
+
+
+     OPTIONS BEING PROCESSED
+   ***************************
+
+
+  *Node, nset=NALL
+  *Element, type=C3D8R, elset=ELALL
+  *Nset, nset=XMIN
+  *Elset, elset=XMIN
+  *Nset, nset=YMIN
+  *Elset, elset=YMIN
+  *Nset, nset=YMAX
+  *Elset, elset=YMAX
+  *Nset, nset=ZMIN
+  *Elset, elset=ZMIN
+  *Elset, elset=ONSET
+  *nset, nset=LOAD
+  *nset, nset=BASE
+  *Nset, nset=EXT_X05_Y05
+  *NMAP, TYPE=RECTANGULAR, NSET=NALL
+
+     THE LOCAL ORIGIN IS LOCATED AT      0.000     0.000     0.000     IN THE GLOBAL SYSTEM
+
+     THE LOCAL 1 -AXIS HAS GLOBAL DIRECTION      1.000     0.000     0.000
+
+     THE LOCAL 2 -AXIS HAS GLOBAL DIRECTION      0.000     1.000     0.000
+
+     THE LOCAL 3 -AXIS HAS GLOBAL DIRECTION      0.000     0.000     1.000
+
+  *MATERIAL,NAME=mat
+  *User Material, constants=40
+  *DENSITY
+  *DEPVAR, DELETE=7
+  *ORIENTATION, name=Ori-00
+  *ORIENTATION, name=Ori-15
+  *ORIENTATION, name=Ori-30
+  *ORIENTATION, name=Ori-45
+  *ORIENTATION, name=Ori-60
+  *ORIENTATION, name=Ori-75
+  *ORIENTATION, name=Ori-90
+  *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
+  *SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=RELAX STIFFNESS, ELEMENT DELETION=YES
+
+ ***WARNING: THE PARAMETER HOURGLASS ON THE *SECTION CONTROLS OPTION IS 
+             RELEVANT FOR SOLID, MEMBRANE, AND SHELL ELEMENTS WITH REDUCED 
+             INTEGRATION WHEREVER APPLICABLE. THIS WARNING CAN BE IGNORED IF 
+             THE FEATURE IS APPLIED TO THESE ELEMENT TYPES ONLY.
+  *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
+  *EQUATION
+  *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
+  *ELEMENT OUTPUT
+  *ELEMENT OUTPUT, ELSET=ONSET
+  *AMPLITUDE, NAME=ccr, SMOOTH=0.25
+  *OUTPUT, FIELD, FREQUENCY=1
+  *OUTPUT, HISTORY, FREQUENCY=97
+  *STEP, name=Step-1
+  *STEP, name=Step-1
+  *DYNAMIC, EXPLICIT
+  *FIXED MASS SCALING, TYPE=UNIFORM, DT=0.004378
+  *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+  *OUTPUT, FIELD, FREQUENCY=1
+
+ ***WARNING: THE PARAMETER FREQUENCY CANNOT BE USED WITH THE PARAMETER FIELD. 
+             IT WILL BE IGNORED.
+ LINE IMAGE: *OUTPUT, FIELD, FREQUENCY=1
+  *ELEMENT OUTPUT
+  *NODE OUTPUT
+  *OUTPUT, HISTORY, FREQUENCY=97
+  *NODE OUTPUT, NSET=LOAD
+  *NODE OUTPUT, NSET=BASE
+  *NODE OUTPUT, NSET=EXT_X05_Y05
+  *ELEMENT OUTPUT, ELSET=ONSET
+  *End Step
+
+ ***WARNING: THE REQUEST FOR LEP OUTPUT WILL BE REPLACED BY A REQUEST FOR LE 
+             OUTPUT
+
+ ***WARNING: THE REQUEST FOR SP OUTPUT WILL BE REPLACED BY A REQUEST FOR S 
+             OUTPUT
+
+ ***WARNING: THE REQUEST FOR MISES OUTPUT WILL BE REPLACED BY A REQUEST FOR S 
+             OUTPUT
+  *BOUNDARY
+
+ ***WARNING: DEGREE OF FREEDOM 5 IS NOT ACTIVE IN THIS MODEL AND CAN NOT BE 
+             RESTRAINED
+
+ ***WARNING: DEGREE OF FREEDOM 6 IS NOT ACTIVE IN THIS MODEL AND CAN NOT BE 
+             RESTRAINED
+
+ ***WARNING: DEGREE OF FREEDOM 4 IS NOT ACTIVE IN THIS MODEL AND CAN NOT BE 
+             RESTRAINED
+
+ ***WARNING: DEGREE OF FREEDOM 4 IS NOT ACTIVE IN THIS MODEL AND CAN NOT BE 
+             RESTRAINED
+
+ ***WARNING: DEGREE OF FREEDOM 5 IS NOT ACTIVE IN THIS MODEL AND CAN NOT BE 
+             RESTRAINED
+  *STEP, name=Step-1
+  *DYNAMIC, EXPLICIT
+  *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+
+ ***WARNING: THE OPTION *BOUNDARY,TYPE=DISPLACEMENT HAS BEEN USED; CHECK STATUS 
+             FILE BETWEEN STEPS FOR WARNINGS ON ANY JUMPS PRESCRIBED ACROSS THE 
+             STEPS IN DISPLACEMENT VALUES OF TRANSLATIONAL DOF. FOR ROTATIONAL 
+             DOF MAKE SURE THAT THERE ARE NO SUCH JUMPS. ALL JUMPS IN 
+             DISPLACEMENTS ACROSS STEPS ARE IGNORED
+  *End Step
+
+
+
+                            P R O B L E M   S I Z E
+
+
+          NUMBER OF ELEMENTS IS                                 26544
+          NUMBER OF NODES IS                                    31041
+          NUMBER OF NODES DEFINED BY THE USER                   31041
+          TOTAL NUMBER OF VARIABLES IN THE MODEL                93123
+          (DEGREES OF FREEDOM PLUS MAX NO. OF ANY LAGRANGE MULTIPLIER
+           VARIABLES. INCLUDE *PRINT,SOLVE=YES TO GET THE ACTUAL NUMBER.)
+
+
+
+                              END OF USER INPUT PROCESSING
+
+
+
+     JOB TIME SUMMARY
+       USER TIME (SEC)      =  0.75000    
+       SYSTEM TIME (SEC)    =  3.00000E-02
+       TOTAL CPU TIME (SEC) =  0.78000    
+       WALLCLOCK TIME (SEC) =          1

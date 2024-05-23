@@ -110,7 +110,7 @@
 
 !C  CONVERGENCE TOLERANCES
 !    REAL(PREC),PARAMETER::TOL1=1.0E-006, TOL2=1.0E-008
-	REAL(PREC),PARAMETER::TOL1=1.0E-007
+	REAL(PREC),PARAMETER::TOL1=1.0E-003
 
 !C  TEMPORARY HOLDERS
 	REAL(PREC)::TT, TTA, TTB, ZALPHA, F1, FZERO, TDEPBAR, EBULK3, &
@@ -157,7 +157,6 @@
 !C!********************************************
 !C INITIALIZE THE STIFFNESS TENSOR (IT WILL BE STORED IN DDSDDE)
     DDSDDE = ZERO
-	write(80,1)TIME, EPBAR, SIGMA(1),YF, HF, AA, BB, CC
 
 !C ELASTIC PROPERTIES (3D STRESS)
     EBULK3 = EMOD/(ONE - TWO*ENU)
@@ -470,7 +469,7 @@
 
         DEPBAR=DEPBAR+ZALPHA*D2EPBAR
 	    DSIGMA=DSIGMA+ZALPHA*D2SIGMA
-
+        
         !C  write(*,*),"DEPBAR", NRK, DEPBAR
 
 	END DO !!! END OF NEWTON-RAPHSON ITERATIONS
@@ -594,7 +593,7 @@
 	    DDSDDE(K1,K1)=SCOMP(K1,K1)-DSIGMA(K1)*DSIGMA(K1)/TT
 	END DO
 
-
+    
     !C  write(*,*)"DDSDDE", DDSDDE
     DEALLOCATE(KMATERIAL)	
     RETURN
@@ -1004,7 +1003,7 @@
 							IF ((DEVIA(2) > ZTOL) .OR. (JJ > 1)) THEN
 								HYFP(2,2) = HYFP(2,2) + KMATERIAL(N0) &
 									* DEVIA(1) ** II &
-									* JJ * (JJ-1) * DEVIA(2) ** (JJ-2) &
+									* JJ * (JJ-1) * DEVIA(2) ** (JJ - 2) &
 									* DEVIA(3) ** KK &
 									* DEVIA(4) ** LL &
 									* DEVIA(5) ** MM
@@ -1028,7 +1027,7 @@
 							IF ((DEVIA(5) > ZTOL) .OR. (MM > 0)) THEN 
 								HYFP(2,5) = HYFP(2,5) + KMATERIAL(N0) &
 									* DEVIA(1) ** II &
-									* JJ * DEVIA(2) ** (JJ - 1)&
+									* JJ * DEVIA(2) ** (JJ - 1) &
 									* DEVIA(3) ** KK &
 									* DEVIA(4) ** LL &
 									* MM * DEVIA(5) ** (MM - 1)
@@ -1111,7 +1110,7 @@
 								* DEVIA(4) ** LL &
 								* MM * DEVIA(5) ** (MM-1)
 							IF ((DEVIA(5) > ZTOL) .OR. (MM > 1)) THEN 
-								HYFP(5,5) = HYFP(4,5) + KMATERIAL(N0) &
+								HYFP(5,5) = HYFP(5,5) + KMATERIAL(N0) &
 									* DEVIA(1) ** II &
 									* DEVIA(2) ** JJ &
 									* DEVIA(3) ** KK &
