@@ -12,7 +12,7 @@ DT		    = DTIME/2.E5
 **---------------------------------------------------
 ** Geometry and Orientation
 **---------------------------------------------------
-*INCLUDE, INPUT=UT_clement.geo
+*INCLUDE, INPUT=UT.geo
 *NMAP, TYPE=RECTANGULAR, NSET=NALL
 0., 0., 0., 1., 0., 0.,
 0., 1., 0.,

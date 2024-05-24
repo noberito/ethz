@@ -46,7 +46,7 @@ DT		    = DTIME/2.E5
 **-----------------------------------------------------
 *SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=ENHANCED, ELEMENT DELETION=YES
 1.0, 1.0, 1.0, 1.0, 1.0, , , 
-*SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-30, material=mat
+*SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
 **
 *MATERIAL,NAME=mat
 *INCLUDE, INPUT=DP780_abq_deg4_mises.inp
@@ -55,7 +55,7 @@ DT		    = DTIME/2.E5
 *DEPVAR
 1,
 1,EPBAR,"EPBAR"
-**------------------------------------------------------
+**-------------------------------
 ** BOUNDARY CONDITIONS
 **------------------------------------------------------
 *EQUATION
@@ -83,23 +83,25 @@ ZMIN, 3, 5, 0.
 *Static
 1e-05, 1., 1e-05, 0.005
 **
+**
 *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+XMAX, 1, 1, 1.
 LOAD, 2, 2, 1.
 **-----------------------------------
 ** OUTPUT REQUESTS
 **------------------------------------------------------
 *OUTPUT, FIELD, FREQUENCY=1
 *ELEMENT OUTPUT
- S, SDV, TRIAX, E
+ S, LEP, SDV, TRIAX, SP, MISES
 *NODE OUTPUT
- U, RF
+ U, V, RF
 **
-*OUTPUT, HISTORY, FREQUENCY=1
+*OUTPUT, HISTORY, FREQUENCY=99
 *NODE OUTPUT, NSET=LOAD
  U2, RF2
 *NODE OUTPUT, NSET=BASE
  U2, RF2
 *ELEMENT OUTPUT, ELSET=ONSET
- TRIAX, SDV, S, E
+ TRIAX, SDV, LEP, SP, S, MISES
 **------------------------------------------------------
 *End Step
