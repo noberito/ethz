@@ -90,4 +90,6 @@ def generate_data_calibration(material, thetas):
     row = pd.DataFrame({"q": [q], "LoadAngle" : [theta], "YieldStress" : [ys], "Rval" : [rval], "Type" : [pttype]})
     ut_data = pd.concat([ut_data, row])
 
+    print(ut_data)
+
     ut_data.to_csv(foldername + 'data_cal_{}.csv'.format(material), index=False)

@@ -101,6 +101,7 @@ def export_virtual_data(protomodel, material, nb_virtual_pt):
         data = data_yf_sphere(mises, itermax, nb_virtual_pt)
     if protomodel == "tresca":
         data = data_yf_sphere(tresca, itermax, nb_virtual_pt)
+    print(mises(data))
     df = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23"])
     df["Rval"] = np.zeros(len(data))
     df["Type"] = ["v"] * len(data)

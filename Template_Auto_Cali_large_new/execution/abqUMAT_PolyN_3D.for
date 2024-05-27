@@ -110,7 +110,7 @@
 
 !C  CONVERGENCE TOLERANCES
 !    REAL(PREC),PARAMETER::TOL1=1.0E-006, TOL2=1.0E-008
-	REAL(PREC),PARAMETER::TOL1=1.0E-003
+	REAL(PREC),PARAMETER::TOL1=1.0E-007
 
 !C  TEMPORARY HOLDERS
 	REAL(PREC)::TT, TTA, TTB, ZALPHA, F1, FZERO, TDEPBAR, EBULK3, &
@@ -125,7 +125,7 @@
     INTEGER::K1,K2,NRK,KK,LL,MM,II,JJ
 
 !C  NEWTON-RAPHSON MAXIMUM NUMBER OF ITERATIONS
-    INTEGER,PARAMETER:: NRMAX=100
+    INTEGER,PARAMETER:: NRMAX=500
 	
 !C PolyN interface variables 
     INTEGER::DEGREE,NCOEFF,NMON	
@@ -138,8 +138,7 @@
     CC = PROPS(5)
 	DEGREE = INT(PROPS(6))
 	NCOEFF = INT(PROPS(7))
-	NKMAT = (NPROPS - 7)/2
-    NMON=INT(DEGREE/2)
+	NKMAT = NPROPS - 7
 	
 	ALLOCATE (KMATERIAL(NKMAT))
 	KMATERIAL = PROPS(8:7+NKMAT)
@@ -151,7 +150,7 @@
 !C     WRITE TO A FILE
 !C**********************************************************************
 
-       OPEN(80, FILE = 'C:\temp\TESTS\DP780_UT\output.txt')
+    OPEN(80, FILE = 'C:\temp\Template_Auto_Cali_Large_new\execution\output.txt')
     1 FORMAT(30F30.8)
       
 !C!********************************************
@@ -726,8 +725,9 @@
                         * DEVIA(3) ** KK &
                         * DEVIA(4) ** LL &
                         * DEVIA(5) ** MM
-                        N0 = N0 + 1
+                       
                     END IF
+					N0 = N0 + 1
                 END DO
             END DO
         END DO
@@ -848,8 +848,8 @@
                         !C write(*,*)"DEVIA(5) ** LL", DEVIA(5) ** LL
                         !C write(*,*)"DEVIA(6) ** (MM-1)", DEVIA(6) ** (MM-1)
                         !C write(*,*)"GYF(6)", GYF(6)
-                        N0 = N0 + 1
                     END IF
+					N0 = N0 + 1
                 END DO
             END DO
         END DO
@@ -929,6 +929,7 @@
                     IF (((KK==LL) .AND. (LL==MM)) .OR. & 
                     ((MOD(KK,2)==0) .AND. (MOD(LL,2)==0) &
                     .AND. (MOD(MM,2)==0))) THEN
+						
                         YF = YF + KMATERIAL(N0) &
                             * DEVIA(1) ** II &
                             * DEVIA(2) ** JJ &
@@ -1118,8 +1119,8 @@
 									* MM * (MM - 1) * DEVIA(5) ** (MM - 2)
 							END IF	
 						END IF
-                        N0 = N0 + 1
                     END IF
+					N0 = N0 + 1
                 END DO
             END DO
         END DO
@@ -1143,7 +1144,7 @@
 	
     ZYF = YF**(1.0D0/DBLE(DEGREE))
 	YVAL = ZYF/(DBLE(DEGREE)*YF)
-    Y2VAL  =DBLE(DEGREE-1)/ZYF
+    Y2VAL = DBLE(DEGREE-1)/ZYF
 
     !C  write(*,*)"YF", YF
     !C  write(*,*)"GYF PRE", GYF
@@ -1158,7 +1159,7 @@
     !C  write(*,*)"HYF PRE", HYF
     DO II = 1, NTENS
         DO JJ = II, NTENS
-            HYF(II, JJ) = HYF(II, JJ) * YVAL - GYF(II) * GYF(JJ) * Y2VAL
+            HYF(II, JJ) = HYF(II, JJ) * YVAL - GYF(II) * GYF(JJ) * Y2VAL 
             HYF(JJ, II) = HYF(II, JJ)
         END DO
     END DO

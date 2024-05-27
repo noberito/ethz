@@ -5,13 +5,19 @@ import pandas as pd
 import time
 import numpy as np
 
-# Get the directory where the Python script is located
-script_dir = os.path.dirname(os.path.abspath(__file__))
+# Get the directory where the Python exec is located
+
+
+
 current_dir = "./"  # Assuming current directory
 dir = "/"
 if os.name == "nt":
     current_dir = ".\\"
     dir = "\\"
+
+exec_dir = os.path.dirname(os.path.abspath(__file__))
+template_dir = os.path.dirname(exec_dir)
+res_sim_dir = template_dir + dir + "results_sim"
 
 jobs = ["UT_00_polyN", "UT_15_polyN", "UT_30_polyN", "UT_45_polyN", "UT_60_polyN", "UT_75_polyN","UT_90_polyN", "UT_EBT_polyN"]
 """"CH_00_polyN", "CH_45_polyN",
@@ -26,9 +32,9 @@ def simulate(job):
 
     abq = r'"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\env\vars.bat" -arch intel64 vs2019 &'
 
-    command = f"abq2023 job={job} input={input_file} double user={subroutine}"
+    command = f"abq2023 job={job} input={input_file} double user={subroutine} && exit"
     full_command = f"{abq} {command}"
-    result = subprocess.run(full_command, shell=True, capture_output=True, text=True, cwd=script_dir)
+    result = subprocess.run(full_command, shell=True, capture_output=True, text=True, cwd=exec_dir)
 
     print("Standard Output:\n", result.stdout)
     print("Standard Error:\n", result.stderr)
@@ -43,7 +49,7 @@ def report(job):
     abq = r'"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\env\vars.bat" -arch intel64 vs2019 &'
     command = f"abq2023 odbreport job={job} odb={odb} field={field} components"
     full_command = f"{abq} {command}"
-    result = subprocess.run(full_command, shell=True, capture_output=True, text=True, cwd=script_dir)
+    result = subprocess.run(full_command, shell=True, capture_output=True, text=True, cwd=exec_dir)
 
     print("Standard Output:\n", result.stdout)
     print("Standard Error:\n", result.stderr)
@@ -52,7 +58,7 @@ def report(job):
 def post_process_report(job):
     print("Post processing report {}".format(job))
 
-    filename = script_dir + dir + r"{}.rep".format(job) 
+    filename = exec_dir + dir + r"{}.rep".format(job) 
     t = time.time()
     with open(filename, "r") as file:
         file_no_space = file.read().replace("\n", " ")
@@ -148,16 +154,13 @@ def post_process_report(job):
             le = "LE{}{}".format(i,j)
             df[e] = np.exp(df[le]) - 1
     
-    folderpath = script_dir + dir + "results" + dir
    
     filename = "{}.csv".format(job)
-    filepath = folderpath + filename
+    filepath = res_sim_dir + dir + filename
     print("Post processing {} ended".format(job))
     df.to_csv(filepath)
 
 if __name__ == "__main__":
-    #simulate(jobs[0])
-    #report(jobs[0])
     pool = multiprocessing.Pool()
     pool.map(simulate, jobs)
     pool.map(report, jobs)
@@ -165,4 +168,3 @@ if __name__ == "__main__":
 
     pool.close()
     pool.join()
-    

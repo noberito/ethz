@@ -81,7 +81,7 @@ ZMIN, 3, 5, 0.
 ** ----------------------------------------------------
 *Step, name=Step-1, nlgeom=YES
 *Static
-1e-05, 1., 1e-05, 0.005
+1e-05, 1., 1e-05, 0.1
 **
 **
 *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
@@ -96,7 +96,7 @@ LOAD, 2, 2, 1.
 *NODE OUTPUT
  U, V, RF
 **
-*OUTPUT, HISTORY, FREQUENCY=99
+*OUTPUT, HISTORY, FREQUENCY=1
 *NODE OUTPUT, NSET=LOAD
  U2, RF2
 *NODE OUTPUT, NSET=BASE

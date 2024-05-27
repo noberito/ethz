@@ -81,7 +81,7 @@ ZMIN, 3, 5, 0.
 ** ----------------------------------------------------
 *Step, name=Step-1, nlgeom=YES
 *Static
-1e-05, 1., 1e-05, 0.005
+1e-05, 1., 1e-05, 0.1
 **
 *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
 LOAD, 2, 2, 1.
