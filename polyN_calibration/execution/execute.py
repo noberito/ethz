@@ -31,8 +31,8 @@ def simulate(test):
     cp_input_file = f'temp_{input_file}'
     sim_dir = exec_dir + dir + test
 
-    copy_command = f'cp {input_file} {cp_input_file} '
-    subprocess.call(copy_command, shell=True, cwd=sim_dir)
+    copy_sim_cmd = f'cp {input_file} {cp_input_file} '
+    subprocess.call(copy_sim_cmd, shell=True, cwd=sim_dir)
 
     abq = r'"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\env\vars.bat" -arch intel64 vs2019 &'
     job_command = f"abq2023 job=temp_{job} double interactive user={subroutine} && exit"
@@ -167,7 +167,7 @@ def post_process_report(test):
 
 if __name__ == "__main__":
     pool = multiprocessing.Pool()
-    pool.map(simulate, jobs)
+    pool.map(simulate, tests)
     #pool.map(report, jobs)
     #pool.map(post_process_report, jobs)
 
