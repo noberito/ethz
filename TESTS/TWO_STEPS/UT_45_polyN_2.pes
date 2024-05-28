@@ -1,0 +1,156 @@
+** Definition of Parameters of Analysis
+** UT Single Element EXP
+**---------------------------------------------------
+*Node, nset=NALL
+      1,  0.1,  0.1,  0.1
+      2,  0.1,  0.0,  0.1
+      3,  0.1,  0.1,  0.0
+      4,  0.1,  0.0,  0.0
+      5,  0.0,  0.1,  0.1
+      6,  0.0,  0.0,  0.1
+      7,  0.0,  0.1,  0.0
+      8,  0.0,  0.0,  0.0
+*Element, type=C3D8R, elset=ELALL
+1, 5, 6, 8, 7, 1, 2, 4, 3
+*Nset, nset=YMAX, generate
+ 1,  5,  2
+*Nset, nset=YMIN, generate
+ 2,  6,  2
+*Nset, nset=XMIN, generate
+ 5,  8,  1
+*Nset, nset=XMAX, generate
+ 1,  4,  1
+*Nset, nset=ZMIN
+ 3, 4, 7, 8
+*Nset, nset=LOAD
+ 7,
+*Elset, elset=ONSET
+ 1,
+*Nset, nset=BASE
+ 8,
+*NMAP, TYPE=RECTANGULAR, NSET=NALL
+0., 0., 0., 1., 0., 0.,
+0., 1., 0.,
+** Width & Thickness factor
+1.0,1., 1.0
+** 0deg axis aligned with y-direction
+*ORIENTATION, name=Ori-00
+         0.,     1.,     0.,	-1.,     0.,     0.
+3, 0.
+*ORIENTATION, name=Ori-15
+         0.267949192431,     1.,     0.,	-1.,     0.267949192431,     0.
+3, 0.
+*ORIENTATION, name=Ori-30
+         0.577350269193,     1.,     0.,	-1.,     0.577350269193,     0.
+3, 0.
+*ORIENTATION, name=Ori-45
+         1.,     1.,     0.,	-1.,     1.,     0.
+3, 0.
+*ORIENTATION, name=Ori-60
+         1.,     0.577350269193,     0.,	-0.577350269193,     1.,     0.
+3, 0.
+*ORIENTATION, name=Ori-75
+         1.,     0.267949192431,     0.,	-0.267949192431,     1.,     0.
+3, 0.
+** 90deg axis aligned with y-direction
+*ORIENTATION, name=Ori-90
+         1.,     0.,     0.,	0.,     1.,     0.
+3, 0.
+**-----------------------------------------------------
+** Material Data
+**-----------------------------------------------------
+*SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=ENHANCED, ELEMENT DELETION=YES
+1.0, 1.0, 1.0, 1.0, 1.0, , , 
+*SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-45, material=mat
+**
+*MATERIAL,NAME=mat
+*USER MATERIAL, constants=77
+207746.0110116033, 0.3, 1233.1373130498682, 0.0021580351567108886, 0.16156360094357192, 4, 70, 6.637668908237488, 
+8.656929063495149, 12.77789447742127, 9.046040666244405, 6.138553731046572, 0, 0, 0, 0, 
+38.479327412339956, 8.11976736740349, 36.45122003571024, 0, 0, 6.729134200358455, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, 0, 
+14.273585340175417, 23.654471890358877, 9.732628845633986, 0, 0, 15.82823304225894, 0, 0, 
+0, 10.585542108228056, 0, 0, 0, 0, 0, 0, 
+0, 0, 0, 0, 0, 0, 0, -0.3769766206076801, 
+-2.484196459786805, 0, 0, 0, 0, 0, 16.76027139791711, 19.35318044159724, 
+16.21577218849402, 0, 0, 17.208460054138545, 0, 0, 0, 20.09398316698886, 
+0, 0, 0, 0, 7.405320941600545, 
+*DENSITY
+7.85e-09
+**
+**
+*DEPVAR
+1,
+1,EPBAR,"EPBAR"
+**------------------------------------------------------
+** BOUNDARY CONDITIONS
+**------------------------------------------------------
+*EQUATION
+2
+YMAX, 2, 1.
+LOAD, 2, -1.
+2
+YMIN, 2, 1.
+BASE, 2, -1.
+**
+*BOUNDARY
+XMIN, 1, 1, 0.
+XMIN, 5, 6, 0.
+YMIN, 2, 2, 0.
+BASE, 2, 2, 0.
+YMIN, 4, 4, 0.
+ZMIN, 3, 5, 0.
+**
+*AMPLITUDE, NAME=ccr, DEFINITION=TABULAR, SMOOTH=0.05
+0.,0.,
+**%(TRAMP1)s, %(RAMP1)s,
+1.0, 0.1,
+** ----------------------------------------------------
+*Step, name=Step-1, nlgeom=YES
+*Static
+0.002, 0.05, 1e-5, 0.002
+**
+*BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+LOAD, 2, 2, 1.
+**-----------------------------------
+** OUTPUT REQUESTS
+**------------------------------------------------------
+*OUTPUT, FIELD, FREQUENCY=1
+*ELEMENT OUTPUT
+ S, SDV, TRIAX, E
+*NODE OUTPUT
+ U, RF
+**
+*OUTPUT, HISTORY, FREQUENCY=1
+*NODE OUTPUT, NSET=LOAD
+ U2, RF2
+*NODE OUTPUT, NSET=BASE
+ U2, RF2
+*ELEMENT OUTPUT, ELSET=ONSET
+ TRIAX, SDV, S, E
+**------------------------------------------------------
+*End Step
+*Step, name=Step-2, nlgeom=YES
+*Static
+0.002, 0.95, 1e-5, 0.005
+**
+*BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+LOAD, 2, 2, 1.
+**-----------------------------------
+** OUTPUT REQUESTS
+**------------------------------------------------------
+*OUTPUT, FIELD, FREQUENCY=1
+*ELEMENT OUTPUT
+ S, SDV, TRIAX, E
+*NODE OUTPUT
+ U, RF
+**
+*OUTPUT, HISTORY, FREQUENCY=1
+*NODE OUTPUT, NSET=LOAD
+ U2, RF2
+*NODE OUTPUT, NSET=BASE
+ U2, RF2
+*ELEMENT OUTPUT, ELSET=ONSET
+ TRIAX, SDV, S, E
+**------------------------------------------------------
+*End Step
