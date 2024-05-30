@@ -39,20 +39,21 @@ material = "DP780"
 gseed = 6
 enu = 0.3
 density = 7.85e-9
-nb_virtual_pt = 100000
+nb_virtual_pt = 10
 degree = 4
-weigth_exp = 0
-weigth_rval = 0
+weigth_exp = 0.9
+weigth_rval = 1
 protomodel = "mises"
-law = "swift"
+law = "voce"
+n_opti = 10
 
-gen_v_data = False
+gen_v_data = True
 gen_e_data = False
 adapt = False
 export_coeff_abq = True
 export_coeff_user = False
 plot = False
-opti = False
+opti = True
 export_coeff_pre = False
 
 
@@ -80,10 +81,6 @@ def mises(sigma):
 
     res = np.sqrt(0.5 * (s22 - s33)**2 + 0.5 * (s33 - s11)**2 + 0.5 * (s11 - s22)**2 + 3 * (s23**2 + s13**2 + s12**2))
     return res
-
-
-
-
 
 # In[204]:
 
@@ -966,7 +963,7 @@ def f(S) :
 
 X = df[["s11", "s22", "s33", "s12", "s13", "s23"]].values
 
-"""print("Yield stress values")
+print("Yield stress values")
 for i in range(len(X)):
-    print(f(X[i]))"""
+    print(f(X[i]))
 

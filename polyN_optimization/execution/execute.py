@@ -7,11 +7,7 @@ import numpy as np
 
 # Get the directory where the Python exec is located
 
-current_dir = "./"  # Assuming current directory
-dir = "/"
-if os.name == "nt":
-    current_dir = ".\\"
-    dir = "\\"
+dir = os.sep
 
 material = "DP780"
 
@@ -38,12 +34,12 @@ def simulate(sim_param):
     waitingTime = sim_param[1] * dt
     print(f"Simulating {test}")
     job = f'{test}_polyN'
-    subroutine = "abqUMAT_PolyN_3D.for"
+    subroutine = "abqUMAT_PolyN_3D_v2.for"
     input_file = f"{job}.inp"
     cp_input_file = f'temp_{input_file}'
     odb = "{}.odb".format(job)
 
-    time.sleep(waitingTime)
+    #time.sleep(waitingTime)
 
     copy_sim_cmd = f'copy {input_file} {cp_input_file} '
     subprocess.call(copy_sim_cmd, shell=True, cwd=exec_dir)
@@ -52,7 +48,7 @@ def simulate(sim_param):
     job_command = f"abq2023 job=temp_{job} double interactive user={subroutine} && exit"
     sim_command = f"{abq} {job_command}"
 
-    time.sleep(waitingTime)
+    #time.sleep(waitingTime)
 
     subprocess.call(sim_command, shell=True, cwd=exec_dir)
 

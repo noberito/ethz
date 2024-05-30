@@ -42,7 +42,7 @@ def compare(tests, material):
         j = i // 3
         k = i % 3
 
-        exp_res_path = results_exp_dir + dir + "DATA" + dir + test + "_1.csv"
+        exp_res_path = results_exp_dir + dir + test + "_1.csv"
         sim_res_path = results_sim_dir + dir + test + "_polyN.csv"
 
         df_sim = pd.read_csv(sim_res_path)
@@ -51,9 +51,10 @@ def compare(tests, material):
         df_exp = pd.read_csv(exp_res_path)
         if test == "UT_EBT":
             df_exp = df_exp.rename(columns={df_exp.columns[0]:"TrueStrain", df_exp.columns[1]:"TrueStress[MPa]"})
-        ax[j,k].scatter(df_sim["E"], df_sim["S"], marker = "x",label = "sim")
-        ax[j,k].scatter(df_exp["TrueStrain"], df_exp["TrueStress[MPa]"], marker = "x", label = "exp")   
-        ax[j,k].set_title(test)  
+        ax[j,k].plot(df_sim["E"], df_sim["S"], marker = "x",label = "sim")
+        ax[j,k].plot(df_exp["TrueStrain"], df_exp["TrueStress[MPa]"], marker = "x", label = "exp")   
+        ax[j,k].set_title(test)
+        ax[j,k].legend()
 
     plt.legend()
     plt.tight_layout()

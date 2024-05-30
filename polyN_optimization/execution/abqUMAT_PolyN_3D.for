@@ -110,7 +110,7 @@
 
 !C  CONVERGENCE TOLERANCES
 !    REAL(PREC),PARAMETER::TOL1=1.0E-006, TOL2=1.0E-008
-	REAL(PREC),PARAMETER::TOL1=1.0E-007
+	REAL(PREC),PARAMETER::TOL1=1.0E-008
 
 !C  TEMPORARY HOLDERS
 	REAL(PREC)::TT, TTA, TTB, ZALPHA, F1, FZERO, TDEPBAR, EBULK3, &
@@ -202,11 +202,7 @@
     !C  write(*,*)"TEST 3", ZERO * ZERO ** (-1)
     !C  write(*,*)"TEST 4", ZERO * ZERO ** (-1) + ONE
     !C  write(*,*)"TEST 5", 1.0E-10 ** (-2) * ZERO
-    
-    VT =  ZERO * ZERO ** (-1)
-    !C  write(*,*)"VT avant", VT
-    VT = 1
-    !C  write(*,*)"VT après", VT
+
 
 !C CHECK YIELDING CONDITION
     CALL KHARD(HF,HPF,EPBAR,AA,BB,CC)
@@ -267,8 +263,7 @@
 	CALL GYFUNCTION(SIGMA,NTENS,YF,GYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
 	F1=YF-HF
 
-    !C  write(*,*)"YF", YF
-    !C  write(*,*)"GYF",GYF
+
 
 !C  ASSEMBLE XIMAT MATRIX AND Y-VECTOR
     DO K1=1,NTENS,1
@@ -357,8 +352,7 @@
         CALL KHARD(HF,HPF,EPBAR+DEPBAR,AA,BB,CC)
 	    SIGMA=STRESS+DSIGMA
 	    CALL HYFUNCTION(SIGMA,NTENS,YF,GYF,HYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
-		
-        !C  write(*,*)"YF", NRK, YF
+        
 
 	    F1=YF-HF
 	    FZERO=F1*F1
@@ -373,6 +367,7 @@
         FZERO=DSQRT(FZERO)
 !C      CHECK TOLERANCES
 !C        IF ((DABS(F1)<TOL1).AND.(DSQRT(TTB)<TOL2)) EXIT
+        !c  write(80,1)F1/TOL1  
         IF(FZERO<TOL1) EXIT
 
         !C  write(*,*)"ZZ PRE", NRK, ZZ
@@ -725,9 +720,8 @@
                         * DEVIA(3) ** KK &
                         * DEVIA(4) ** LL &
                         * DEVIA(5) ** MM
-                       
+                        N0 = N0 + 1
                     END IF
-					N0 = N0 + 1
                 END DO
             END DO
         END DO
@@ -848,8 +842,8 @@
                         !C write(*,*)"DEVIA(5) ** LL", DEVIA(5) ** LL
                         !C write(*,*)"DEVIA(6) ** (MM-1)", DEVIA(6) ** (MM-1)
                         !C write(*,*)"GYF(6)", GYF(6)
+                        N0 = N0 + 1
                     END IF
-					N0 = N0 + 1
                 END DO
             END DO
         END DO
@@ -1119,8 +1113,8 @@
 									* MM * (MM - 1) * DEVIA(5) ** (MM - 2)
 							END IF	
 						END IF
+                        N0 = N0 + 1
                     END IF
-					N0 = N0 + 1
                 END DO
             END DO
         END DO
