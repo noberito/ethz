@@ -1,8 +1,0 @@
-#Coefficients poly2 for DP600 based on 1000 points from the mises protomodel
-Number of coefficients : 6
-1 : 3.2047631096673705
-2 : 3.282144235374037
-3 : 3.22625486798864
-4 : 2.9462242027297942
-5 : 2.947258131727322
-6 : 2.9501003021441288

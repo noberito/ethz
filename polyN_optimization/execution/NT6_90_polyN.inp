@@ -1,0 +1,97 @@
+**---------------------------------------------------
+** Load Parameters
+**---------------------------------------------------
+*INCLUDE, INPUT=NT6_90_paras.inp
+**---------------------------------------------------
+** Geometry and Orientation
+**---------------------------------------------------
+*INCLUDE, INPUT=NT6.geo
+*NMAP, TYPE=RECTANGULAR, NSET=NALL
+0., 0., 0., 1., 0., 0.,
+0., 1., 0.,
+** Width & Thickness factor
+<WIDTH>,<WIDTH>, <THICKNESS>
+*ORIENTATION, name=Ori-00
+         0.,     1.,     0.,	-1.,     0.,     0.
+3, 0.
+*ORIENTATION, name=Ori-15
+         0.267949192431,     1.,     0.,	-1.,     0.267949192431,     0.
+3, 0.
+*ORIENTATION, name=Ori-30
+         0.577350269193,     1.,     0.,	-1.,     0.577350269193,     0.
+3, 0.
+*ORIENTATION, name=Ori-45
+         1.,     1.,     0.,	-1.,     1.,     0.
+3, 0.
+*ORIENTATION, name=Ori-60
+         1.,     0.577350269193,     0.,	-0.577350269193,     1.,     0.
+3, 0.
+*ORIENTATION, name=Ori-75
+         1.,     0.267949192431,     0.,	-0.267949192431,     1.,     0.
+3, 0.
+** 90deg axis aligned with y-direction
+*ORIENTATION, name=Ori-90
+         1.,     0.,     0.,	0.,     1.,     0.
+3, 0.
+**-----------------------------------------------------
+** Material Data
+**-----------------------------------------------------
+*SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=ENHANCED, ELEMENT DELETION=YES
+1.0, 1.0, 1.0, 1.0, 1.0, , , 
+*SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-90, material=mat
+**
+*MATERIAL,NAME=mat
+*INCLUDE, INPUT=DP780_abq_deg4_mises.inp
+**
+**
+*DEPVAR
+1,
+1,EPBAR,"EPBAR"
+**------------------------------------------------------
+** BOUNDARY CONDITIONS
+**------------------------------------------------------
+*EQUATION
+2
+YMAX, 2, 1.
+LOAD, 2, -1.
+2
+YMIN, 2, 1.
+BASE, 2, -1.
+**
+*BOUNDARY
+XMIN, 1, 1, 0.
+XMIN, 5, 6, 0.
+YMIN, 2, 2, 0.
+BASE, 2, 2, 0.
+YMIN, 4, 4, 0.
+ZMIN, 3, 5, 0.
+**
+*AMPLITUDE, NAME=ccr, SMOOTH=0.25
+0.,0.,<TRAMP1>,<RAMP1>,<DTIME>,<DISPL>
+** ----------------------------------------------------
+*Step, name=Step-1, nlgeom=YES
+*Static
+1e-05, 1., 1e-05, 0.005
+**
+*BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+LOAD, 2, 2, 1.
+**-----------------------------------
+** OUTPUT REQUESTS
+**------------------------------------------------------
+*OUTPUT, FIELD, FREQUENCY=1
+*ELEMENT OUTPUT
+ S, LEP, SDV, TRIAX, SP, MISES
+*NODE OUTPUT
+ U, V, RF
+**
+*OUTPUT, HISTORY, FREQUENCY=97
+*NODE OUTPUT, NSET=LOAD
+ U2, RF2
+*NODE OUTPUT, NSET=BASE
+ U2, RF2
+*NODE OUTPUT, NSET=EXT_Y05
+ U2
+*ELEMENT OUTPUT, ELSET=ONSET
+ TRIAX, SDV, LEP, SP, S, MISES
+**------------------------------------------------------
+*End Step

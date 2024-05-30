@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 tol_yf = 0.01
 itermax = 20
 
-current_dir = "./"  # Assuming current directory
+current_dir = os.path.dirname(os.path.abspath(__file__))  # Assuming current directory
 dir = "/"
 if os.name == "nt":
     current_dir = ".\\"
@@ -101,11 +101,15 @@ def export_virtual_data(protomodel, material, nb_virtual_pt):
         data = data_yf_sphere(mises, itermax, nb_virtual_pt)
     if protomodel == "tresca":
         data = data_yf_sphere(tresca, itermax, nb_virtual_pt)
-    print(mises(data))
     df = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23"])
     df["Rval"] = np.zeros(len(data))
     df["Type"] = ["v"] * len(data)
 
-    filename = "data_virtual_" + material + "_" + protomodel + ".csv"
-    filepath = current_dir + material + "_results" + dir + "DATA" + dir + filename
+    filename = f"data_virtual_{material}_{protomodel}.csv"
+    folderpath = f"{current_dir}{dir}calibration_data{dir}{material}"
+    filepath = folderpath + dir + filename
+
+    if not os.path.exists(folderpath):
+        os.makedirs(folderpath)
+
     df.to_csv(filepath, index=False)

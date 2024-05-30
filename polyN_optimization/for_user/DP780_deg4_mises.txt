@@ -1,0 +1,24 @@
+#Coefficients poly4 for DP780 based on 100000 points from the mises protomodel
+Number of coefficients : 22
+1 : 9
+2 : 18
+3 : 27
+4 : 18
+5 : 9
+6 : 18
+7 : 18
+8 : 18
+9 : 9
+10 : 18
+11 : 18
+12 : 18
+13 : 18
+14 : 9
+15 : 0
+16 : 0
+17 : 18
+18 : 18
+19 : 18
+20 : 18
+21 : 18
+22 : 9
