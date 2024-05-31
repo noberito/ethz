@@ -1,0 +1,18 @@
+# Choose the constraits for the first optimization
+
+# Degree 2 : f(S) = a1 * Sx**2 + a2 * Sx * Sy + a3 * Sy**2 + a4 * Sx**2 + a5 * Sxz**2 + a6 * Syz**2
+
+# Degree 4 : f(S) = a1 * Sx**4 + a2 * Sx**3 * Sy + a3 * Sx**2 * Sy**2 + a4 * Sx * Sy**3 + a5 * Sy**4 
+#                 + (a6 * Sx**2 + a7 * Sx * Sy + a8 * Sy**2) * Sxy**2
+#                 + a9 * Sxy**4
+#                 + (a10 * Sx**2 + a11 * Sx * Sy + a12 * Sy**2) * Sxz**2
+#                 + a13 * Sxy**2 * Sxz**2 
+#                 + a14 * Sxz**4
+#                 + (a15 * Sx + a16 * Sy) * Sxy * Sxz * Syz
+#                 + (a17 * Sx**2 + a18 * Sx * Sy + a19 * Sy**2) * Syz**2
+#                 + a20 * Sxy**2 * Syz**2
+#                 + a21 * Sxz**2 * Syz**2 
+#                 + a22 * Syz**4
+
+S
+eq : 

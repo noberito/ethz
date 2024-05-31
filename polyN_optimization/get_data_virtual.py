@@ -6,11 +6,8 @@ import matplotlib.pyplot as plt
 tol_yf = 0.01
 itermax = 20
 
-current_dir = os.path.dirname(os.path.abspath(__file__))  # Assuming current directory
-dir = "/"
-if os.name == "nt":
-    current_dir = ".\\"
-    dir = "\\"
+file_dir = os.path.dirname(os.path.abspath(__file__))  # Assuming current directory
+dir = os.sep
 
 def mises(sigma):
     """
@@ -106,10 +103,9 @@ def export_virtual_data(protomodel, material, nb_virtual_pt):
     df["Type"] = ["v"] * len(data)
 
     filename = f"data_virtual_{material}_{protomodel}.csv"
-    folderpath = f"{current_dir}{dir}calibration_data{dir}{material}"
+    folderpath = f"{file_dir}{dir}calibration_data{dir}{material}"
     filepath = folderpath + dir + filename
 
     if not os.path.exists(folderpath):
         os.makedirs(folderpath)
-
     df.to_csv(filepath, index=False)

@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize
 import os
+import time
 import tensorflow as tf
 from tensorflow import keras
 from keras import Sequential
@@ -27,33 +28,35 @@ from get_hardening_law import get_hardening_law
 # In[201]:
 
 
-current_dir = os.path.dirname(os.path.abspath(__file__))  
+file_dir = os.path.dirname(os.path.abspath(__file__))  
 dir = os.sep
+exec_dir = file_dir + dir + "execution"
 
 
 # In[202]:
 
 
 "---------------------------------------------------------------- PARAMETERS ---------------------------------------------------------------------------------------------"
-material = "DP780"
+material = "AA7020-T6"
 gseed = 6
 enu = 0.3
 density = 7.85e-9
-nb_virtual_pt = 10
+nb_virtual_pt = 100000
 degree = 4
-weigth_exp = 0.9
+weigth_exp = 0.85
 weigth_rval = 1
 protomodel = "mises"
-law = "voce"
+law = "swift"
 n_opti = 10
 
 gen_v_data = True
-gen_e_data = False
+gen_e_data = True
 adapt = False
 export_coeff_abq = True
 export_coeff_user = False
 plot = False
 opti = True
+savefig = True
 export_coeff_pre = False
 
 
@@ -87,9 +90,9 @@ def mises(sigma):
 """ --------------------------------------------------------COPY LAB DATA----------------------------------------------"""
 
 def copy_lab_data(material):
-    copy_dir = f"{current_dir}{dir}results_exp{dir}{material}"
+    copy_dir = f"{file_dir}{dir}results_exp{dir}{material}"
     if not os.path.exists(copy_dir):
-        parent_dir = os.path.dirname(current_dir)
+        parent_dir = os.path.dirname(file_dir)
         lab_data_dir = f"{parent_dir}{dir}lab_data"
         mat_lab_data_dir = f"{lab_data_dir}{dir}{material}_results{dir}DATA"
         shutil.copytree(mat_lab_data_dir, copy_dir)
@@ -102,7 +105,7 @@ def readData(material, protomodel):
             - protomodel : string
     """
 
-    folderpath = f"{current_dir}{dir}calibration_data{dir}{material}"
+    folderpath = f"{file_dir}{dir}calibration_data{dir}{material}"
     filename_e = "data_exp_" + material + ".csv"
     filename_v = "data_virtual_" + material + "_" + protomodel + ".csv"
 
@@ -152,7 +155,7 @@ model.compile(optimizer='adam',
               loss='binary_crossentropy',
               metrics=["accuracy"])
 
-folderpath = f"{current_dir}{dir}convexity_domain{dir}NN{dir}"
+folderpath = f"{file_dir}{dir}convexity_domain{dir}NN{dir}"
 
 filename_model = folderpath + f"model_{degree}.keras"
 filename_weights = folderpath + f"model_weights_{degree}.weights.h5"
@@ -214,7 +217,7 @@ def get_param_polyN(degree):
 
 powers, nmon = get_param_polyN(degree)
 
-
+print(powers)
 # In[207]:
 
 
@@ -431,7 +434,7 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
     dX_stress_dev = np.zeros((ndata_rval, 5, nmon))
     X_stress_rval = data[index_rval]
     param = df[["Rval", "q", "LoadAngle"]].iloc[index_rval].values
-    coeff_mon = np.ones(22)
+    coeff_mon = np.ones(nmon)
     coeff_dmon, powers_dmon = jac_polyN_param(coeff_mon, powers)
 
     for j in range(5):
@@ -654,7 +657,7 @@ def optiCoeff_pflow(law, coeff_polyN):
     def f(S):
         return np.power(polyN(S, coeff_polyN), 1/degree)
 
-    foldername = current_dir + dir + "calibration_data" + dir + material
+    foldername = file_dir + dir + "calibration_data" + dir + material
     filename_out = "data_plasticlaw.csv"
     filepath = foldername + dir + filename_out
 
@@ -727,7 +730,7 @@ def optiCoeff_pflow(law, coeff_polyN):
 """--------------------------------------CHECK OF COEFFICIENTS----------------------------------------------"""
 
 def check_coeff(a, b, c, law):
-    foldername = current_dir + dir + "calibration_data" + dir + material
+    foldername = file_dir + dir + "calibration_data" + dir + material
     filename_out = "data_plasticlaw.csv"
     filepath = foldername + dir + filename_out
 
@@ -765,6 +768,110 @@ def check_coeff(a, b, c, law):
 
 
 # In[212]:
+
+
+    
+def plot_check(df, coeff):
+    def f(S):
+        return(polyN(S, coeff))
+
+    coeff_grad, powers_grad = jac_polyN_param(coeff, powers)
+
+    def grad(S):
+        return grad_polyN(S, coeff_grad, powers_grad)
+
+
+    df_exp = df[df["Rval"] > 0.001]
+    sigma0 = df_exp["YieldStress"].iloc[0]
+    fig, ax1 = plt.subplots()
+
+    ys_exp = df_exp["YieldStress"]
+    n_data = len(ys_exp)
+    theta_exp = df_exp["LoadAngle"].values
+    R_exp = df_exp["Rval"].values
+
+    ax1.scatter(theta_exp, ys_exp/sigma0, color="blue", label="YS exp", marker="x")
+    ax1.set_xlabel("Load angle")
+    ax1.set_ylabel(r'$\sigma$ / $\sigma_0$')
+
+    ax1.scatter(theta_exp, R_exp, color="red", label="Rval exp", marker="x")
+    #plt.scatter(theta_exp, R_theo, label="Modelisation", marker="x", color="red")
+
+    ntheta=100
+    thetas=np.linspace(0, np.pi / 2, ntheta)
+
+    def ys_theta(theta):
+        u = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
+        ys = 0.1
+        lamb = 1.1
+        eps = 1e-7
+
+        while f(u * ys) < 1:
+            ys = ys * lamb
+        s = 0.1
+        e = ys
+        m = (s + e) / 2
+        res = f(u * m) - 1
+
+        while (np.abs(res) > eps):
+            if res > 0:
+                e = m
+            else:
+                s = m
+            m = (s + e) / 2
+            res = f(u * m) - 1
+
+        return(m)
+    
+    ys_theta = np.vectorize(ys_theta)
+    ys_model = ys_theta(thetas)
+    ax1.plot(thetas, ys_model, color="blue", label="YS model")
+
+
+    def ys_component_theta(theta):
+        u = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
+        ys = 0.1 * u
+        lamb = 1.1
+        eps = 1e-7
+
+        while f(ys) < 1:
+            ys = ys * lamb
+
+        s = 0.1 * u
+        e = ys
+        m = (s + e) / 2
+        res = f(m) - 1
+
+        while (np.abs(res) > eps):
+            if res > 0:
+                e = m
+            else:
+                s = m
+            m = (s + e) / 2
+            res = f(m) - 1
+
+        return(m)
+
+    X = np.array([ys_component_theta(theta) for theta in thetas])
+    gradX = grad(X)
+    vs = np.array([- np.sin(thetas), np.cos(thetas), np.zeros(ntheta)]).T
+    vs = np.expand_dims(vs, axis=1)
+    V = np.matmul(np.transpose(vs, (0, 2, 1)), vs).reshape(ntheta, 9)[:, [0, 4, 8, 1, 3, 2]]
+    R_model = - np.sum(gradX * V, axis = 1)/(gradX[:,0] + gradX[:,1])
+
+    ax1.plot(thetas, R_model, label="Rval model", color="red")
+    plt.title(f"Poly{degree} model on {material} : Yield Stresses and R-values from UT tests")
+    plt.legend()
+
+    if savefig :
+        foldername_out = file_dir + dir + "plots" + dir + material
+        if not os.path.exists(foldername_out):
+            os.makedirs(foldername_out)
+        filename = f"{material}_poly{degree}_{weigth_exp}_{nb_virtual_pt}_{protomodel}.png"
+        filepath = foldername_out + dir + filename
+        plt.savefig(filepath)
+    plt.show()
+
 
 
 """----------------------------------------------------TESTING FUNCTIONS (PLOT & CONVEXITY)-----------------------------------------------------------------"""
@@ -880,7 +987,7 @@ def plot_implicit_coeff(coeff, bbox=(-1.5,1.5)):
 """-------------------------------------------------OUTPUT---------------------------------------------------------------------------------------------"""
 def write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt):
     filename = "{}_deg{}_{}.txt".format(material, degree, protomodel)
-    foldername = current_dir + dir + "for_user" 
+    foldername = file_dir + dir + "for_user" 
     filepath = foldername + dir + filename
 
     n = len(coeff)
@@ -892,7 +999,7 @@ def write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt):
             
 def write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material):
     filename = "{}_abq_deg{}_{}.inp".format(material, degree, protomodel)
-    foldername = current_dir + dir + "execution"
+    foldername = file_dir + dir + "execution"
     filepath = foldername + dir + filename
 
     n = len(coeff)
@@ -919,7 +1026,14 @@ def write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, materia
         file.write("*DENSITY\n")
         file.write("{}".format(density))
     
+def create_sim_file(material):
+    filename = "all_sim_param.inp"
+    filepath = exec_dir + dir + filename
+    usermat_file = f"{material}_abq_deg{degree}_mises.inp"
 
+    with open(filepath, "w") as f:
+        f.write("*PARAMETER\n")
+        f.write(f"USERMATFILE = '{usermat_file}'")
 
 # In[218]:
 
@@ -937,6 +1051,7 @@ if gen_e_data:
     export_exp_data(material, thetas)
     print("Processing ended")
 
+
 get_hardening_law(material)
 df = readData(material, protomodel)
 nb_virtual_pt = len(df[df["Type"] == "v"])
@@ -949,6 +1064,8 @@ else :
 coeff = adapt_coeff(adapt, degree, coeff)
 a, b, c, ymod = optiCoeff_pflow(law, coeff)
 
+create_sim_file(material)
+plot_check(df, coeff)
 
 if plot:
     plot_implicit_coeff(coeff)
@@ -958,12 +1075,5 @@ if export_coeff_abq:
     write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material)
 
 """-----------------------------------------------FURTHER TESTS----------------------------------------------------------"""
-def f(S) :
-    return(polyN(S, coeff))
 
-X = df[["s11", "s22", "s33", "s12", "s13", "s23"]].values
-
-print("Yield stress values")
-for i in range(len(X)):
-    print(f(X[i]))
 

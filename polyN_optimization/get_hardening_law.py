@@ -12,7 +12,7 @@ import numpy as np
 # In[2]:
 
 
-current_dir = os.getcwd()
+current_dir = os.path.dirname(os.path.abspath(__file__))
 dir = os.sep
 
 # In[3]:

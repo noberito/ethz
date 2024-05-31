@@ -10,12 +10,14 @@ import numpy as np
 dir = os.sep
 
 material = "DP780"
+law = "swift"
+degree = 4
 
 exec_dir = os.path.dirname(os.path.abspath(__file__))
 polyN_cali_dir = os.path.dirname(exec_dir)
 results_sim_dir = polyN_cali_dir + dir + "results_sim" + dir + material
 
-sim_params = [["UT_00", 0], ["UT_15", 1], ["UT_30",2], ["UT_45",3], ["UT_60",4], ["UT_75",5],["UT_90",6], ["UT_EBT",7]]
+sim_params = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 """"CH_00", "CH_45",
 "NT6_00", "NT6_45", "NT6_90",
 "NT20_00", "NT20_45",
@@ -30,16 +32,13 @@ tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 dt = 1
 
 def simulate(sim_param):
-    test = sim_param[0]
-    waitingTime = sim_param[1] * dt
+    test = sim_param
     print(f"Simulating {test}")
     job = f'{test}_polyN'
-    subroutine = "abqUMAT_PolyN_3D_v2.for"
+    subroutine = f"abqUMAT_PolyN_3D_v2_{law}.for"
     input_file = f"{job}.inp"
     cp_input_file = f'temp_{input_file}'
     odb = "{}.odb".format(job)
-
-    #time.sleep(waitingTime)
 
     copy_sim_cmd = f'copy {input_file} {cp_input_file} '
     subprocess.call(copy_sim_cmd, shell=True, cwd=exec_dir)
@@ -47,16 +46,14 @@ def simulate(sim_param):
     abq = r'"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\env\vars.bat" -arch intel64 vs2019 &'
     job_command = f"abq2023 job=temp_{job} double interactive user={subroutine} && exit"
     sim_command = f"{abq} {job_command}"
-
-    #time.sleep(waitingTime)
-
+    
     subprocess.call(sim_command, shell=True, cwd=exec_dir)
 
     copy_odb = f'copy temp_{odb} {odb}'
     subprocess.call(copy_odb, shell=True, cwd=exec_dir)
 
     delete_cmd = f'del temp_{job}*'
-    subprocess.call(delete_cmd, shell=True, cwd=exec_dir)
+    #subprocess.call(delete_cmd, shell=True, cwd=exec_dir)
 
     print("Simulation {} ended".format(job))
 

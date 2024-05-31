@@ -2,11 +2,8 @@ import numpy as np
 import pandas as pd
 import os
 
-current_dir = os.path.dirname(os.path.abspath(__file__)) 
-
-dir = "/"
-if os.name == "nt":
-    dir = "\\"
+file_dir = os.path.dirname(os.path.abspath(__file__)) 
+dir = os.sep
 
 
 thetas = ["00", "15", "30", "45", "60", "75", "90"]
@@ -14,7 +11,7 @@ materials = ["AA7020-T6", "DP600", "DP780"]
 
 def export_exp_data(material, thetas):
     ut_data = pd.DataFrame(columns=["q", "LoadAngle", "YieldStress", "Rval", "Type", "YoungMod", "Width", "Thickness"])
-    foldername_in = f"{current_dir}{dir}results_exp{dir}{material}"
+    foldername_in = f"{file_dir}{dir}results_exp{dir}{material}"
 
     if material == "AA7020-T6" :
         nexp = 2
@@ -91,6 +88,8 @@ def export_exp_data(material, thetas):
     row = pd.DataFrame({"q": [q], "LoadAngle" : [theta], "YieldStress" : [ys], "Rval" : [rval], "Type" : [pttype]})
     ut_data = pd.concat([ut_data, row])
 
-    foldername_out = f"{current_dir}{dir}calibration_data{dir}{material}"
+    foldername_out = f"{file_dir}{dir}calibration_data{dir}{material}"
+    if not os.path.exists(foldername_out):
+        os.makedirs(foldername_out)
     print(foldername_out)
     ut_data.to_csv(foldername_out + dir + 'data_exp_{}.csv'.format(material), index=False)
