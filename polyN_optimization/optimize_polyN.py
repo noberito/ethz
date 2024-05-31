@@ -19,8 +19,7 @@ import multiprocessing
 from pickle import load
 import sklearn
 import sklearn.preprocessing 
-from get_data_virtual import export_virtual_data
-from get_data_exp import export_exp_data
+from get_calibration_data import export_exp_data, export_virtual_data
 import shutil
 from get_hardening_law import get_hardening_law
 
@@ -37,27 +36,32 @@ exec_dir = file_dir + dir + "execution"
 
 
 "---------------------------------------------------------------- PARAMETERS ---------------------------------------------------------------------------------------------"
-material = "AA7020-T6"
+material = "DP600"
 gseed = 6
 enu = 0.3
 density = 7.85e-9
-nb_virtual_pt = 100000
+nb_virtual_pt = 10
 degree = 4
-weigth_exp = 0.85
+weigth_exp = 0.98
 weigth_rval = 1
 protomodel = "mises"
-law = "swift"
+law = "voce"
 n_opti = 10
 
 gen_v_data = True
-gen_e_data = True
-adapt = False
-export_coeff_abq = True
-export_coeff_user = False
-plot = False
+gen_e_data = False
+
 opti = True
-savefig = True
-export_coeff_pre = False
+loadcoeff = False
+adapt = False
+
+export_coeff_abq = True
+export_coeff_user = True
+
+plot = False
+savefigyr = True
+savefigplane = True
+savecoeff = False
 
 
 # In[203]:
@@ -216,8 +220,6 @@ def get_param_polyN(degree):
     return(powers, nmon)
 
 powers, nmon = get_param_polyN(degree)
-
-print(powers)
 # In[207]:
 
 
@@ -399,12 +401,13 @@ def hessian_polyN(S, coeff_hessian, powers_hessian):
 
 """ ---------------------------------------------PARAMETERS OPTIMIZATION-----------------------------------------------------------------------------"""
 
-nn = 1
+
 if degree==2:
     C = np.array([3, 3, 3, 3, 3, 3], dtype=float)
 if degree==4:
     C = np.array([9, 18, 27, 18, 9, 18, 18, 18, 9, 18, 18, 18, 18, 9, 0, 0, 18, 18, 18, 18, 18, 9], dtype=float)
-
+if degree==6:
+    C = np.array([27, 81, 162, 189, 162, 81, 27, 81, 162, 243, 162, 81, 81, 81, 81, 27, 81, 162, 243, 162, 81, 162, 162, 162, 81, 81, 81, 81, 81, 27, 0, 0, 0, 0, 81, 162, 243, 162, 81, 162, 162, 162, 81, 162, 162, 162, 162, 81, 81, 81, 81, 81, 81, 27,])
 def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
     """
     
@@ -502,7 +505,6 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
     print("Start optimizing")
 
     C_norm = X_scaler.transform(np.atleast_2d(C))[0]
-    
     #Optimization on not scaled data
     opt = scipy.optimize.minimize(J, C, method='BFGS', jac=Grad_J)
     a_test = opt.x
@@ -518,8 +520,8 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
     #Estimation that a polyN function is convex when model(coeff) > 0.5 + tau
     tau = 0.0
     res = model.predict(a)[0,0] - 0.5 - tau
-
-
+    i = 0
+    nn = 0
     if nn:
         if res < 0 :
             #Prediction without contraints not convex according to our criteria on tau
@@ -529,12 +531,11 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
             eps_sigma = 0.001
             eps_model = 0.0001
             itermax = 100
-            i = 0
+
             use_tc = True #bool representing convexity of the current solution
             sigma = np.ones(nmon)
 
             while np.linalg.norm(sigma) > eps_sigma and (i < itermax) or (i == 1):
-
                 if use_tc :
                     #bisection method to find the point of the border
                     #of the convexity domain between the current solution a
@@ -791,8 +792,8 @@ def plot_check(df, coeff):
     R_exp = df_exp["Rval"].values
 
     ax1.scatter(theta_exp, ys_exp/sigma0, color="blue", label="YS exp", marker="x")
-    ax1.set_xlabel("Load angle")
-    ax1.set_ylabel(r'$\sigma$ / $\sigma_0$')
+    ax1.set_xlabel(r"$\theta$[rad]", size=12)
+    ax1.set_ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
 
     ax1.scatter(theta_exp, R_exp, color="red", label="Rval exp", marker="x")
     #plt.scatter(theta_exp, R_theo, label="Modelisation", marker="x", color="red")
@@ -860,17 +861,96 @@ def plot_check(df, coeff):
     R_model = - np.sum(gradX * V, axis = 1)/(gradX[:,0] + gradX[:,1])
 
     ax1.plot(thetas, R_model, label="Rval model", color="red")
-    plt.title(f"Poly{degree} model on {material} : Yield Stresses and R-values from UT tests")
+    ax1.set_title(f"Poly{degree} model on {material} : Yield Stresses and R-values from UT tests", size=12)
     plt.legend()
+    plt.grid(1)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
 
-    if savefig :
+    if savefigyr :
         foldername_out = file_dir + dir + "plots" + dir + material
         if not os.path.exists(foldername_out):
             os.makedirs(foldername_out)
-        filename = f"{material}_poly{degree}_{weigth_exp}_{nb_virtual_pt}_{protomodel}.png"
+        filename = f"ysrval_{material}_poly{degree}_{weigth_exp}_{nb_virtual_pt}_{protomodel}.png"
         filepath = foldername_out + dir + filename
         plt.savefig(filepath)
-    plt.show()
+    else:
+        plt.show()
+
+def mises(sigma):
+    """
+    Vectorized Mises function
+    """
+    sigma = np.atleast_2d(sigma)
+    if sigma.shape[-1] != 6:
+        raise ValueError("Input array must have shape (N, 6)")
+
+    s11 = sigma[:, 0]
+    s22 = sigma[:, 1]
+    s33 = sigma[:, 2]
+    s12 = sigma[:, 3]
+    s13 = sigma[:, 4]
+    s23 = sigma[:, 5]
+
+    res = np.sqrt(0.5 * (s22 - s33)**2 + 0.5 * (s33 - s11)**2 + 0.5 * (s11 - s22)**2 + 3 * (s23**2 + s13**2 + s12**2))
+    return res
+
+def plot_planestress(material, coeff):
+    zs = np.linspace(0, 1, 10)
+    mises_plot = False
+    fig, ax = plt.subplots()
+
+
+    sx = np.linspace(-1.5, 1.5, 100)
+    sy = np.linspace(-1.5, 1.5, 100)
+    sx, sy = np.meshgrid(sx,sy)
+
+    for z in zs:
+        def mises_plane(x,y):
+            return(mises(np.array([x,y,0,z,0,0])))
+
+        def f(x,y):
+            return(polyN(np.array([x,y,0,z,0,0]), coeff))
+
+        f = np.vectorize(f)
+        mises_plane = np.vectorize(mises_plane)
+
+        ys_polyN = f(sx, sy)
+        ys_mises = mises_plane(sx, sy)
+
+        # Create the contour plot
+        cs1 = ax.contour(sx, sy, ys_polyN, levels=[1], colors='blue', linewidths=1)
+        if mises_plot:
+            cs2 = ax.contour(sx, sy, ys_mises, levels=[1], colors='red', linewidths=1)
+
+    # Set labels
+    ax.set_xlabel(r"$\sigma_{xx}/\sigma_0$[-]", size=12)
+    ax.set_ylabel(r"$\sigma_{yy}/\sigma_0$[-]", size=12)
+    ax.set_aspect('equal', adjustable='box')
+    ax.grid(1)
+    
+    nm1, labels = cs1.legend_elements()
+    if mises_plot:
+        nm2, labels = cs2.legend_elements()
+
+
+    ax.set_title(rf'{material} Yield surface in the $\sigma_{{xx}},\sigma_{{yy}}$ plane', size=12)
+    plt.legend(nm1, ["polyN"])
+    if mises_plot:
+        plt.legend(nm2, ["Mises"])
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+
+    if savefigplane :
+        foldername_out = file_dir + dir + "plots" + dir + material
+        if not os.path.exists(foldername_out):
+            os.makedirs(foldername_out)
+        filename = f"planexy_{material}_poly{degree}_{weigth_exp}_{nb_virtual_pt}_{protomodel}.png"
+        filepath = foldername_out + dir + filename
+        plt.savefig(filepath)
+    else:
+        plt.show()
+
 
 
 
@@ -994,20 +1074,30 @@ def write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt):
     with open(filepath, "w") as file:
         file.write("#Coefficients poly{} for {} based on {} points from the {} protomodel\n".format(degree, material, nb_virtual_pt, protomodel))
         file.write("Number of coefficients : {}\n".format(n))
-        for i in range(n):
-            file.write("{} : {}\n".format(i + 1, coeff[i]))
+        file.write("np.array([")
+        n0 = 0
+        n_p = 0
+        while n0 < nmon:
+            for m in range(0, degree + 1):
+                for l in range(0, degree + 1 - m):
+                    for k in range(0, degree + 1 - m - l):
+                        for j in range(0, degree + 1 - m - l - k):
+                            i = degree - m - l - k - j
+                            i0, j0, k0, l0, m0 = powers[n0]
+                            if (i==i0) and (j==j0) and (k==k0) and (l==l0) and (m==m0):
+                                file.write("{}, ".format(round(coeff[n0])))
+                                n0 = n0 + 1
+        file.write("])")
             
-def write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material):
-    filename = "{}_abq_deg{}_{}.inp".format(material, degree, protomodel)
+def write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law):
+    filename = "{}_abq_deg{}_{}_{}.inp".format(material, degree, law, protomodel)
     foldername = file_dir + dir + "execution"
     filepath = foldername + dir + filename
 
-    n = len(coeff)
     with open(filepath, "w") as file:
         file.write("*USER MATERIAL, constants={}\n".format(7 + nmon))
         file.write("{}, {}, {}, {}, {}, {}, {}, ".format(ymod, enu, a, b, c, degree, nmon))
         n0 = 0
-        n_p = 0
         while n0 < nmon:
             for m in range(0, degree + 1):
                 for l in range(0, degree + 1 - m):
@@ -1025,7 +1115,8 @@ def write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, materia
         file.write("\n")
         file.write("*DENSITY\n")
         file.write("{}".format(density))
-    
+ 
+
 def create_sim_file(material):
     filename = "all_sim_param.inp"
     filepath = exec_dir + dir + filename
@@ -1048,7 +1139,7 @@ if gen_v_data :
 
 if gen_e_data:
     print("Processing experimental data")
-    export_exp_data(material, thetas)
+    export_exp_data(material)
     print("Processing ended")
 
 
@@ -1058,22 +1149,24 @@ nb_virtual_pt = len(df[df["Type"] == "v"])
 
 if opti:
     coeff = optiCoeff_polyN(df, degree, weigth_exp, weigth_rval)
+elif loadcoeff:
+    coeff = np.load("polyN_coeff.npy")
 else :
     coeff = C
 
 coeff = adapt_coeff(adapt, degree, coeff)
 a, b, c, ymod = optiCoeff_pflow(law, coeff)
 
+if savecoeff:
+    np.save("polyN_coeff.npy", coeff)
+
 create_sim_file(material)
 plot_check(df, coeff)
+plot_planestress(material, coeff)
 
 if plot:
     plot_implicit_coeff(coeff)
 if export_coeff_user:
     write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt)
 if export_coeff_abq:
-    write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material)
-
-"""-----------------------------------------------FURTHER TESTS----------------------------------------------------------"""
-
-
+    write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law)

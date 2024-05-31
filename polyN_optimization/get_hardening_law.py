@@ -12,7 +12,7 @@ import numpy as np
 # In[2]:
 
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
+file_dir = os.path.dirname(os.path.abspath(__file__))
 dir = os.sep
 
 # In[3]:
@@ -33,7 +33,7 @@ def get_hardening_law(material):
     for i in range(1, n_ut_00 + 1):
 
         filename_in = "UT_00_{}.csv".format(i)
-        foldername_in = current_dir + dir + "results_exp" + dir + material + dir
+        foldername_in = file_dir + dir + "results_exp" + dir + material + dir
 
         filepath = foldername_in + filename_in
         
@@ -49,7 +49,7 @@ def get_hardening_law(material):
 
     df_out.iloc[0, df_out.columns.get_loc('YoungModulus')] = ymod / n_ut_00
 
-    foldername_out = current_dir + dir + "calibration_data" + dir + material
+    foldername_out = file_dir + dir + "calibration_data" + dir + material
     filename_out = foldername_out + dir + "data_plasticlaw.csv"
     df_out.to_csv(filename_out, index=False)
 

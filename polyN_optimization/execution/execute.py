@@ -9,9 +9,9 @@ import numpy as np
 
 dir = os.sep
 
-material = "DP780"
-law = "swift"
-degree = 4
+material = "DP600"
+law = "voce"
+degree = 6
 
 exec_dir = os.path.dirname(os.path.abspath(__file__))
 polyN_cali_dir = os.path.dirname(exec_dir)
