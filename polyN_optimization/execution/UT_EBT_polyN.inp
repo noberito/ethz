@@ -50,7 +50,7 @@ DT		    = DTIME/2.E5
 *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
 **
 *MATERIAL,NAME=mat
-*INCLUDE, INPUT=DP600_abq_deg2_swift_mises.inp
+*INCLUDE, INPUT=DP600_abq_deg4_swift_mises.inp
 *DEPVAR
 1,
 1,EPBAR,"EPBAR"

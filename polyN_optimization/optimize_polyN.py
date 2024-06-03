@@ -1160,6 +1160,7 @@ a, b, c, ymod = optiCoeff_pflow(law, coeff)
 
 if savecoeff:
     np.save("polyN_coeff.npy", coeff)
+    np.save(f"{law}_coeff.npy", np.array([a, b, c, ymod]))
 
 #plot_check(df, coeff)
 #plot_planestress(material, coeff)

@@ -40,9 +40,8 @@
       CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,JSTEP,KINC)
 
 !CCC---NOTE: the INCLUDE directive enforces implicit casting in conflict with 'IMPLICIT NONE'
-!CC          use 'IMPLICIT NONE' in the testing/implementation phase and then comment it out 
-    IMPLICIT NONE      	
-!	INCLUDE 'ABA_PARAM.INC'
+!CC          use 'IMPLICIT NONE' in the testing/implementation phase and then comment it out    	
+	INCLUDE 'ABA_PARAM.INC'
 !C    INTEGER, PARAMETER :: PREC =  SELECTED_REAL_KIND(15,307)
     INTEGER, PARAMETER :: PREC = 8
 !C******************************************************************************

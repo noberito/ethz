@@ -1,0 +1,197 @@
+# -*- coding: mbcs -*-
+#
+# Abaqus/Viewer Release 2023 replay file
+# Internal Version: 2022_09_28-20.11.55 183150
+# Run by cnober on Mon Jun  3 15:43:20 2024
+#
+
+# from driverUtils import executeOnCaeGraphicsStartup
+# executeOnCaeGraphicsStartup()
+#: Executing "onCaeGraphicsStartup()" in the site directory ...
+from abaqus import *
+from abaqusConstants import *
+session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=375.819793701172, 
+    height=212.760009765625)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].maximize()
+from viewerModules import *
+from driverUtils import executeOnCaeStartup
+executeOnCaeStartup()
+o2 = session.openOdb(name='UT_EBT_polyN.odb')
+#: Model: C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb
+#: Number of Assemblies:         1
+#: Number of Assembly instances: 0
+#: Number of Part instances:     1
+#: Number of Meshes:             1
+#: Number of Element Sets:       3
+#: Number of Node Sets:          10
+#: Number of Steps:              1
+session.viewports['Viewport: 1'].setValues(displayedObject=o2)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    CONTOURS_ON_DEF, ))
+session.viewports['Viewport: 1'].animationController.setValues(
+    animationType=TIME_HISTORY)
+session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
+session.viewports['Viewport: 1'].view.setValues(nearPlane=0.149102, 
+    farPlane=0.484881, width=0.322565, height=0.177004, viewOffsetX=-0.0481188, 
+    viewOffsetY=-0.0249152)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S12 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.XYPlot('XYPlot-1')
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.viewports['Viewport: 1'].setValues(displayedObject=xyp)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xy2 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S12 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c2 = session.Curve(xyData=xy2)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, c2, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xy2 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S12 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c2 = session.Curve(xyData=xy2)
+xy3 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S22 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c3 = session.Curve(xyData=xy3)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, c2, c3, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xy2 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S12 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c2 = session.Curve(xyData=xy2)
+xy3 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S13 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c3 = session.Curve(xyData=xy3)
+xy4 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S22 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c4 = session.Curve(xyData=xy4)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, c2, c3, c4, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S13 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S23 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S13 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S12 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 1 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_EBT_polyN.odb']
+session.viewports['Viewport: 1'].setValues(displayedObject=odb)
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    CONTOURS_ON_DEF, ))
+session.viewports['Viewport: 1'].view.setValues(nearPlane=0.14564, 
+    farPlane=0.488343, width=0.356581, height=0.19567, viewOffsetX=-0.0643297, 
+    viewOffsetY=-0.0283486)
+session.viewports['Viewport: 1'].view.setValues(session.views['Top'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Back'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Back'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Top'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Bottom'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Left'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Front'])
+session.viewports['Viewport: 1'].view.setValues(nearPlane=0.470141, 
+    farPlane=0.648273, width=0.392719, height=0.2155, viewOffsetX=0.00156988, 
+    viewOffsetY=4.98753e-05)
+session.viewports['Viewport: 1'].view.setValues(nearPlane=0.397652, 
+    farPlane=0.724287, width=0.332167, height=0.182273, cameraPosition=(
+    0.617125, 0.233844, 0.188688), cameraUpVector=(-0.227794, 0.965479, 
+    -0.126336), cameraTarget=(0.0936959, 0.0924348, 0.0518025), 
+    viewOffsetX=0.00132783, viewOffsetY=4.21853e-05)
+session.viewports['Viewport: 1'].animationController.setValues(
+    animationType=TIME_HISTORY)
+session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
+session.viewports['Viewport: 1'].animationController.stop()
+session.viewports['Viewport: 1'].animationController.incrementFrame()
+session.viewports['Viewport: 1'].animationController.incrementFrame()
+session.viewports['Viewport: 1'].animationController.showLastFrame()
+session.viewports['Viewport: 1'].view.setValues(nearPlane=0.403292, 
+    farPlane=0.718647, width=0.336879, height=0.184858, cameraPosition=(
+    0.617053, 0.23417, 0.188626), cameraUpVector=(-0.175651, 0.938359, 
+    -0.297707), cameraTarget=(0.0936241, 0.0927608, 0.0517405), 
+    viewOffsetX=0.00134666, viewOffsetY=4.27836e-05)

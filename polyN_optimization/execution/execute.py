@@ -59,17 +59,15 @@ def change_usermat(usermatfile):
         with open(filename, "w") as f:
             f.writelines(content)
 
-def simulate(sim_param):
-    test = sim_param
+def simulate(test):
     print(f"Simulating {test}")
     job = f'{test}_polyN'
     subroutine = f"abqUMAT_PolyN_3D_v2_{law}.for"
-    usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}.inp"
+
     input_file = f"{job}.inp"
     cp_input_file = f'temp_{input_file}'
     odb = "{}.odb".format(job)
 
-    change_usermat(usermatfile)
     copy_sim_cmd = f'copy {input_file} {cp_input_file} '
     subprocess.call(copy_sim_cmd, shell=True, cwd=exec_dir)
 
@@ -210,6 +208,8 @@ def simulate(sim_param):
     df.to_csv(filepath)
 
 if __name__ == "__main__":
+    usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}.inp"
+    change_usermat(usermatfile)
     pool = multiprocessing.Pool()
     pool.map(simulate, ut_tests)
     pool.close()
