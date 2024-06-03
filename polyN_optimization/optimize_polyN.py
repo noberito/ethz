@@ -19,6 +19,7 @@ import multiprocessing
 from pickle import load
 import sklearn
 import sklearn.preprocessing 
+from read_param import read_param
 from get_calibration_data import export_exp_data, export_virtual_data
 import shutil
 from get_hardening_law import get_hardening_law
@@ -36,32 +37,36 @@ exec_dir = file_dir + dir + "execution"
 
 
 "---------------------------------------------------------------- PARAMETERS ---------------------------------------------------------------------------------------------"
-material = "DP600"
-gseed = 6
-enu = 0.3
-density = 7.85e-9
-nb_virtual_pt = 10
-degree = 4
-weigth_exp = 0.98
-weigth_rval = 1
-protomodel = "mises"
-law = "voce"
-n_opti = 10
 
-gen_v_data = True
-gen_e_data = False
+p = read_param()
 
-opti = True
-loadcoeff = False
-adapt = False
+material = p["material"]
+gseed = int(p["gseed"])
+enu = float(p["enu"])
+density = float(p["density"])
+nb_virtual_pt = int(p["nb_virtual_pt"])
+degree = int(p["degree"])
+weigth_exp = float(p["weigth_exp"])
+weigth_rval = float(p["weigth_rval"])
+protomodel = p["protomodel"]
+law = p["law"]
+n_opti = int(p["n_opti"])
 
-export_coeff_abq = True
-export_coeff_user = True
+gen_v_data = int(p["gen_v_data"])
+gen_e_data = int(p["gen_e_data"])
 
-plot = False
-savefigyr = True
-savefigplane = True
-savecoeff = False
+opti = int(p["opti"])
+loadcoeff = int(p["loadcoeff"])
+adapt = int(p["adapt"])
+
+export_coeff_abq = int(p["export_coeff_abq"])
+export_coeff_user = int(p["export_coeff_user"])
+
+
+plot = int(p["plot"])
+savefigyr = int(p["savefigyr"])
+savefigplane = int(p["savefigplane"])
+savecoeff = int(p["savecoeff"])
 
 
 # In[203]:
@@ -146,40 +151,35 @@ def readData(material, protomodel):
 
 """------------------------ MODEL AND SCALER LOADING -------------------------------------------------"""
 
-def custom_activation(x):
-    return 0.5 * (1 + tf.math.sign(x)) * (x + 1/100) +  0.5 * (1 - tf.math.sign(x)) * tf.math.exp(tf.math.minimum(0.0,x)) / 100
-
-model = Sequential([])
-model.add(Input(shape=(22,)))
-model.add(Dense(200, activation=custom_activation, kernel_initializer=tf.keras.initializers.RandomUniform(minval=-7.0, maxval=7.0, seed=gseed)))
-model.add(Dense(200, activation=custom_activation))
-model.add(Dense(1, activation="sigmoid"))
-
-model.compile(optimizer='adam',
-              loss='binary_crossentropy',
-              metrics=["accuracy"])
-
 folderpath = f"{file_dir}{dir}convexity_domain{dir}NN{dir}"
 
 filename_model = folderpath + f"model_{degree}.keras"
 filename_weights = folderpath + f"model_weights_{degree}.weights.h5"
 filename_scaler = folderpath + f"scaler_{degree}.pkl"
 
-X_scaler = load(open(filename_scaler, 'rb'))
-model.load_weights(filename_weights)
+if os.path.exists(filename_scaler):
+    X_scaler = load(open(filename_scaler, 'rb'))
 
-mean = X_scaler.mean_
-std = np.sqrt(X_scaler.var_)
+    mean = X_scaler.mean_
+    std = np.sqrt(X_scaler.var_)
 
+    def custom_activation(x):
+        return 0.5 * (1 + tf.math.sign(x)) * (x + 1/100) +  0.5 * (1 - tf.math.sign(x)) * tf.math.exp(tf.math.minimum(0.0,x)) / 100
 
-#Small test
-if degree==2:
-    C = np.array([3, 3, 3, 3, 3, 3])
-if degree==4:
-    C = np.array([9, 18, 27, 18, 9, 18, 18, 18, 9, 18, 18, 18, 18, 9, 0, 0, 18, 18, 18, 18, 18, 9])
+    model = Sequential([])
+    model.add(Input(shape=(22,)))
+    model.add(Dense(200, activation=custom_activation, kernel_initializer=tf.keras.initializers.RandomUniform(minval=-7.0, maxval=7.0, seed=gseed)))
+    model.add(Dense(200, activation=custom_activation))
+    model.add(Dense(1, activation="sigmoid"))
 
-#print(model.predict(X_scaler.transform(np.atleast_2d(C)))[0,0])
+    model.compile(optimizer='adam',
+                loss='binary_crossentropy',
+                metrics=["accuracy"])
 
+    model.load_weights(filename_weights)
+    nn = 1
+else :
+    nn = 0
 
 # In[206]:
 
@@ -408,10 +408,19 @@ if degree==4:
     C = np.array([9, 18, 27, 18, 9, 18, 18, 18, 9, 18, 18, 18, 18, 9, 0, 0, 18, 18, 18, 18, 18, 9], dtype=float)
 if degree==6:
     C = np.array([27, 81, 162, 189, 162, 81, 27, 81, 162, 243, 162, 81, 81, 81, 81, 27, 81, 162, 243, 162, 81, 162, 162, 162, 81, 81, 81, 81, 81, 27, 0, 0, 0, 0, 81, 162, 243, 162, 81, 162, 162, 162, 81, 162, 162, 162, 162, 81, 81, 81, 81, 81, 81, 27,])
+
 def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
     """
-    
+        Returns the optimized coefficients of polyN on experimental data (UTs) and virtual data from a protomodel
+        Input :
+            - df : pd.Dataframe, must contain columns ["d11", "d22", "s12", "s13", "s23"] of yield stresses points. And if available ["Rval"] with ["LoadAngle"]¨.
+            - degree : integer, degree of polyN
+            - weight_exp : float, weight for the experimental data
+            - weight_rval : float, weight for the rvalue data
+        Output :
+            - coeff : ndarray of shape (nmon), coeff of polyN model
     """
+
     data = df[["d11", "d22", "s12", "s13", "s23"]].values
     polyN = sklearn.preprocessing.PolynomialFeatures((degree, degree), include_bias=False)
     X_stress = polyN.fit_transform(data)
@@ -436,7 +445,7 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
     ndata_rval = np.count_nonzero(index_rval)
     dX_stress_dev = np.zeros((ndata_rval, 5, nmon))
     X_stress_rval = data[index_rval]
-    param = df[["Rval", "q", "LoadAngle"]].iloc[index_rval].values
+    param = df[["Rval", "LoadAngle"]].iloc[index_rval].values
     coeff_mon = np.ones(nmon)
     coeff_dmon, powers_dmon = jac_polyN_param(coeff_mon, powers)
 
@@ -454,20 +463,17 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
 
     X_rval = np.zeros((ndata_rval, nmon))
     for i in range(ndata_rval):
-        rval, q, theta = param[i]
+        rval, theta = param[i]
         v = np.array([rval + np.square(np.sin(theta)), rval + np.square(np.cos(theta)), 0,  -np.cos(theta) * np.sin(theta), 0, 0])
         X_rval[i] = np.dot(v, dX_stress_stress[i])
     
     weigth_s = np.where(df["Type"] == "e", weigth_exp, 1-weigth_exp)
     weigth_r = np.ones(ndata_rval) * weigth_rval
 
-
     weigth = np.concatenate((weigth_s, weigth_r), axis = 0)
     v = np.concatenate((X_stress, X_rval), axis = 0)
     d = np.concatenate((np.ones(ndata), np.zeros(ndata_rval)))
     M = np.zeros((nmon, nmon))
-
-
 
     for j in range(v.shape[0]):
         vj = np.expand_dims(v[j], axis=0)
@@ -482,49 +488,42 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
 
     D = np.sum(weigth * np.square(d)) / 2
 
-    
     def J(a):
         return np.dot(np.dot(a, M), a) - np.dot(V, a) + D
 
     def Grad_J(a):
         return 2 * np.dot(M, a) - V
 
-    def J_norm(a_norm):
-        a = np.array(X_scaler.inverse_transform(np.atleast_2d(a_norm)))[0]
-        return np.dot(np.dot(a, M), a) - np.dot(V, a) + D
-    
-    grad_scaler = np.diag(1/std)
-
-    def Grad_J_norm(a_norm):
-        a = np.array(X_scaler.inverse_transform(np.atleast_2d(a_norm)))[0]
-        return np.dot(grad_scaler, 2 * np.dot(M, a) - V)
-
-
-    #Random starting point?
-
-    print("Start optimizing")
-
-    C_norm = X_scaler.transform(np.atleast_2d(C))[0]
-    #Optimization on not scaled data
-    opt = scipy.optimize.minimize(J, C, method='BFGS', jac=Grad_J)
-    a_test = opt.x
-
-    #Optimization on scaled data
-    opt_norm = scipy.optimize.minimize(J_norm, C_norm, method='BFGS', jac=Grad_J_norm)
-    a = np.atleast_2d(opt_norm.x)
-    J_val = J_norm(a)
-
-    #print("Coefficients without scaling", a_test)
-    #print("Coefficients with scaling in between", X_scaler.inverse_transform(a))
-
-    #Estimation that a polyN function is convex when model(coeff) > 0.5 + tau
-    tau = 0.0
-    res = model.predict(a)[0,0] - 0.5 - tau
-    i = 0
-    nn = 0
     if nn:
+        #If the model for the given degree is available
+
+        def J_norm(a_norm):
+            a = np.array(X_scaler.inverse_transform(np.atleast_2d(a_norm)))[0]
+            return np.dot(np.dot(a, M), a) - np.dot(V, a) + D
+        
+        grad_scaler = np.diag(1/std)
+
+        def Grad_J_norm(a_norm):
+            a = np.array(X_scaler.inverse_transform(np.atleast_2d(a_norm)))[0]
+            return np.dot(grad_scaler, 2 * np.dot(M, a) - V)
+
+
+
+        print("Start optimizing with neural network")
+
+        C_norm = X_scaler.transform(np.atleast_2d(C))[0]
+
+        #Optimization on scaled data
+        opt_norm = scipy.optimize.minimize(J_norm, C_norm, method='BFGS', jac=Grad_J_norm)
+        a = np.atleast_2d(opt_norm.x)
+        J_val = J_norm(a)
+
+        #Assumption that a polyN function is convex when model(coeff) > 0.5 + tau
+        tau = 0.0
+        res = model.predict(a)[0,0] - 0.5 - tau
+        i = 0
         if res < 0 :
-            #Prediction without contraints not convex according to our criteria on tau
+            #Prediction without contraints is not convex according to our criteria on tau
 
             M0 = X_scaler.transform(np.atleast_2d(C))
             lamb = 0.5 #scaling factor
@@ -585,14 +584,19 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
 
                 i = i + 1
     
-    J_val_fin = J_norm(a)
-    score = model.predict(a)[0,0]
-    print("Ended in {} iterations".format(i))
-    print("Final score", score)
-    print("Without constraints : J =", J_val)
-    print("With constraints : J =", J_val_fin)
+        J_val_fin = J_norm(a)
+        score = model.predict(a)[0,0]
+        print("Ended in {} iterations".format(i))
+        print("Final score", score)
+        print("Without constraints : J =", J_val)
+        print("With constraints : J =", J_val_fin)
 
-    return(X_scaler.inverse_transform(a)[0])
+        return(X_scaler.inverse_transform(a)[0])
+
+    else :
+        opt = scipy.optimize.minimize(J, C, method='BFGS', jac=Grad_J)
+        a_test = opt.x
+        return(a_test)
 
 
     #We work with scaled data to optimize using neural network's gradient and loss' gradient in the same space of coefficients
@@ -637,6 +641,13 @@ coeff_deg4 = np.array([b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b
 
 
 def adapt_coeff(adapt, degree, coeff):
+    """
+        Allow to modify the coefficients if the user wants it.
+        Input :
+            - adapt : bool, 1 if coeff has to be modified
+            - degree : integer
+            - coeff : ndarray of shape (nmon), coeff of polyN model
+    """
     if adapt :
         if degree == 2:
             return coeff_deg2
@@ -644,16 +655,15 @@ def adapt_coeff(adapt, degree, coeff):
             return coeff_deg4
     return coeff
 
-
-
-
-
 # In[210]:
 
 
 """---------------------------------------------------------CALIBRATE SWIFT OR VOCE FUNCTION----------------------------------------------------------------------------"""
 
 def optiCoeff_pflow(law, coeff_polyN):
+    """
+        
+    """
     
     def f(S):
         return np.power(polyN(S, coeff_polyN), 1/degree)
@@ -732,7 +742,7 @@ def optiCoeff_pflow(law, coeff_polyN):
 
 def check_coeff(a, b, c, law):
     foldername = file_dir + dir + "calibration_data" + dir + material
-    filename_out = "data_plasticlaw.csv"
+    filename_out = f"data_plasticlaw_{material}.csv"
     filepath = foldername + dir + filename_out
 
     df_law = pd.read_csv(filepath)
@@ -1085,7 +1095,7 @@ def write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt):
                             i = degree - m - l - k - j
                             i0, j0, k0, l0, m0 = powers[n0]
                             if (i==i0) and (j==j0) and (k==k0) and (l==l0) and (m==m0):
-                                file.write("{}, ".format(round(coeff[n0])))
+                                file.write("{}, ".format(coeff[n0]))
                                 n0 = n0 + 1
         file.write("])")
             
@@ -1116,15 +1126,6 @@ def write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, materia
         file.write("*DENSITY\n")
         file.write("{}".format(density))
  
-
-def create_sim_file(material):
-    filename = "all_sim_param.inp"
-    filepath = exec_dir + dir + filename
-    usermat_file = f"{material}_abq_deg{degree}_mises.inp"
-
-    with open(filepath, "w") as f:
-        f.write("*PARAMETER\n")
-        f.write(f"USERMATFILE = '{usermat_file}'")
 
 # In[218]:
 
@@ -1160,9 +1161,8 @@ a, b, c, ymod = optiCoeff_pflow(law, coeff)
 if savecoeff:
     np.save("polyN_coeff.npy", coeff)
 
-create_sim_file(material)
-plot_check(df, coeff)
-plot_planestress(material, coeff)
+#plot_check(df, coeff)
+#plot_planestress(material, coeff)
 
 if plot:
     plot_implicit_coeff(coeff)

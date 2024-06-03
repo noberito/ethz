@@ -2,7 +2,7 @@
 #
 # Abaqus/Viewer Release 2023 replay file
 # Internal Version: 2022_09_28-20.11.55 183150
-# Run by cnober on Fri May 31 15:25:36 2024
+# Run by cnober on Mon Jun  3 11:56:26 2024
 #
 
 # from driverUtils import executeOnCaeGraphicsStartup
@@ -17,8 +17,8 @@ session.viewports['Viewport: 1'].maximize()
 from viewerModules import *
 from driverUtils import executeOnCaeStartup
 executeOnCaeStartup()
-o2 = session.openOdb(name='temp_UT_00_polyN.odb')
-#: Model: C:/temp/polyN_optimization/execution/temp_UT_00_polyN.odb
+o2 = session.openOdb(name='UT_30_polyN.odb')
+#: Model: C:/temp/polyN_optimization/execution/UT_30_polyN.odb
 #: Number of Assemblies:         1
 #: Number of Assembly instances: 0
 #: Number of Part instances:     1
@@ -28,7 +28,7 @@ o2 = session.openOdb(name='temp_UT_00_polyN.odb')
 #: Number of Steps:              1
 session.viewports['Viewport: 1'].setValues(displayedObject=o2)
 session.viewports['Viewport: 1'].makeCurrent()
-odb = session.odbs['C:/temp/polyN_optimization/execution/temp_UT_00_polyN.odb']
+odb = session.odbs['C:/temp/polyN_optimization/execution/UT_30_polyN.odb']
 xy1 = xyPlot.XYDataFromHistory(odb=odb, 
     outputVariableName='Stress components: S11 at Element 1 Int Point 1 in ELSET ONSET', 
     steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')

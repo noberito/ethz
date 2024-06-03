@@ -1,27 +1,35 @@
 import subprocess
 import os
+import sys
 import multiprocessing
 import pandas as pd
 import time
 import numpy as np
 
+
 # Get the directory where the Python exec is located
 
-dir = os.sep
+sep = os.sep
 
-material = "DP600"
-law = "voce"
-degree = 6
 
 exec_dir = os.path.dirname(os.path.abspath(__file__))
 polyN_cali_dir = os.path.dirname(exec_dir)
-results_sim_dir = polyN_cali_dir + dir + "results_sim" + dir + material
 
-sim_params = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
-""""CH_00", "CH_45",
-"NT6_00", "NT6_45", "NT6_90",
-"NT20_00", "NT20_45",
-"SH_000", "SH_090", "SH_p45"]"""
+sys.path.append(polyN_cali_dir)
+
+from read_param import read_param
+
+p = read_param()
+
+material = p["material"]
+law = p["law"]
+degree = int(p["degree"])
+protomodel = p["protomodel"]
+
+results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
+
+
+ut_tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 
 tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 """"CH_00", "CH_45",
@@ -31,15 +39,37 @@ tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 
 dt = 1
 
+subroutine = f"abqUMAT_PolyN_3D_v2_{law}.for"
+
+def change_usermat(usermatfile):
+    for test in tests:
+        filename = exec_dir + sep + test + "_polyN.inp"
+        with open(filename, "r") as f:
+            content = f.readlines()
+        i = 0
+        line = content[i]
+        vu = 0
+        
+        while not vu :
+            if len(line) > 9 and line[:9] == "*MATERIAL":
+                vu = 1
+            i = i + 1
+            line = content[i]
+        content[i] = f"*INCLUDE, INPUT={usermatfile}\n"
+        with open(filename, "w") as f:
+            f.writelines(content)
+
 def simulate(sim_param):
     test = sim_param
     print(f"Simulating {test}")
     job = f'{test}_polyN'
     subroutine = f"abqUMAT_PolyN_3D_v2_{law}.for"
+    usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}.inp"
     input_file = f"{job}.inp"
     cp_input_file = f'temp_{input_file}'
     odb = "{}.odb".format(job)
 
+    change_usermat(usermatfile)
     copy_sim_cmd = f'copy {input_file} {cp_input_file} '
     subprocess.call(copy_sim_cmd, shell=True, cwd=exec_dir)
 
@@ -53,14 +83,14 @@ def simulate(sim_param):
     subprocess.call(copy_odb, shell=True, cwd=exec_dir)
 
     delete_cmd = f'del temp_{job}*'
-    #subprocess.call(delete_cmd, shell=True, cwd=exec_dir)
+    subprocess.call(delete_cmd, shell=True, cwd=exec_dir)
 
     print("Simulation {} ended".format(job))
 
     #REPORTING
     print("Creating report {}".format(test))
     job = f'{test}_polyN'
-    sim_dir = exec_dir + dir + test
+    sim_dir = exec_dir + sep + test
 
     odb = "{}.odb".format(job)
     field = "S,LE,SDV_EPBAR"
@@ -77,7 +107,7 @@ def simulate(sim_param):
     #POST PROCESSING
     print("Post processing report {}".format(test))
     job = f'{test}_polyN'
-    filepath = exec_dir + dir + r"{}.rep".format(job) 
+    filepath = exec_dir + sep + r"{}.rep".format(job) 
 
     t = time.time()
 
@@ -175,14 +205,12 @@ def simulate(sim_param):
     
    
     filename = "{}.csv".format(job)
-    filepath = results_sim_dir + dir + filename
+    filepath = results_sim_dir + sep + filename
     print("Post processing {} ended".format(job))
     df.to_csv(filepath)
 
 if __name__ == "__main__":
-    """for test in tests :
-        simulate(test)"""
     pool = multiprocessing.Pool()
-    pool.map(simulate, sim_params)
+    pool.map(simulate, ut_tests)
     pool.close()
     pool.join()

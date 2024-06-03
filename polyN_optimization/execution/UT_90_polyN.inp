@@ -1,6 +1,5 @@
 ** Definition of Parameters of Analysis
 ** UT Single Element EXP
-*INCLUDE, INPUT=all_sim_param.inp
 **---------------------------------------------------
 *PARAMETER
 THICKNESS	= 1.
@@ -50,9 +49,7 @@ DT		    = DTIME/2.E5
 *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-90, material=mat
 **
 *MATERIAL,NAME=mat
-*INCLUDE, INPUT=DP600_abq_deg6_mises.inp
-**
-**
+*INCLUDE, INPUT=DP600_abq_deg2_swift_mises.inp
 *DEPVAR
 1,
 1,EPBAR,"EPBAR"

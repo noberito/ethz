@@ -27,6 +27,13 @@ n_ut_00_mat = {"DP780" : 3, "DP600" : 3, "AA7020-T6" : 2}
 
 
 def get_hardening_law(material):
+    """
+        Generate the csv file "data_plasticlaw_{material}" used to calibrate the hardening law.
+        Based on the UT_00 tests from the given material
+        Input :
+            - material : string
+    """
+    
     n_ut_00 = n_ut_00_mat[material]
     df_out = pd.DataFrame(columns = ["PlasticStrain", "PlasticStress", "YoungModulus"])
     ymod = 0
@@ -50,6 +57,6 @@ def get_hardening_law(material):
     df_out.iloc[0, df_out.columns.get_loc('YoungModulus')] = ymod / n_ut_00
 
     foldername_out = file_dir + dir + "calibration_data" + dir + material
-    filename_out = foldername_out + dir + "data_plasticlaw.csv"
+    filename_out = foldername_out + dir + f"data_plasticlaw_{material}.csv"
     df_out.to_csv(filename_out, index=False)
 

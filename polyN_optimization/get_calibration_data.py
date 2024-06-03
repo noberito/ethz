@@ -10,6 +10,15 @@ itermax = 20
 
 
 def analyze_exp_data(material):
+    """
+        Returns a dictionnary of the different tests led for the given material /(in the results_exp/material folder, files
+        not to read must start with "_")
+        Input :
+            - material : string
+        Output :
+            - d : dictionnary (d[test][orientation][number])
+
+    """
     d = {}
     folder = file_dir + sep + "results_exp" + sep + material
     files = os.listdir(folder)
@@ -26,6 +35,9 @@ def analyze_exp_data(material):
         
 
 def export_exp_data_old(material, thetas):
+    """
+        Not used
+    """
 
     ut_data = pd.DataFrame(columns=["q", "LoadAngle", "YieldStress", "Rval", "Type", "YoungMod", "Width", "Thickness"])
     foldername_in = f"{file_dir}{sep}results_exp{sep}{material}"
@@ -112,6 +124,13 @@ def export_exp_data_old(material, thetas):
     ut_data.to_csv(foldername_out + sep + 'data_exp_{}.csv'.format(material), index=False)
 
 def export_exp_data(material):
+    """
+        Generate the csv file data_exp_{material} needed to optimize.
+        For the moment, only the UT files are checked: Must have a column "PlasticStrain_longi" and "PlasticStress[MPa]"
+        and if available a column "R-value" containing the r-val
+        Input :
+            - material : string
+    """
     mat_dic = analyze_exp_data(material)
     ut_data = pd.DataFrame(columns=["q", "LoadAngle", "YieldStress", "Rval", "Type", "YoungMod", "Width", "Thickness"])
     dirname_in = f"{file_dir}{sep}results_exp{sep}{material}"
@@ -159,39 +178,50 @@ def export_exp_data(material):
     print(foldername_out)
     ut_data.to_csv(foldername_out + sep + 'data_exp_{}.csv'.format(material), index=False)
 
-def mises(sigma):
+def mises(S):
     """
     Vectorized Mises function
+    Input :
+        - S : np.array of shape (N,6) or (6,), stress
+    Output :
+        - res : np.array of shape (N, 1)
     """
-    sigma = np.atleast_2d(sigma)
-    if sigma.shape[-1] != 6:
+    S = np.atleast_2d(S)
+    if S.shape[-1] != 6:
         raise ValueError("Input array must have shape (N, 6)")
 
-    s11 = sigma[:, 0]
-    s22 = sigma[:, 1]
-    s33 = sigma[:, 2]
-    s12 = sigma[:, 3]
-    s13 = sigma[:, 4]
-    s23 = sigma[:, 5]
+    s11 = S[:, 0]
+    s22 = S[:, 1]
+    s33 = S[:, 2]
+    s12 = S[:, 3]
+    s13 = S[:, 4]
+    s23 = S[:, 5]
 
     res = np.sqrt(0.5 * (s22 - s33)**2 + 0.5 * (s33 - s11)**2 + 0.5 * (s11 - s22)**2 + 3 * (s23**2 + s13**2 + s12**2))
     return res
 
-def tresca(sigma):
-    sigma = np.atleast_2d(sigma)
-    N = len(sigma)
-    if sigma.shape[-1] != 6:
+def tresca(S):
+    """
+    Vectorized Tresca function
+    Input :
+        - S : np.array of shape (N,6) or (6,), stress
+    Output :
+        - res : np.array of shape (N, 1)"""
+    
+    S = np.atleast_2d(S)
+    N = len(S)
+    if S.shape[-1] != 6:
         raise ValueError("Input array must have shape (N, 6)")
 
-    sigma_matrix = np.zeros((N, 3, 3))
+    S_matrix = np.zeros((N, 3, 3))
     
     index_x = np.array([0, 1, 2, 0, 0, 1])
     index_y = np.array([0, 1, 2, 1, 2, 2])
-    sigma_matrix[:, index_x, index_y] = sigma
-    sigma_matrix = sigma_matrix + np.transpose(sigma_matrix, (0, 2, 1))
-    sigma_matrix[:,np.arange(3),np.arange(3)] = sigma_matrix[:,np.arange(3),np.arange(3)] // 2
+    S_matrix[:, index_x, index_y] = S
+    S_matrix = S_matrix + np.transpose(S_matrix, (0, 2, 1))
+    S_matrix[:,np.arange(3),np.arange(3)] = S_matrix[:,np.arange(3),np.arange(3)] // 2
 
-    ps = np.linalg.eigvals(sigma_matrix)
+    ps = np.linalg.eigvals(S_matrix)
     dps = np.zeros((N, 3))
 
     dps[:,0] = np.abs(ps[:, 0] - ps[:, 1])
@@ -206,7 +236,12 @@ def get_coeff_hill48(material):
 def hill48(sigma, coeff_mat):
     """
     Vectorized Hill48 function for the given coefficients
-    """
+    Input :
+        - S : np.array of shape (N,6) or (6,), stress
+        - coeff_mat : np.array of shape (6,), coefficients of the hill48 function for the material studied
+    Output :
+        - res : np.array of shape (N, 1)"""
+    
     sigma = np.atleast_2d(sigma)
     if sigma.shape[-1] != 6:
         raise ValueError("Input array must have shape (N, 6)")
@@ -230,10 +265,27 @@ def hill48(sigma, coeff_mat):
 
 
 def generate_dir(nb_virtual_pt, ndim):
+    """
+        Generate random nb_virtual_pt directions in dimension ndim
+        Input :
+            - nb_virtual_pt : integer
+            - ndim : integer
+        Output :
+            - u : ndarray of shape (nb_virtual_pt, ndim)
+    """
     u = np.random.normal(0, 1, (nb_virtual_pt, ndim))
     return(u)
 
 def data_yf_sphere(f, itermax, nb_pt_check):
+    """
+        For a given function f, returns nb_pt_check points on the surface of equation f(S) = 1
+        Input :
+            - f : nd.array of shape (6,) -> float
+            - itermax : integer, number of maximum iterations in the trial and error
+            - nb_pt_check : integer
+        Output :
+            - data : ndarray of shape (nb_pt_check, 6)
+    """
     data = np.zeros((nb_pt_check, 6))
     j = 0
 
@@ -272,6 +324,14 @@ def data_yf_sphere(f, itermax, nb_pt_check):
     return(data)
 
 def export_virtual_data(protomodel, material, nb_virtual_pt):
+    """
+        Generate the csv file data_exp_{material} needed to optimize the polyN function.
+        Based on the protomodel given.
+        Input :
+            - protomodel : string, must be in ["mises", "tresca", "Hill48", "Yld2000"]
+            - material : string
+            - nb_virtual_pt : integer
+    """
 
     if protomodel == "mises":
         data = data_yf_sphere(mises, itermax, nb_virtual_pt)
@@ -285,6 +345,7 @@ def export_virtual_data(protomodel, material, nb_virtual_pt):
         pass
     if protomodel == "Yld2000":
         pass
+
     df = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23"])
     df["Rval"] = np.zeros(len(data))
     df["Type"] = ["v"] * len(data)
