@@ -42,6 +42,11 @@ dt = 1
 subroutine = f"abqUMAT_PolyN_3D_v2_{law}.for"
 
 def change_usermat(usermatfile):
+    """
+        Change the input user material file in the all the abaqus files of test in tests
+        Input :
+            - usermatfile : string, filename of the user material file
+    """
     for test in tests:
         filename = exec_dir + sep + test + "_polyN.inp"
         with open(filename, "r") as f:
@@ -60,6 +65,11 @@ def change_usermat(usermatfile):
             f.writelines(content)
 
 def simulate(test):
+    """
+        Run the abaqus simulation of the test_polyN.inp and generate a csv file in results_sim folder
+        Input :
+            - test : string, name of the test (ex : UT_00)
+    """
     print(f"Simulating {test}")
     job = f'{test}_polyN'
     subroutine = f"abqUMAT_PolyN_3D_v2_{law}.for"
@@ -203,6 +213,8 @@ def simulate(test):
     
    
     filename = "{}.csv".format(job)
+    if not(os.path.exists(results_sim_dir)):
+        os.makedirs(results_sim_dir)
     filepath = results_sim_dir + sep + filename
     print("Post processing {} ended".format(job))
     df.to_csv(filepath)
