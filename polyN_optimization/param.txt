@@ -1,13 +1,13 @@
 * To use new params, write "{variable} = {value}"
 
-material = DP600
+material = DP780
 gseed = 6
 enu = 0.3
 density = 7.85e-9
-nb_virtual_pt = 1000
+nb_virtual_pt = 10
 degree = 4
-weigth_exp = 0
-weigth_rval = 0
+weigth_exp = 0.95
+weigth_rval = 1
 protomodel = mises
 law = swift
 n_opti = 10

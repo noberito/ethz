@@ -413,7 +413,7 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
     """
         Returns the optimized coefficients of polyN on experimental data (UTs) and virtual data from a protomodel
         Input :
-            - df : pd.Dataframe, must contain columns ["d11", "d22", "s12", "s13", "s23"] of yield stresses points. And if available ["Rval"] with ["LoadAngle"]¨.
+            - df : pd.Dataframe, must contain columns ["d11", "d22", "s12", "s13", "s23"] of yield stresses points. And if available ["Rval"] with ["LoadAngle"].
             - degree : integer, degree of polyN
             - weight_exp : float, weight for the experimental data
             - weight_rval : float, weight for the rvalue data
@@ -441,6 +441,7 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval):
 
     ndata = len(data)
     #RVALUE
+    #TO UNDERSTAND HOW R-VALUES ARE CALCULATED, REFER TO ARTICLE OF SOARE 2023 ABOUT HOMOGENEOUS YIELD FUNCTIONS
     index_rval = np.where(df["Rval"]< 0.00001, False, True) #RVALUE SIGNIFICANT IF NOT ZERO
     ndata_rval = np.count_nonzero(index_rval)
     dX_stress_dev = np.zeros((ndata_rval, 5, nmon))
@@ -662,7 +663,10 @@ def adapt_coeff(adapt, degree, coeff):
 
 def optiCoeff_pflow(law, coeff_polyN):
     """
-        
+        Returns the a, b, c coefficients of the hardening law defined by the user and the young modulus of the material.
+        Input :
+            - law : string, law in ["swift", "voce"]
+            - coeff_polyN : ndarray of shape (nmon,), polyN coefficients
     """
     
     def f(S):
@@ -741,6 +745,14 @@ def optiCoeff_pflow(law, coeff_polyN):
 """--------------------------------------CHECK OF COEFFICIENTS----------------------------------------------"""
 
 def check_coeff(a, b, c, law):
+    """
+        Plot the hardening law found against the experimental plastic curve (plastic stress according to plastic strain)
+        Input :
+            - a : float
+            - b : float
+            - c : float
+            - law : string
+    """
     foldername = file_dir + dir + "calibration_data" + dir + material
     filename_out = f"data_plasticlaw_{material}.csv"
     filepath = foldername + dir + filename_out
@@ -782,11 +794,17 @@ def check_coeff(a, b, c, law):
 
 
     
-def plot_check(df, coeff):
+def plot_check(df, coeff_polyN):
+    """
+        Plot the yield surface in the sx, sy plane and the yield stresses and r-values according to the loading angle.
+        Input :
+            - df : pd.Dataframe, must contain columns ["d11", "d22", "s12", "s13", "s23"] of yield stresses points. And if available ["Rval"] with ["LoadAngle"]
+            - coeff_polyN : ndarray of shape (nmon,)
+    """
     def f(S):
-        return(polyN(S, coeff))
+        return(polyN(S, coeff_polyN))
 
-    coeff_grad, powers_grad = jac_polyN_param(coeff, powers)
+    coeff_grad, powers_grad = jac_polyN_param(coeff_polyN, powers)
 
     def grad(S):
         return grad_polyN(S, coeff_grad, powers_grad)
@@ -812,6 +830,13 @@ def plot_check(df, coeff):
     thetas=np.linspace(0, np.pi / 2, ntheta)
 
     def ys_theta(theta):
+        """
+            For a given loading angle, returns the norm of the yield stress in a ut_theta test
+            Input :
+                - theta : float (radians)
+            Output :
+                - m : float, norm of yield stress
+        """
         u = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
         ys = 0.1
         lamb = 1.1
@@ -840,6 +865,13 @@ def plot_check(df, coeff):
 
 
     def ys_component_theta(theta):
+        """
+            For a given loading angle, returns the yield stress (sx, sy, sz, sxy, sxz, syz) in a ut_theta test
+            Input :
+                - theta : float (radians)
+            Output :
+                - m : ndarray of shape (6,), yield stress
+        """
         u = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
         ys = 0.1 * u
         lamb = 1.1
@@ -863,6 +895,8 @@ def plot_check(df, coeff):
 
         return(m)
 
+
+    #TO UNDERSTAND HOW R-VALUES ARE CALCULATED, REFER TO ARTICLE OF SOARE 2023 ABOUT HOMOGENEOUS YIELD FUNCTIONS
     X = np.array([ys_component_theta(theta) for theta in thetas])
     gradX = grad(X)
     vs = np.array([- np.sin(thetas), np.cos(thetas), np.zeros(ntheta)]).T

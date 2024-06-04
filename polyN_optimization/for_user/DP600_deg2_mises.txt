@@ -1,3 +1,3 @@
-#Coefficients poly2 for DP600 based on 10 points from the mises protomodel
+#Coefficients poly2 for DP600 based on 1000 points from the mises protomodel
 Number of coefficients : 6
-np.array([3.0178759345875057, 2.9575266878877677, 2.7927909508262885, 2.5673383441220397, 3.0, 3.0, ])
+np.array([2.996192142222618, 2.989101211208226, 2.993518559413718, 2.9975788000567474, 2.998753595703535, 3.000009663633819, ])

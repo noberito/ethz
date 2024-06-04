@@ -46,7 +46,7 @@ def compare(material):
             if ori == "EBT":
                 df_exp = df_exp.rename(columns={df_exp.columns[0]:"TrueStrain", df_exp.columns[1]:"TrueStress[MPa]"})
                 e = df_exp["TrueStrain"]
-                s = df_exp["TrueStress[MPa]"]
+                s = df_exp["TrueStress[MPa]"] * np.sqrt(2) #In the EBT file, True stress corresponds to the stress applied in one direction which is 1/sqrt(2) * S
                 ax[j,k].plot(e, s, label = f"exp. {m+1}")
             else:
                 imax = df_exp["EngStress[MPa]"].idxmax()

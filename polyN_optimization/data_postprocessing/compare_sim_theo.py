@@ -187,7 +187,7 @@ def curve_theo_ebt(polyN_coeff, law_coeff):
     eps = np.linspace(0, 1 - eemax, n)
     S_plastic = np.zeros(n)
 
-    u = np.array([1, 1, 0, 0, 0, 0])
+    u = np.array([1/np.sqrt(2), 1/np.sqrt(2), 0, 0, 0, 0])
     for i in range(n):
         ep = eps[i]
         val = hlaw(ep) 
