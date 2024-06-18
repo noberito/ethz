@@ -7,8 +7,8 @@ import time
 import multiprocessing
 import os
 
-degree = 6
-nb_dir = 100
+degree = 2
+nb_dir = 1000
 
 tol_kg = 1e-7
 tol_yf = 0.001

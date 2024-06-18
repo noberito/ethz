@@ -1,0 +1,130 @@
+** Definition of Parameters of Analysis
+** UT Single Element EXP
+**---------------------------------------------------
+**---------------------------------------------------
+** Geometry and Orientation
+**---------------------------------------------------
+*Node, nset=NALL
+      1,  0.1,  0.1,  0.1
+      2,  0.1,  0.0,  0.1
+      3,  0.1,  0.1,  0.0
+      4,  0.1,  0.0,  0.0
+      5,  0.0,  0.1,  0.1
+      6,  0.0,  0.0,  0.1
+      7,  0.0,  0.1,  0.0
+      8,  0.0,  0.0,  0.0
+*Element, type=C3D8R, elset=ELALL
+1, 5, 6, 8, 7, 1, 2, 4, 3
+*Nset, nset=YMAX, generate
+ 1,  5,  2
+*Nset, nset=YMIN, generate
+ 2,  6,  2
+*Nset, nset=XMIN, generate
+ 5,  8,  1
+*Nset, nset=XMAX, generate
+ 1,  4,  1
+*Nset, nset=ZMIN
+ 3, 4, 7, 8
+*Nset, nset=LOAD
+ 7,
+*Elset, elset=ONSET
+ 1,
+*Nset, nset=BASE
+ 8,
+*NMAP, TYPE=RECTANGULAR, NSET=NALL
+0., 0., 0., 1., 0., 0.,
+0., 1., 0.,
+** Width & Thickness factor
+1.0,1., 1.0
+** 0deg axis aligned with y-direction
+*ORIENTATION, name=Ori-00
+         0.,     1.,     0.,	-1.,     0.,     0.
+3, 0.
+*ORIENTATION, name=Ori-15
+         0.267949192431,     1.,     0.,	-1.,     0.267949192431,     0.
+3, 0.
+*ORIENTATION, name=Ori-30
+         0.577350269193,     1.,     0.,	-1.,     0.577350269193,     0.
+3, 0.
+*ORIENTATION, name=Ori-45
+         1.,     1.,     0.,	-1.,     1.,     0.
+3, 0.
+*ORIENTATION, name=Ori-60
+         1.,     0.577350269193,     0.,	-0.577350269193,     1.,     0.
+3, 0.
+*ORIENTATION, name=Ori-75
+         1.,     0.267949192431,     0.,	-0.267949192431,     1.,     0.
+3, 0.
+** 90deg axis aligned with y-direction
+*ORIENTATION, name=Ori-90
+         1.,     0.,     0.,	0.,     1.,     0.
+3, 0.
+**-----------------------------------------------------
+** Material Data
+**-----------------------------------------------------
+*SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=RELAX STIFFNESS, ELEMENT DELETION=YES
+1.0, 1.0, 1.0, 1.0, 1.0, , , 
+*SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-15, material=mat
+**
+*MATERIAL,NAME=mat
+*USER MATERIAL, constants=29
+207746.0110116033, 0.3, 1264.9087962891108, 0.0026173144008679546, 0.1640638246457746, 4, 22, 11.61909557892767, 
+28.850994765798127, 43.35806650796864, 28.171607652185635, 10.322598051421949, 14.54530369807102, 13.685280427820961, 15.849023537897624, 8.295529823483502, 
+14.33489923101563, 10.910051558839433, 15.722492332867912, 19.94658108442978, 9.224545327812057, -0.08863730860990904, 2.3038169134325415, 16.14154230140798, 
+14.539719654140482, 17.295754509538956, 19.977012243159564, 17.051316010942127, 9.065887085322418, 
+*DENSITY
+7.85e-09
+*DEPVAR
+1,
+1,EPBAR,"EPBAR"
+**------------------------------------------------------
+** BOUNDARY CONDITIONS
+**------------------------------------------------------
+*EQUATION
+2
+YMAX, 2, 1.
+LOAD, 2, -1.
+2
+YMIN, 2, 1.
+BASE, 2, -1.
+**
+*BOUNDARY
+XMIN, 1, 1, 0.
+XMIN, 5, 6, 0.
+YMIN, 2, 2, 0.
+BASE, 2, 2, 0.
+YMIN, 4, 4, 0.
+ZMIN, 3, 5, 0.
+**
+*AMPLITUDE, NAME=ccr, DEFINITION=TABULAR, SMOOTH=0.05
+0.,0.,
+**%(TRAMP1)s, %(RAMP1)s,
+1.0, 0.1,
+** ----------------------------------------------------
+*STEP, name=Step-1
+*DYNAMIC, EXPLICIT
+,1,,0.001
+*FIXED MASS SCALING, TYPE=UNIFORM, DT=5e-06
+*Bulk Viscosity
+0.06, 1.2
+**
+*BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
+LOAD, 2, 2, 1.
+**-----------------------------------
+** OUTPUT REQUESTS
+**------------------------------------------------------
+*OUTPUT, FIELD, FREQUENCY=1
+*ELEMENT OUTPUT
+ S, SDV, TRIAX, E
+*NODE OUTPUT
+ U, RF
+**
+*OUTPUT, HISTORY, FREQUENCY=1
+*NODE OUTPUT, NSET=LOAD
+ U2, RF2
+*NODE OUTPUT, NSET=BASE
+ U2, RF2
+*ELEMENT OUTPUT, ELSET=ONSET
+ TRIAX, SDV, S, E
+**------------------------------------------------------
+*End Step

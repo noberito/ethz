@@ -1,0 +1,46 @@
+<Description>
+   ABQvwrG.exe / rank 0 / thread 0  encountered an unhandled exception
+
+</Description>
+
+<Context>
+   ABQvwrG
+</Context>
+
+<Callstack>
+  1)  KERNELBASE.dll              RaiseException                          
+  2)  VCRUNTIME140.dll            CxxThrowException                       
+  3)  ABQSMAAbuGeom.dll           nex_CmdException<atr_String,2>::Propagate
+  4)  ABQSMAPybPyoModule.dll      pyo_ExceptionBinding::ThrowAbaqusException
+  5)  ABQSMAInbVwrPyUtils.dll     pyt_InterpreterRole::RaiseLastException 
+  6)  ABQSMAInbVwrPyUtils.dll     pyt_InterpreterRole::RunCommand         
+  7)  ABQSMAIngFoxAbq.dll         AFXApp::create                          
+  8)  ABQSMAIngVwrGui.dll         gui_Actor::initialize                   
+  9)  ABQSMAIngFoxAbq.dll         AFXApp::create                          
+ 10)  ABQvwrG.exe               unknown                                 
+</Callstack>
+
+<Memory>
+   <Current>            0 GB </Current>
+   <Resident>           0 GB </Resident>
+   <Physical>          47 GB </Physical>
+   <Limit>              0 GB </Limit>
+   <Accessible>        47 GB </Accessible>
+   <Available>         32 GB </Available>
+   <Allocator>            DL </Allocator>
+</Memory>
+
+<Swap>
+       <Size>          54 GB </Size>
+       <Used>          15 GB </Used>
+       <Free>          39 GB </Free>
+</Swap>
+
+<Directories>
+  <current> C:\temp\polyN_optimization\execution </current> <free>    138 GB </free>   <used>    326 GB </used> 
+     <temp> C:\Users\cnober\AppData\Local\Temp </temp>    <free>    138 GB </free>
+</Directories>
+
+<Installation>
+</Installation>
+

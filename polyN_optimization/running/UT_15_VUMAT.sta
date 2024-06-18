@@ -1,0 +1,81 @@
+Abaqus/Explicit 2023                             DATE 13-Jun-2024  TIME 16:33:35
+-------------------------------------------------------------------------------
+ PREPROCESSOR WARNING MESSAGES
+-------------------------------------------------------------------------------
+
+
+***WARNING: There are 5 warning messages in the data (.dat) file.  Please
+            check the data file for possible errors in the input file.
+
+
+-------------------------------------------------------------------------------
+  USER SUBROUTINE VUMAT
+-------------------------------------------------------------------------------
+
+
+***WARNING: A material defined in user subroutine VUMAT must be defined as
+            purely elastic (using the initial elastic modulus) at the
+            beginning of the analysis (stepTime=0). This is an informative
+            message. It does not necessarily indicate that user subroutine
+            VUMAT is incorrectly defined.
+
+
+-------------------------------------------------------------------------------
+ MODEL INFORMATION (IN GLOBAL X-Y COORDINATES)
+-------------------------------------------------------------------------------
+
+   Total mass (unscaled) in model = 7.85000E-12
+   Center of mass of model (based on unscaled mass) = ( 5.000000E-02, 5.000000E-02, 5.000000E-02)
+
+    Moments of Inertia :
+                 About Center of Mass              About Origin
+      I(XX)          3.925000E-14                  7.850000E-14
+      I(YY)          3.925000E-14                  7.850000E-14
+      I(ZZ)          3.925000E-14                  7.850000E-14
+      I(XY)         -2.282810E-22                 -1.962500E-14
+      I(YZ)         -2.282810E-22                 -1.962500E-14
+      I(ZX)         -2.282810E-22                 -1.962500E-14
+
+-------------------------------------------------------------------------------
+ STABLE TIME INCREMENT INFORMATION
+-------------------------------------------------------------------------------
+
+
+  The stable time increment estimate for each element is based on
+  linearization about the initial state. The stable time increment estimates
+  do not account for mass scaling.
+
+
+   Initial time increment = 1.06416E-08
+
+   Statistics for all elements:
+      Mean = 1.06416E-08
+      Standard deviation = 0.0000
+
+   Most critical elements:
+    Element number   Rank    Time increment   Increment ratio
+   ----------------------------------------------------------
+           1          1       1.064163E-08      1.000000E+00
+
+
+Abaqus/Explicit 2023                             DATE 13-Jun-2024  TIME 16:33:38
+
+The double precision Abaqus/Explicit executable will be used in this analysis.
+
+
+-------------------------------------------------------------------------------
+ SOLUTION PROGRESS
+-------------------------------------------------------------------------------
+
+ STEP 1  ORIGIN 0.0000
+
+  Total memory used for step 1 is approximately 371.3 kilobytes.
+  Global time estimation algorithm will be used.
+  Scaling factor:  1.0000
+              STEP     TOTAL      WALL      STABLE    CRITICAL    KINETIC      TOTAL    PERCENT
+INCREMENT     TIME      TIME      TIME   INCREMENT     ELEMENT     ENERGY     ENERGY  CHNG MASS
+        0  0.000E+00 0.000E+00  00:00:00 5.000E-06           1  4.332E-09  4.332E-09  2.208E+07
+Output Field Frame Number   0, of   20, at step time 0.000E+00
+
+***ERROR: Process terminated by external request (SIGTERM or SIGINT received).
+

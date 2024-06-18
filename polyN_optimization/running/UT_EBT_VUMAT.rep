@@ -1,0 +1,78 @@
+ODB Report: -job UT_EBT_VUMAT -odb UT_EBT_VUMAT.odb -field S,LE,SDV_EPBAR -components
+
+General ODB information
+  name          : UT_EBT_VUMAT.odb
+  analysisTitle : 
+  description   : DDB object
+  path          : c:/temp/polyN_optimization/execution/UT_EBT_VUMAT.odb
+
+-------------------------------------------------------------------------------
+Total number of steps = 1
+
+-----------------------------------------------------------
+Step name 'Step-1'
+  description   : 
+  number        : 1
+  domain        : TIME
+  procedure     : *DYNAMIC, EXPLICIT
+  timePeriod    : 1.0
+  totalTime     : 0.0
+  previousStep  : Initial
+  nlgeom        : Yes
+  mass          : 7.85000016378934e-12
+  acoustic mass : 0.0
+
+  Total number of frames = 2
+
+  -------------------------------------
+  Frame number  1
+    description : Increment       617: Step Time =   3.0755E-03
+    increment   : 617
+    frame value : 0.00307553331367671
+    domain      : TIME
+
+    Field name    'S'
+      description : Stress components
+      type        : TENSOR_3D_FULL
+      is complex  : No
+      component labels : S11 S22 S33 S12 S13 S23 
+      valid invariants : MISES MAX_PRINCIPAL MID_PRINCIPAL MIN_PRINCIPAL TRESCA PRESS INV3 
+      has orientations : Yes
+      Location 0
+        position  : INTEGRATION_POINT
+
+      Components of field 'S'
+      Instance  Element     Node   SP IP      S11           S22           S33           S12           S13           S23     
+      -------- --------- --------- -- -- ------------- ------------- ------------- ------------- ------------- -------------
+      PART-1-1         1               1   -nan(ind).0   -nan(ind).0   -nan(ind).0   -nan(ind).0   -nan(ind).0   -nan(ind).0
+
+    Field name    'LE'
+      description : Logarithmic strain components
+      type        : TENSOR_3D_FULL
+      is complex  : No
+      component labels : LE11 LE22 LE33 LE12 LE13 LE23 
+      valid invariants : MAX_PRINCIPAL MID_PRINCIPAL MIN_PRINCIPAL 
+      has orientations : Yes
+      Location 0
+        position  : INTEGRATION_POINT
+
+      Components of field 'LE'
+      Instance  Element     Node   SP IP      LE11          LE22          LE33          LE12          LE13          LE23    
+      -------- --------- --------- -- -- ------------- ------------- ------------- ------------- ------------- -------------
+      PART-1-1         1               1    0.00306598    0.00306598   -0.00262817   6.45747e-26   1.62063e-19   6.56747e-25
+
+    Field name    'SDV_EPBAR'
+      description : EPBAR
+      type        : SCALAR
+      is complex  : No
+      has orientations : No
+      Location 0
+        position  : INTEGRATION_POINT
+
+      Components of field 'SDV_EPBAR'
+      Instance  Element     Node   SP IP     Value    
+      -------- --------- --------- -- -- -------------
+      PART-1-1         1               1   -nan(ind).0
+
+
+End of ODB Report.

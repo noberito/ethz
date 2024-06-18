@@ -1,0 +1,11 @@
+*PARAMETER
+THICKNESS    = 1.
+WIDTH        = 1.
+**
+DISPL        = 0.05
+DTIME        = 1.0
+**
+DT           = DTIME/2.E5
+MAXDT        = 1e-3
+MINDT        = 1e-5
+DT1          = 1e-5

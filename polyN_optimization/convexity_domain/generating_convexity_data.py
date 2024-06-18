@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import multiprocessing
+import os
 
 degree = 6
 nb_dir = 1
@@ -641,6 +642,9 @@ def dc_lpm(direction, M=M):
 
 if __name__ == "__main__":
 
+    file_dir = os.path.dirname(os.path.abspath(__file__))
+    sep = os.sep
+
     t = time.time()
     dirs = generate_dir(nb_dir, nb_coeff)
 
@@ -658,8 +662,8 @@ if __name__ == "__main__":
         X = np.concatenate((X, results[i][0]), axis = 0)
         Y = np.concatenate((Y, results[i][1]), axis = 0)
     
-    np.save("X_convex_{}.npy".format(degree), X)
-    np.save("Y_convex_{}.npy".format(degree), Y)
+    np.save(file_dir + sep + "X_convex_{}.npy".format(degree), X)
+    np.save(file_dir + sep + "Y_convex_{}.npy".format(degree), Y)
 
     print(time.time() - t, ":", len(X),"points")
     
