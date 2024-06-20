@@ -1,6 +1,6 @@
 1
 
-   Abaqus 2023                                  Date 13-Jun-2024   Time 16:33:32
+   Abaqus 2023                                  Date 19-Jun-2024   Time 17:27:02
    For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
 
 
@@ -72,7 +72,7 @@
 
 1
 
-   Abaqus 2023                                  Date 13-Jun-2024   Time 16:33:32
+   Abaqus 2023                                  Date 19-Jun-2024   Time 17:27:02
    For use by ETH ZUERICH under license from Dassault Systemes or its subsidiary.
 
                                                                                      
@@ -132,7 +132,7 @@
   *ORIENTATION, name=Ori-75
   *ORIENTATION, name=Ori-90
   *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-15, material=mat
-  *SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=RELAX STIFFNESS, ELEMENT DELETION=YES
+  *SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=ENHANCED, ELEMENT DELETION=YES
 
  ***WARNING: THE PARAMETER HOURGLASS ON THE *SECTION CONTROLS OPTION IS 
              RELEVANT FOR SOLID, MEMBRANE, AND SHELL ELEMENTS WITH REDUCED 

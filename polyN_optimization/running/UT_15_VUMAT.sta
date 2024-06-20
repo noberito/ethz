@@ -1,4 +1,4 @@
-Abaqus/Explicit 2023                             DATE 13-Jun-2024  TIME 16:33:35
+Abaqus/Explicit 2023                             DATE 19-Jun-2024  TIME 17:27:05
 -------------------------------------------------------------------------------
  PREPROCESSOR WARNING MESSAGES
 -------------------------------------------------------------------------------
@@ -46,19 +46,19 @@ Abaqus/Explicit 2023                             DATE 13-Jun-2024  TIME 16:33:35
   do not account for mass scaling.
 
 
-   Initial time increment = 1.06416E-08
+   Initial time increment = 1.76857E-08
 
    Statistics for all elements:
-      Mean = 1.06416E-08
+      Mean = 1.76857E-08
       Standard deviation = 0.0000
 
    Most critical elements:
     Element number   Rank    Time increment   Increment ratio
    ----------------------------------------------------------
-           1          1       1.064163E-08      1.000000E+00
+           1          1       1.768571E-08      1.000000E+00
 
 
-Abaqus/Explicit 2023                             DATE 13-Jun-2024  TIME 16:33:38
+Abaqus/Explicit 2023                             DATE 19-Jun-2024  TIME 17:27:08
 
 The double precision Abaqus/Explicit executable will be used in this analysis.
 
@@ -74,8 +74,55 @@ The double precision Abaqus/Explicit executable will be used in this analysis.
   Scaling factor:  1.0000
               STEP     TOTAL      WALL      STABLE    CRITICAL    KINETIC      TOTAL    PERCENT
 INCREMENT     TIME      TIME      TIME   INCREMENT     ELEMENT     ENERGY     ENERGY  CHNG MASS
-        0  0.000E+00 0.000E+00  00:00:00 5.000E-06           1  4.332E-09  4.332E-09  2.208E+07
+        0  0.000E+00 0.000E+00  00:00:00 5.000E-06           1  1.569E-09  1.569E-09  7.993E+06
 Output Field Frame Number   0, of   20, at step time 0.000E+00
+     9864  5.000E-02 5.000E-02  00:00:00 5.037E-06           1  6.463E-09  3.661E-08  7.993E+06
+Output Field Frame Number   1, of   20, at step time 5.000E-02
+    19841  1.000E-01 1.000E-01  00:00:01 4.982E-06           1  1.346E-08  6.423E-06  7.993E+06
+Output Field Frame Number   2, of   20, at step time 1.000E-01
+    29874  1.500E-01 1.500E-01  00:00:02 4.983E-06           1  4.167E-09  6.443E-06  7.993E+06
+Output Field Frame Number   3, of   20, at step time 1.500E-01
+    39846  2.000E-01 2.000E-01  00:00:03 5.014E-06           1  2.071E-09  6.443E-06  7.993E+06
+Output Field Frame Number   4, of   20, at step time 2.000E-01
+    49852  2.500E-01 2.500E-01  00:00:04 4.979E-06           1  2.302E-09  6.444E-06  7.993E+06
+Output Field Frame Number   5, of   20, at step time 2.500E-01
+    59934  3.000E-01 3.000E-01  00:00:05 4.938E-06           1  2.798E-09  6.444E-06  7.993E+06
+Output Field Frame Number   6, of   20, at step time 3.000E-01
+    70104  3.500E-01 3.500E-01  00:00:05 4.895E-06           1  2.191E-09  6.445E-06  7.993E+06
+Output Field Frame Number   7, of   20, at step time 3.500E-01
+    80367  4.000E-01 4.000E-01  00:00:06 4.849E-06           1  2.563E-09  6.445E-06  7.993E+06
+Output Field Frame Number   8, of   20, at step time 4.000E-01
+    90729  4.500E-01 4.500E-01  00:00:07 4.801E-06           1  2.845E-09  6.445E-06  7.993E+06
+Output Field Frame Number   9, of   20, at step time 4.500E-01
+   101196  5.000E-01 5.000E-01  00:00:08 4.753E-06           1  2.473E-09  6.446E-06  7.993E+06
+Output Field Frame Number  10, of   20, at step time 5.000E-01
+   111770  5.500E-01 5.500E-01  00:00:09 4.704E-06           1  2.675E-09  6.446E-06  7.993E+06
+Output Field Frame Number  11, of   20, at step time 5.500E-01
+   122455  6.000E-01 6.000E-01  00:00:10 4.655E-06           1  1.967E-09  6.446E-06  7.993E+06
+Output Field Frame Number  12, of   20, at step time 6.000E-01
+   133254  6.500E-01 6.500E-01  00:00:11 4.606E-06           1  1.935E-09  6.446E-06  7.993E+06
+Output Field Frame Number  13, of   20, at step time 6.500E-01
+   144168  7.000E-01 7.000E-01  00:00:12 4.557E-06           1  2.758E-09  6.446E-06  7.993E+06
+Output Field Frame Number  14, of   20, at step time 7.000E-01
+   155199  7.500E-01 7.500E-01  00:00:13 4.508E-06           1  1.755E-09  6.445E-06  7.993E+06
+Output Field Frame Number  15, of   20, at step time 7.500E-01
+   166349  8.000E-01 8.000E-01  00:00:14 4.461E-06           1  2.067E-09  6.445E-06  7.993E+06
+Output Field Frame Number  16, of   20, at step time 8.000E-01
+   177618  8.500E-01 8.500E-01  00:00:14 4.413E-06           1  2.597E-09  6.445E-06  7.993E+06
+Output Field Frame Number  17, of   20, at step time 8.500E-01
+   189007  9.000E-01 9.000E-01  00:00:15 4.367E-06           1  2.655E-09  6.445E-06  7.993E+06
+Output Field Frame Number  18, of   20, at step time 9.000E-01
+   200517  9.500E-01 9.500E-01  00:00:16 4.321E-06           1  1.966E-09  6.445E-06  7.993E+06
+Output Field Frame Number  19, of   20, at step time 9.500E-01
+   212148  1.000E+00 1.000E+00  00:00:17 4.277E-06           1  2.043E-09  6.445E-06  7.993E+06
+Restart Number  1 at 1.0000
+Output Field Frame Number  20, of   20, at step time 1.000E+00
+  EXPLICIT EXECUTABLE TIME SUMMARY
+       USER TIME (SEC)      =   7.9000
+       SYSTEM TIME (SEC)    =  0.20000
+       WALLCLOCK TIME (SEC) =           17
+              INIT (SEC) =          0
+              MAIN (SEC) =         17
 
-***ERROR: Process terminated by external request (SIGTERM or SIGINT received).
+  THE ANALYSIS HAS COMPLETED SUCCESSFULLY
 

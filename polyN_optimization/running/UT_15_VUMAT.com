@@ -43,7 +43,7 @@ options = {
     'importSim':OFF,
     'importer':OFF,
     'importerParts':OFF,
-    'includes':['UT_VUMAT_param.inp', 'UT.geo', 'DP780_abq_deg4_swift_mises.inp'],
+    'includes':['UT_VUMAT_param.inp', 'UT.geo', 'AA7020-T6_abq_deg4_swift_mises.inp'],
     'initialConditionsFile':OFF,
     'input':'UT_15_VUMAT',
     'inputFormat':INP,

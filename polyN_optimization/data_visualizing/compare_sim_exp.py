@@ -13,14 +13,7 @@ sys.path.append(polyN_cali_dir)
 from read_param import read_param
 from get_calibration_data import analyze_exp_data
 
-p = read_param()
-material = p["material"]
-degree = int(p["degree"])
-input_type = p["input_type"]
-
-load_points = {"UT" :"7", "CH" :"25791", "SH":"8676", "NT6" : "7382", "NT20" : "1683"}
-
-def compare_ut(material):
+def compare_ut(material, degree):
 
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
@@ -71,7 +64,7 @@ def compare_ut(material):
     plt.legend()
     plt.show()
 
-def compare_all(material):
+def compare_all(material, degree, input_type):
 
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
@@ -160,7 +153,7 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def compare_large_strain(material):
+def compare_large_strain(material, degree, input_type):
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
 
@@ -185,6 +178,7 @@ def compare_large_strain(material):
 
             for ori in type_tests_mat.keys():
                 sim_res_path = results_sim_dir + sep + type_test + "_" + ori + "_" + input_type + ".csv"
+                print(sim_res_path)
                 plot = 1
 
                 if not os.path.exists(sim_res_path):
@@ -196,13 +190,7 @@ def compare_large_strain(material):
                 
                 if plot:
                     df_sim = pd.read_csv(sim_res_path)
-                    if type_test == "CH":
-                        fac = 2
-                    elif type_test == "SH":
-                        fac = 1 / np.sqrt(2)
-                    else :
-                        fac = 1
-                    ax[i].plot(df_sim["U2"] / 10, df_sim["RF2"] / 10000 * fac , label="abaqus", c="red")
+                    ax[i].plot(df_sim["U2"], df_sim["RF2"], label="abaqus", c="red")
 
                     for m in range(type_tests_mat[ori]):
                         exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
@@ -224,6 +212,17 @@ def compare_large_strain(material):
     fig.suptitle(f"{material} with poly{degree} : Check Experiments vs Abaqus results", fontsize=12)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])  
     plt.subplots_adjust(hspace=0.5)
-    plt.show()
 
-compare_large_strain(material)
+    figdir = file_dir + sep + material
+    if not(os.path.exists(figdir)):
+        os.makedirs(figdir)
+    
+    number = 0
+    filename = f"{material}_largestrain_{number}.png"
+    filepath = figdir + sep + filename
+    while os.path.exists(filepath):
+        number = number + 1
+        filename = f"{material}_largestrain_{number}.png"
+        filepath = figdir + sep + filename 
+
+    plt.savefig(filepath)

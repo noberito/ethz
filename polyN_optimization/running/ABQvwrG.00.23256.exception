@@ -1,0 +1,36 @@
+<Description>
+   ABAQUS/ABQvwrG rank 0 received the ABORT signal
+
+</Description>
+
+<Context>
+   ABQvwrG
+</Context>
+
+<Callstack>
+</Callstack>
+
+<Memory>
+   <Current>            0 GB </Current>
+   <Resident>           0 GB </Resident>
+   <Physical>          47 GB </Physical>
+   <Limit>              0 GB </Limit>
+   <Accessible>        47 GB </Accessible>
+   <Available>         26 GB </Available>
+   <Allocator>            DL </Allocator>
+</Memory>
+
+<Swap>
+       <Size>          54 GB </Size>
+       <Used>          22 GB </Used>
+       <Free>          31 GB </Free>
+</Swap>
+
+<Directories>
+  <current> C:\temp\polyN_optimization\running </current> <free>    143 GB </free>   <used>    320 GB </used> 
+     <temp> C:\Users\cnober\AppData\Local\Temp </temp>    <free>    143 GB </free>
+</Directories>
+
+<Installation>
+</Installation>
+

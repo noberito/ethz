@@ -74,6 +74,12 @@ def mises(sigma):
 """ --------------------------------------------------------COPY LAB DATA----------------------------------------------"""
 
 def copy_lab_data(material):
+    """
+        Copy the lab_data/{material}_results directory into the directory polyN_optimization/results_exp/DATA/{material} directory
+        if not already done
+        Input :
+            - material : string
+    """
     copy_dir = f"{file_dir}{sep}results_exp{sep}{material}"
     if not os.path.exists(copy_dir):
         parent_dir = os.path.dirname(file_dir)
@@ -120,15 +126,6 @@ def readData(material, protomodel):
 
 
 
-
-# In[205]:
-
-
-"""------------------------ MODEL AND SCALER LOADING -------------------------------------------------"""
-
-
-
-
 """------------------------------------POLYN PARAMETERS---------------------------------------------------------"""
 
 def get_param_polyN(degree):
@@ -159,7 +156,6 @@ def get_param_polyN(degree):
     sorted_indices = np.lexsort((powers[1], powers[2], powers[3], powers[4]))
     powers = powers.T[sorted_indices]
     X = X[:,sorted_indices]
-
 
     return(powers)
 
@@ -193,6 +189,7 @@ def polyN(S, coeff, powers):
         Input :
             - S : ndarray of shape (n,6) or (6,), stress components in 3D
             - coeff : ndarray of shape (nmon,), coefficients of the polyN function
+            - powers : ndarray of shape (nmon, 5), powers[i, j] is the power of the variable j in the monomial i
         Output :
             - res : float, result of polyN
     """
@@ -520,6 +517,9 @@ def optiCoeff_pflow(law, coeff_polyN, material, degree, powers):
         Input :
             - law : string, law in ["swift", "voce"]
             - coeff_polyN : ndarray of shape (nmon,), polyN coefficients
+            - material : string
+            - degree : integer, degree of the polyN function
+            - powers : ndarray of shape (nmon, 5), powers[i, j] is the power of the variable j in the monomial i
     """
     
     def f(S):
@@ -628,6 +628,7 @@ def check_coeff(a, b, c, law, material):
             - b : float
             - c : float
             - law : string
+            - material : string
     """
     foldername = file_dir + sep + "calibration_data" + sep + material
     filename_out = f"data_plasticlaw_{material}.csv"
@@ -675,10 +676,16 @@ def check_coeff(a, b, c, law, material):
     
 def plot_check(df, coeff_polyN, powers, material, weigth_exp, savefigyr, nb_virtual_pt, degree, protomodel):
     """
-        Plot the yield surface in the sx, sy plane and the yield stresses and r-values according to the loading angle.
+        Plot the yield stresses and r-values according to the loading angle. Comparing model and theory on UT tests.
         Input :
             - df : pd.Dataframe, must contain columns ["d11", "d22", "s12", "s13", "s23"] of yield stresses points. And if available ["Rval"] with ["LoadAngle"]
             - coeff_polyN : ndarray of shape (nmon,)
+            - powers : ndarray of shape (nmon, 5), powers[i, j] is the power of the variable j in the monomial i
+            - material : string
+            - savefigyr : boolean, 1 if save fig, 0 to plot
+            - nb_virtual_pt : integer, number of points extracted from the protomodel
+            - degree : integer
+            - protomodel : string, protomodel among the ones available
     """
     def f(S):
         return(polyN(S, coeff_polyN, powers))
@@ -818,7 +825,19 @@ def mises(sigma):
     res = np.sqrt(0.5 * (s22 - s33)**2 + 0.5 * (s33 - s11)**2 + 0.5 * (s11 - s22)**2 + 3 * (s23**2 + s13**2 + s12**2))
     return res
 
-def plot_planestress(material, coeff, powers, savefigplane, weigth_exp, nb_virtual_pt, degree, protomodel):
+def plot_planestress(coeff, powers, material, savefigplane, weigth_exp, nb_virtual_pt, degree, protomodel):
+    """
+        Plot the yield surface in the sx, sy plane.
+        Input :
+            - coeff_polyN : ndarray of shape (nmon,)
+            - powers : ndarray of shape (nmon, 5), powers[i, j] is the power of the variable j in the monomial i
+            - material : string
+            - savefigplane : boolean, 1 if save fig, 0 to plot
+            - weight_exp : float, weigth of the experimental yield stresses data
+            - nb_virtual_pt : integer, number of points extracted from the protomodel
+            - degree : integer
+            - protomodel : string, protomodel among the ones available
+    """
     zs = np.linspace(0, 1, 10)
     mises_plot = False
     fig, ax = plt.subplots()
@@ -1048,7 +1067,13 @@ def write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, materia
 
 
 def first_opti():
-
+    """
+        Generate 3 main files :
+            - polyN_coeff.npy : coefficients of the polyN function according to param.txt
+            - {law}_coeff.npy : coefficients of the hardening law given in param.txt and the young modulus
+            - user material file
+        Other features available
+    """
     p = read_param()
 
     material = p["material"]
@@ -1129,3 +1154,5 @@ def first_opti():
         write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt, powers)
     if export_coeff_abq:
         write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers)
+    
+    return(coeff)

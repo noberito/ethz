@@ -37,7 +37,7 @@
 **-----------------------------------------------------
 ** Material Data
 **-----------------------------------------------------
-*SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=RELAX STIFFNESS, ELEMENT DELETION=YES
+*SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=ENHANCED, ELEMENT DELETION=YES
 1.0, 1.0, 1.0, 1.0, 1.0, , , 
 *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-90, material=mat
 **
@@ -72,7 +72,7 @@ ZMIN, 3, 5, 0.
 ** ----------------------------------------------------
 *STEP, name=Step-1
 *DYNAMIC, EXPLICIT
-,1,,<MAXDT>
+,<DTIME>,,
 *FIXED MASS SCALING, TYPE=UNIFORM, DT=<DT>
 *Bulk Viscosity
 0.06, 1.2

@@ -1,6 +1,6 @@
 * To use new params, write "{variable} = {value}"
 
-material = AA7020-T6
+material = DP780
 gseed = 6
 enu = 0.3
 density = 7.85e-9
@@ -12,6 +12,7 @@ protomodel = mises
 law = swift
 n_opti = 10
 input_type = UMAT
+var_optim = 8
 
 gen_v_data = 1
 gen_e_data = 1
@@ -27,3 +28,4 @@ plot = 0
 savefigyr = 0
 savefigplane = 0
 savecoeff = 1
+

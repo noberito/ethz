@@ -124,119 +124,139 @@
 !C  INTERNAL VARIABLES OF THE SUBROUTINE
       
 !C  VECTOR O MATERIAL PARAMETERS
-        INTEGER::NKMAT, NTENS
-        REAL(PREC),ALLOCATABLE, DIMENSION(:)::KMATERIAL
-        
-        REAL(PREC)::ZERO=0.0D0
-        REAL(PREC)::ONE=1.0D0
-        REAL(PREC)::TWO=2.0D0
-        REAL(PREC)::THREE=3.0D0
-        REAL(PREC)::SIX=6.0D0
-        REAL(PREC)::ZTOL=1.0e-10
+    INTEGER::NKMAT
+	REAL(PREC),ALLOCATABLE, DIMENSION(:)::KMATERIAL
+    
+	REAL(PREC), PARAMETER::ZERO=0.0D0
+	REAL(PREC), PARAMETER::ONE=1.0D0
+	REAL(PREC), PARAMETER::TWO=2.0D0
+	REAL(PREC), PARAMETER::THREE=3.0D0
+	REAL(PREC), PARAMETER::SIX=6.0D0
+    REAL(PREC), PARAMETER::ZTOL=1.0e-10
 
-    !C  elastic constants
-        REAL(PREC) :: EMOD, ENU
-    !C  COMPLIANCE TENSOR
-        REAL(PREC),DIMENSION(nblock, ndir + nshr,ndir + nshr)::SCOMP
-        REAL(PREC),DIMENSION (ndir + nshr, ndir + nshr) :: DDSDDE 
+!C  elastic constants
+	REAL(PREC) :: EMOD, ENU
+!C  COMPLIANCE TENSOR
+	REAL(PREC),DIMENSION(ndir + nshr,ndir + nshr)::SCOMP, DDSDDE
 
-    !C  HARDENING PARAMETERS
-        REAL(PREC)::AA,BB,CC
-    !C  HARDENING VALUES
-        REAL(PREC):: HF, HPF, HFS
+!C  HARDENING PARAMETERS
+	REAL(PREC)::AA,BB,CC
+!C  HARDENING VALUES
+	REAL(PREC):: HF, HPF, HFS
 
-    !C  STRESS TENSOR AND ITS INCREMENTS
-        REAL(PREC),DIMENSION(nblock, ndir + nshr)::SIGMA, DSIGMA, D2SIGMA
+!C  STRESS TENSOR AND ITS INCREMENTS
+	REAL(PREC),DIMENSION(ndir + nshr)::SIGMA, DSIGMA, D2SIGMA, STRESS, DSTRAN
 
-    !C  EQUIVALENT PLASTIC STRAIN AND ITS INCREMENTS
-        REAL(PREC),DIMENSION(nblock):: EPBAR, DEPBAR, D2EPBAR
+!C  EQUIVALENT PLASTIC STRAIN AND ITS INCREMENTS
+	REAL(PREC):: EPBAR, DEPBAR, D2EPBAR
 
-    !C  YIELD FUNCTION VALUE, GRADIENT AND HESSIAN
-        REAL(PREC):: YF, YFS
-        REAL(PREC),DIMENSION(ndir + nshr)::GYF
-        REAL(PREC),DIMENSION(ndir + nshr,ndir + nshr)::HYF
+!C  YIELD FUNCTION VALUE, GRADIENT AND HESSIAN
+	REAL(PREC):: YF, YFS
+	REAL(PREC),DIMENSION(ndir + nshr)::GYF
+	REAL(PREC),DIMENSION(ndir + nshr,ndir + nshr)::HYF
 
-    !C  CONVERGENCE TOLERANCES
-    !    REAL(PREC),PARAMETER::TOL1=1.0E-006, TOL2=1.0E-008
-        REAL(PREC),PARAMETER::TOL1=1.0E-04
+!C  CONVERGENCE TOLERANCES
+!    REAL(PREC),PARAMETER::TOL1=1.0E-006, TOL2=1.0E-008
+	REAL(PREC),PARAMETER::TOL1=1.0E-004
 
-    !C  TEMPORARY HOLDERS
-        REAL(PREC)::TT, TTA, TTB, ZALPHA, F1, FZERO, EBULK3, &
-            EG2, EG, EG3, ELAM,TDEPBAR
-        REAL(PREC),DIMENSION(ndir + nshr)::YVECTOR, F2, TDSIGMA
-        REAL(PREC),DIMENSION(ndir + nshr,ndir + nshr)::XIMAT
-        REAL(PREC),DIMENSION(ndir + nshr, ndir + nshr)::BV, IDENTITY
-        REAL(PREC),DIMENSION(ndir + nshr)::ZZ
-        REAL(PREC)::VT, stress_power, smean, equiv_stress, deqps, plastic_work_inc
-    !C  LOOP COUNTERS
-        INTEGER::k,j,K1,K2,NRK,KK,LL,MM,II,JJ
+!C  TEMPORARY HOLDERS
+	REAL(PREC)::TT, TTA, TTB, ZALPHA, F1, FZERO, TDEPBAR, EBULK3, &
+        EG2, EG, EG3, ELAM
+	REAL(PREC),DIMENSION(ndir + nshr)::YVECTOR, F2, TDSIGMA
+	REAL(PREC),DIMENSION(ndir + nshr,ndir + nshr)::XIMAT
+	REAL(PREC),DIMENSION(ndir + nshr, ndir + nshr)::BV, IDENTITY
+	REAL(PREC),DIMENSION(ndir + nshr)::ZZ
+    REAL(PREC)::VT
 
-    !C  NEWTON-RAPHSON MAXIMUM NUMBER OF ITERATIONS
-        INTEGER,PARAMETER:: NRMAX=100
-        
-    !C PolyN interface variables 
-        INTEGER::DEGREE,NCOEFF,NMON	
+!C  LOOP COUNTERS
+    INTEGER::K1,K2,NRK,KK,LL,MM,II,JJ,NTENS, k, i
 
-    !C*****************************************************
-        EMOD = PROPS(1)
-        ENU = PROPS(2)
-        AA = PROPS(3)
-        BB = PROPS(4)
-        CC = PROPS(5)
-        DEGREE = INT(PROPS(6))
-        NCOEFF = INT(PROPS(7))
-        NKMAT = NPROPS - 7
+!C  NEWTON-RAPHSON MAXIMUM NUMBER OF ITERATIONS
+    INTEGER,PARAMETER:: NRMAX=50
+	
+!C PolyN interface variables 
+    INTEGER::DEGREE,NCOEFF,NMON	
 
-        ALLOCATE (KMATERIAL(NKMAT))
-        KMATERIAL = PROPS(8:7+NKMAT)
+!C*****************************************************
+	EMOD = PROPS(1)
+    ENU = PROPS(2)
+    AA = PROPS(3)
+    BB = PROPS(4)
+    CC = PROPS(5)
+	DEGREE = INT(PROPS(6))
+	NCOEFF = INT(PROPS(7))
+	NKMAT = NPROPS - 7
+	
+	ALLOCATE (KMATERIAL(NKMAT))
+	KMATERIAL = PROPS(8:7+NKMAT)
 			
 !C!********************************************
 !C RECOVER THE EQUIVALENT PLASTIC STRAIN AT THE BEGINING OF THE INCREMENT
-        do k=1, nblock
-            EPBAR(k) = stateOld(k, 1)
-        end do
-    !C**********************************************************************
-    !C     WRITE TO A FILE
-    !C**********************************************************************
+    NTENS = ndir + nshr
 
-        OPEN(80, FILE = 'C:\temp\polyN_optimization\execution\output.txt')
-        1 FORMAT(30F30.8)
-        
-    !C!********************************************
-    !C INITIALIZE THE STIFFNESS TENSOR (IT WILL BE STORED IN DDSDDE)
-        NTENS = ndir + nshr
-        DDSDDE = ZERO
+!C**********************************************************************
+!C     WRITE TO A FILE
+!C**********************************************************************
 
-    !C ELASTIC PROPERTIES (3D STRESS)
-        EBULK3 = EMOD/(ONE - TWO*ENU)
-        EG2 = EMOD/(ONE+ENU)
-        EG = EG2/TWO
-        EG3 = THREE*EG
-        ELAM = (EBULK3 - EG2)/THREE
 
-    !C COMPUTE THE STIFFNESS TENSOR IN 3D
-        
-        DO K1=1, ndir
-            DO K2=1, ndir
-                DDSDDE(K2, K1)=ELAM
-            END DO
-            DDSDDE(K1, K1)=EG2+ELAM
+      
+!C!********************************************
+!C INITIALIZE THE STIFFNESS TENSOR (IT WILL BE STORED IN DDSDDE)
+
+    DDSDDE = ZERO
+
+!C ELASTIC PROPERTIES (3D STRESS)
+    EBULK3 = EMOD/(ONE - TWO*ENU)
+    EG2 = EMOD/(ONE+ENU)
+    EG = EG2/TWO
+    EG3 = THREE*EG
+    ELAM = (EBULK3 - EG2)/THREE
+
+!C COMPUTE THE STIFFNESS TENSOR IN 3D
+    
+    DO K1=1, ndir
+        DO K2=1, ndir
+            DDSDDE(K2, K1)=ELAM
         END DO
+        DDSDDE(K1, K1)=EG2+ELAM
+    END DO
+    DO K1=ndir+1, NTENS
+        DDSDDE(K1, K1)=EG
+    END DO 
 
-        DO K1= ndir+1, ndir + nshr
-            DDSDDE(K1, K1)=EG
-        END DO    
-        
-    !C COMPUTE THE TRIAL STRESS : SIGMA_{N+1} = SIGMA_{N} + C[DELTA_EPSILON]
-        DO k=1, nblock
-            DO K1=1, ndir + nshr
-                TT = ZERO
-                DO K2=1, ndir + nshr
-                    TT = TT + DDSDDE(K1, K2) * strainInc(k, K2)
-                END DO
-                DSIGMA(k, K1)= TT
-                SIGMA(k, K1) = stressOld(k, K1) + TT
+    TTA=1.0D0/EMOD
+    TTB=-ENU/EMOD 
+    TT=TWO*(ONE+ENU)/EMOD
+    SCOMP = ZERO
+
+    DO K1=1, ndir
+        DO K2=1, ndir
+            SCOMP(K2, K1) = TTB
+        END DO
+        SCOMP(K1, K1) = TTA
+    END DO
+    DO K1=ndir+1, NTENS
+        SCOMP(K1, K1)=TT
+    END DO   
+
+    
+!C COMPUTE THE TRIAL STRESS : SIGMA_{N+1} = SIGMA_{N} + C[DELTA_EPSILON]
+
+    DO k=1, nblock, 1
+        EPBAR = stateOld(k,1)
+        STRESS = stressOld(k,:)
+        DSTRAN = strainInc(k,:)
+        DSIGMA = ZERO
+        DEPBAR = ZERO
+
+        DO K1=1, NTENS
+            TT = ZERO
+            DO K2=1, NTENS
+                TT = TT + DDSDDE(K1, K2) * DSTRAN(K2)
             END DO
+            DSIGMA(K1)= TT
+            SIGMA(K1) = STRESS(K1) + TT
+        END DO
     !C  write(*,*)"DS",DSTRAN
     !C  write(*,*)"S",STRESS
     !C  write(*,*)"SIG",SIGMA
@@ -256,17 +276,17 @@
 
 
     !C CHECK YIELDING CONDITION
-            CALL KHARD(HF,HPF,EPBAR(k),AA,BB,CC)
-            CALL YFUNCTION(SIGMA(k, :),NTENS,YF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
+        CALL KHARD(HF,HPF,EPBAR,AA,BB,CC)
+        CALL YFUNCTION(SIGMA,NTENS,YF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
 
-        !C  ELASTIC STEP :  UPDATE STRESS
-            IF (YF <= HF) THEN
-                !C****write(80,1)TIME, EPBAR, SIGMA(1),YF, HF, AA, BB, CC
-                stressNew(k,:) = SIGMA(k,:)
-                stateNew(k,1) = EPBAR(k)
-        !C  DDSDDE HAS BEEN DEFINED ABOVE
-        !C  THE EQUIVALENT PLASTIC STRAIN, STATEV(1), REMAINS UNCHANGED
-            ELSE
+    !C  ELASTIC STEP :  UPDATE STRESS
+        IF (YF <= HF) THEN
+            !C****write(80,1)TIME, EPBAR, SIGMA(1),YF, HF, AA, BB, CC
+            stressNew(k,:) = SIGMA
+            stateNew(k,1) = EPBAR
+    !C  DDSDDE HAS BEEN DEFINED ABOVE
+    !C  THE EQUIVALENT PLASTIC STRAIN, STATEV(1), REMAINS UNCHANGED
+        ELSE
 
         !c  write(*,*)"Je passe en plastique"
         !c  IF (ISNAN(STRESS(1))) THEN
@@ -280,20 +300,8 @@
 
     !C  DEFINE COMPLIANCE (note that it outputs ENGINEERING shears)
         
-                TTA=1.0D0/EMOD
-                TTB=-ENU/EMOD 
-                TT=TWO*(ONE+ENU)/EMOD
-                SCOMP(k,:,:) = ZERO
-                DO K1=1, ndir
-                    DO K2=1, ndir
-                        SCOMP(k, K2, K1) = TTB
-                    END DO
-                    SCOMP(k, K1, K1) = TTA
-                END DO
-                DO K1=NDI+1, NTENS
-                    SCOMP(k, K1, K1)=TT
-                END DO
-            !C  SCOMP CHECKED
+
+        !C  SCOMP CHECKED
             
             
         !C  SCOMP(1,1)=TTA
@@ -308,87 +316,84 @@
 
         !C    FIRST Newton-Raphson step (no Hessian required)
         !C**************************************************************      
-        !C  DEPBAR=ZERO
 
-                CALL GYFUNCTION(SIGMA(k,:),NTENS,YF,GYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
-                F1=YF-HF
-
-                YVECTOR = 0.0D0
+            CALL GYFUNCTION(SIGMA,NTENS,YF,GYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
+            F1=YF-HF
 
         !C  ASSEMBLE XIMAT MATRIX AND Y-VECTOR
-                DO K1=1,NTENS,1
-                    YVECTOR(K1)=-F1*GYF(K1)
-                    DO K2=K1,NTENS,1
-                        TT=HPF*SCOMP(k, K1,K2)+GYF(K1)*GYF(K2)
-                        XIMAT(K1,K2)=TT
-                        XIMAT(K2,K1)=TT
-                    END DO
+            DO K1=1,NTENS,1
+                YVECTOR(K1)=-F1*GYF(K1)
+                DO K2=K1,NTENS,1
+                    TT=HPF*SCOMP(K1,K2)+GYF(K1)*GYF(K2)
+                    XIMAT(K1,K2)=TT
+                    XIMAT(K2,K1)=TT
                 END DO
+            END DO
 
             !C  write(*,*)"XIMAT", XIMAT
 
-                DO K1=1, NTENS, 1
-                    DO K2=1, NTENS, 1
-                        BV(K1,K2)=XIMAT(K1,K2)
-                    END DO
+            DO K1=1, NTENS, 1
+                DO K2=1, NTENS, 1
+                    BV(K1,K2)=XIMAT(K1,K2)
                 END DO
+            END DO
 
         !C  SOLVE FOR STRESS NR-INCREMENT USING CHOLESKY ALGORITHM
-                DO JJ=1, NTENS, 1
-                    DO KK=1, JJ-1, 1
-                        BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
-                    END DO
-                    BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
-                    DO II=(JJ+1), NTENS, 1
-                        DO KK=1, JJ-1, 1
-                            BV(II,JJ)=BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
-                        END DO
-                        BV(II,JJ)=BV(II,JJ)/BV(JJ,JJ)
-                    END DO
+            DO JJ=1, NTENS, 1
+                DO KK=1, JJ-1, 1
+                    BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
                 END DO
+                BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
+                DO II=(JJ+1), NTENS, 1
+                    DO KK=1, JJ-1, 1
+                        BV(II,JJ)=BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
+                    END DO
+                    BV(II,JJ)=BV(II,JJ)/BV(JJ,JJ)
+                END DO
+            END DO
 
             !C  write(*,*)"BV", BV
             
-                DO II=1, NTENS, 1
-                    ZZ(II) = YVECTOR(II)
-                    DO JJ = 1, II-1, 1
-                        ZZ(II) = ZZ(II) - BV(II, JJ) * ZZ(JJ)
-                    END DO
-                    ZZ(II) = ZZ(II) / BV(II, II)
+            DO II=1, NTENS, 1
+                ZZ(II) = YVECTOR(II)
+                DO JJ = 1, II-1, 1
+                    ZZ(II) = ZZ(II) - BV(II, JJ) * ZZ(JJ)
                 END DO
+                ZZ(II) = ZZ(II) / BV(II, II)
+            END DO
 
             !C  write(*,*)"ZZ", ZZ
             
-                DO II=NTENS, 1, -1
-                    D2SIGMA(k, II) = ZZ(II)
-                    DO JJ =II+1 , NTENS, 1
-                        D2SIGMA(k, II) = D2SIGMA(k, II) - BV(JJ, II) * D2SIGMA(k, JJ)
-                    END DO
-                    D2SIGMA(k, II) = D2SIGMA(k, II) / BV(II, II)
+            DO II=NTENS, 1, -1
+                D2SIGMA(II) = ZZ(II)
+                DO JJ =II+1 , NTENS, 1
+                    D2SIGMA(II) = D2SIGMA(II) - BV(JJ, II) * D2SIGMA(JJ)
                 END DO
+                D2SIGMA(II) = D2SIGMA(II) / BV(II, II)
+            END DO
 
             !C  write(*,*)"D2SIGMA", D2SIGMA
 
             
 
         !C  CALCULATE EQUIVALENT PLASTIC STRAIN NR-INCREMENT 
-                D2EPBAR(k)=F1
-                DO K1=1,NTENS,1
-                    D2EPBAR(k)=D2EPBAR(k)+GYF(K1)*D2SIGMA(k, K1)
-                END DO
-                D2EPBAR(k)=D2EPBAR(k)/HPF
+            D2EPBAR=F1
+            DO K1=1,NTENS,1
+                D2EPBAR=D2EPBAR+GYF(K1)*D2SIGMA(K1)
+            END DO
+            D2EPBAR=D2EPBAR/HPF
             
         !C  DO LINE SEARCH (along the full NR-step)
-                TDEPBAR=D2EPBAR(k)
-                TDSIGMA=DSIGMA(k,:)+D2SIGMA(k,:)
-                FZERO=F1
-                CALL LSEARCH(NTENS,stressOld(k,:),TDSIGMA,strainInc(k,:),EPBAR(k),TDEPBAR,FZERO, &
-                        SCOMP(k,:,:),KMATERIAL,NKMAT,AA,BB,CC,ZALPHA,DEGREE,NCOEFF,NMON)
+            TDEPBAR=D2EPBAR
+            TDSIGMA=DSIGMA+D2SIGMA	
+            FZERO=F1
+            CALL LSEARCH(NTENS,STRESS,TDSIGMA,DSTRAN,EPBAR,TDEPBAR,FZERO, &
+                        SCOMP,KMATERIAL,NKMAT,AA,BB,CC,ZALPHA,DEGREE,NCOEFF,NMON)
 
         !C  UPDATE
 
-                DEPBAR(k)=ZALPHA*D2EPBAR(k)
-                DSIGMA(k,:)=DSIGMA(k,:)+ZALPHA*D2SIGMA(k,:)
+            DEPBAR=ZALPHA*D2EPBAR
+            DSIGMA=DSIGMA+ZALPHA*D2SIGMA
 
             !C  write(*,*)"YF", YF
             !C  write(*,*)"GYF", GYF
@@ -396,162 +401,165 @@
             
         !C    THE REST OF N-R ITERATIONS
         !C******************************************************	     
-                DO NRK=1,NRMAX,1
+            DO NRK=1,NRMAX,1
 
-            !C      CALCULATE NEW VALUES ASSOCIATED WITH NEW STATE
-                    CALL KHARD(HF,HPF,EPBAR(k)+DEPBAR(k),AA,BB,CC)
-                    SIGMA(k,:)=stressOld(k,:)+DSIGMA(k,:)
-                    CALL HYFUNCTION(SIGMA(k,:),NTENS,YF,GYF,HYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
-                    
-                    F1=YF-HF
-                    FZERO=F1*F1
-                    DO K1=1,NTENS,1
-                        TT=DEPBAR(k)*GYF(K1)-strainInc(k, K1)
-                        DO K2=1,NTENS,1
-                            TT=TT+SCOMP(k, K1,K2)*DSIGMA(k, K2)
-                        END DO
-                        F2(K1)=TT
-                        FZERO=FZERO+TT*TT
+        !C      CALCULATE NEW VALUES ASSOCIATED WITH NEW STATE
+                CALL KHARD(HF,HPF,EPBAR+DEPBAR,AA,BB,CC)
+                SIGMA=STRESS+DSIGMA
+                CALL HYFUNCTION(SIGMA,NTENS,YF,GYF,HYF,KMATERIAL,NKMAT,DEGREE,NCOEFF,NMON)
+                
+
+                F1=YF-HF
+                FZERO=F1*F1
+                DO K1=1,NTENS,1
+                    TT=DEPBAR*GYF(K1)-DSTRAN(K1)
+                    DO K2=1,NTENS,1
+                        TT=TT+SCOMP(K1,K2)*DSIGMA(K2)
                     END DO
-                    FZERO=DSQRT(FZERO)
-            !C      CHECK TOLERANCES
-            !C        IF ((DABS(F1)<TOL1).AND.(DSQRT(TTB)<TOL2)) EXIT
-                    !c  write(80,1)F1/TOL1  
-                    IF(FZERO<TOL1) EXIT
+                    F2(K1)=TT
+                    FZERO=FZERO+TT*TT
+                END DO
+                FZERO=DSQRT(FZERO)
+        !C      CHECK TOLERANCES
+        !C        IF ((DABS(F1)<TOL1).AND.(DSQRT(TTB)<TOL2)) EXIT
+                !c  write(80,1)F1/TOL1  
+                IF(FZERO<TOL1) EXIT
 
-                    !C  write(*,*)"ZZ PRE", NRK, ZZ
-                    
-                    !C  write(*,*)"YVECTOR PRE", NRK, XIMAT
-                    !C  write(*,*)"XIMAT PRE", NRK, XIMAT
+                !C  write(*,*)"ZZ PRE", NRK, ZZ
+                
+                !C  write(*,*)"YVECTOR PRE", NRK, XIMAT
+                !C  write(*,*)"XIMAT PRE", NRK, XIMAT
 
-            !C      ASSEMBLE XIMAT MATRIX AND Y-VECTOR
-                    DO K1=1,NTENS,1
-                        YVECTOR(K1)=-(F1*GYF(K1)+HPF*F2(K1))
-                        DO K2=K1,NTENS,1
-                            TT=HPF*(SCOMP(k, K1,K2)+DEPBAR(k)*HYF(K1,K2))+GYF(K1)*GYF(K2)
-                            XIMAT(K1,K2)=TT
-                            XIMAT(K2,K1)=TT
-                        END DO
+        !C      ASSEMBLE XIMAT MATRIX AND Y-VECTOR
+                DO K1=1,NTENS,1
+                    YVECTOR(K1)=-(F1*GYF(K1)+HPF*F2(K1))
+                    DO K2=K1,NTENS,1
+                        TT=HPF*(SCOMP(K1,K2)+DEPBAR*HYF(K1,K2))+GYF(K1)*GYF(K2)
+                        XIMAT(K1,K2)=TT
+                        XIMAT(K2,K1)=TT
                     END DO
+                END DO
 
-                    !C  write(*,*)"XIMAT", NRK, XIMAT
+                !C  write(*,*)"XIMAT", NRK, XIMAT
 
-                    DO K1=1, NTENS, 1
-                        DO K2=1, NTENS, 1
-                            BV(K1,K2)=XIMAT(K1,K2)
-                        END DO
+                DO K1=1, NTENS, 1
+                    DO K2=1, NTENS, 1
+                        BV(K1,K2)=XIMAT(K1,K2)
                     END DO
+                END DO
 
-                    !C  write(*,*)"BV PRE", NRK, BV
-                    
-            !C      SOLVE FOR STRESS NR-INCREMENT USING CHOLESKY ALGORITHM
-                    DO JJ=1, NTENS, 1
-                        !C  write(*,*)"JJ, NRK, BV(JJ,JJ) PRE BOUCLE", JJ, NRK, BV(JJ, JJ)
+                !C  write(*,*)"BV PRE", NRK, BV
+                
+        !C      SOLVE FOR STRESS NR-INCREMENT USING CHOLESKY ALGORITHM
+                DO JJ=1, NTENS, 1
+                    !C  write(*,*)"JJ, NRK, BV(JJ,JJ) PRE BOUCLE", JJ, NRK, BV(JJ, JJ)
+                    DO KK=1, JJ-1, 1
+                        !C  write(*,*)"JJ,KK", JJ, KK
+                        BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
+                    END DO
+                    !C  write(*,*)"JJ, NRK, BV(JJ,JJ) POST BOUCLE", JJ, NRK, BV(JJ, JJ)
+                    BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
+                    !C  write(*,*)"JJ, NRK, BV(JJ,JJ) POST BOUCLE ET SQRT", JJ, NRK, BV(JJ, JJ)
+                    DO II=(JJ+1), NTENS, 1
                         DO KK=1, JJ-1, 1
-                            !C  write(*,*)"JJ,KK", JJ, KK
-                            BV(JJ,JJ)= BV(JJ,JJ) - BV(JJ,KK) * BV(JJ,KK)
+                            BV(II,JJ) = BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
                         END DO
-                        !C  write(*,*)"JJ, NRK, BV(JJ,JJ) POST BOUCLE", JJ, NRK, BV(JJ, JJ)
-                        BV(JJ,JJ) = DSQRT(BV(JJ,JJ))
-                        !C  write(*,*)"JJ, NRK, BV(JJ,JJ) POST BOUCLE ET SQRT", JJ, NRK, BV(JJ, JJ)
-                        DO II=(JJ+1), NTENS, 1
-                            DO KK=1, JJ-1, 1
-                                BV(II,JJ) = BV(II,JJ) - BV(II,KK) * BV(JJ,KK)
-                            END DO
-                            BV(II,JJ)=BV(II,JJ)/BV(JJ,JJ)
-                        END DO
+                        BV(II,JJ)=BV(II,JJ)/BV(JJ,JJ)
                     END DO
-                    
-                    !C  write(*,*)"BV POST", NRK, BV
+                END DO
+                
+                !C  write(*,*)"BV POST", NRK, BV
 
-                    DO II=1, NTENS, 1
-                        ZZ(II) = YVECTOR(II)
-                        DO JJ = 1, II-1, 1
-                            ZZ(II) = ZZ(II) - BV(II, JJ) * ZZ(JJ)
-                        END DO
-                        ZZ(II) = ZZ(II) / BV(II, II)
+                DO II=1, NTENS, 1
+                    ZZ(II) = YVECTOR(II)
+                    DO JJ = 1, II-1, 1
+                        ZZ(II) = ZZ(II) - BV(II, JJ) * ZZ(JJ)
                     END DO
-                    
-                    !C  write(*,*)"ZZ POST", NRK, ZZ
-                    !C  write(*,*)"BV POST", NRK, BV
-                    !C  write(*,*)"YVECTOR POST", NRK, XIMAT
-                    !C  write(*,*)"XIMAT POST", NRK, XIMAT
+                    ZZ(II) = ZZ(II) / BV(II, II)
+                END DO
+                
+                !C  write(*,*)"ZZ POST", NRK, ZZ
+                !C  write(*,*)"BV POST", NRK, BV
+                !C  write(*,*)"YVECTOR POST", NRK, XIMAT
+                !C  write(*,*)"XIMAT POST", NRK, XIMAT
 
 
-                    DO II=NTENS, 1, -1
-                        D2SIGMA(k, II) = ZZ(II)
-                        DO JJ =II+1 , NTENS, 1
-                            D2SIGMA(k, II) = D2SIGMA(k, II) - BV(JJ, II) * D2SIGMA(k, JJ)
-                        END DO
-                        D2SIGMA(k, II) = D2SIGMA(k, II) / BV(II, II)
+                DO II=NTENS, 1, -1
+                    D2SIGMA(II) = ZZ(II)
+                    DO JJ =II+1 , NTENS, 1
+                        D2SIGMA(II) = D2SIGMA(II) - BV(JJ, II) * D2SIGMA(JJ)
                     END DO
+                    D2SIGMA(II) = D2SIGMA(II) / BV(II, II)
+                END DO
 
-            !C      CALCULATE EQUIVALENT PLASTIC STRAIN NR-INCREMENT 
-                    D2EPBAR=F1
-                    !C  write(*,*),"D2PBAR PRE", NRK, D2EPBAR
-                    !C  write(*,*)"GYF", NRK, GYF
-                    !C  write(*,*)"D2SIGMA POST", NRK, D2SIGMA
-                    !C  write(*,*)"HPF", NRK, HPF
+        !C      CALCULATE EQUIVALENT PLASTIC STRAIN NR-INCREMENT 
+                D2EPBAR=F1
+                !C  write(*,*),"D2PBAR PRE", NRK, D2EPBAR
+                !C  write(*,*)"GYF", NRK, GYF
+                !C  write(*,*)"D2SIGMA POST", NRK, D2SIGMA
+                !C  write(*,*)"HPF", NRK, HPF
 
 
-                    DO K1=1,NTENS,1
-                        D2EPBAR(k)=D2EPBAR(k)+GYF(K1)*D2SIGMA(k, K1)
-                    END DO
-                    D2EPBAR(k)=D2EPBAR(k)/HPF
+                DO K1=1,NTENS,1
+                    D2EPBAR=D2EPBAR+GYF(K1)*D2SIGMA(K1)
+                END DO
+                D2EPBAR=D2EPBAR/HPF
 
-            !C      DO LINE SEARCH
-                    TDEPBAR=DEPBAR(k)+D2EPBAR(k)
-                    TDSIGMA=DSIGMA(k,:)+D2SIGMA(k,:)
+        !C      DO LINE SEARCH
+                TDEPBAR=DEPBAR+D2EPBAR
+                TDSIGMA=DSIGMA+D2SIGMA
 
-                    !C  write(*,*),"D2PBAR POST", NRK, D2EPBAR
+                !C  write(*,*),"D2PBAR POST", NRK, D2EPBAR
 
-                    CALL LSEARCH(NTENS,stressOld(k,:),TDSIGMA,strainInc(k,:),EPBAR(k),TDEPBAR,FZERO, &
-                            SCOMP(k,:,:),KMATERIAL,NKMAT,AA,BB,CC,ZALPHA,DEGREE,NCOEFF,NMON)
+                CALL LSEARCH(NTENS,STRESS,TDSIGMA,DSTRAN,EPBAR,TDEPBAR,FZERO, &
+                        SCOMP,KMATERIAL,NKMAT,AA,BB,CC,ZALPHA,DEGREE,NCOEFF,NMON)
 
-            !C      UPDATE
+        !C      UPDATE
 
-                    DEPBAR(k)=DEPBAR(k)+ZALPHA*D2EPBAR(k)
-                    DSIGMA(k,:)=DSIGMA(k,:)+ZALPHA*D2SIGMA(k,:)
-                    
-                    !C  write(*,*),"DEPBAR", NRK, DEPBAR
+                DEPBAR=DEPBAR+ZALPHA*D2EPBAR
+                DSIGMA=DSIGMA+ZALPHA*D2SIGMA
+                
+                !C  write(*,*),"DEPBAR", NRK, DEPBAR
 
-                END DO !!! END OF NEWTON-RAPHSON ITERATIONS
+            END DO !!! END OF NEWTON-RAPHSON ITERATIONS
                 
         !C  UPDATE STATE VARIABLE
 
             !C  write(*,*)"EPBAR, DEPBAR", EPBAR, DEPBAR
-                stateNew(k,1)=EPBAR(k)+DEPBAR(k)
+            stateNew(k,1)=EPBAR+DEPBAR
+
         !C  UPDATE STRESS
-                stressNew(k,:) = stressOld(k,:)+DSIGMA(k,:)
-            !C  write(*,*)"DSIGMA", DSIGMA
-        !C************************************** COMPUTE TANGENT MODULUS: DDSDDE
-            END IF
-        END DO
-        do i=1, nblock
-			stress_power = ONE/TWO * ( &
-                (stressOld(i,1) + stressNew(i,1)) * strainInc(i,1) + &
-                (stressOld(i,2) + stressNew(i,2)) * strainInc(i,2) + &
-                (stressOld(i,3) + stressNew(i,3)) * strainInc(i,3) + &
-                TWO * (stressOld(i,4) + stressNew(i,4)) * strainInc(i,4) + &
-                TWO * (stressOld(i,5) + stressNew(i,5)) * strainInc(i,5) + &
-                TWO * (stressOld(i,6) + stressNew(i,6)) * strainInc(i,6) )
-            enerInternNew(i) = enerInternOld(i) + stress_power/density(i)
+            stressNew(k,:) = STRESS+DSIGMA
+        !C  write(*,*)"DSIGMA", DSIGMA
+    !C************************************** COMPUTE TANGENT MODULUS: DDSDDE
+        END IF
+    
+    END DO
+    do i=1, nblock
+		stress_power = ONE/TWO * ( &
+            (stressOld(i,1) + stressNew(i,1)) * strainInc(i,1) + &
+            (stressOld(i,2) + stressNew(i,2)) * strainInc(i,2) + &
+            (stressOld(i,3) + stressNew(i,3)) * strainInc(i,3) + &
+            TWO * (stressOld(i,4) + stressNew(i,4)) * strainInc(i,4) + &
+            TWO * (stressOld(i,5) + stressNew(i,5)) * strainInc(i,5) + &
+            TWO * (stressOld(i,6) + stressNew(i,6)) * strainInc(i,6) )
+        enerInternNew(i) = enerInternOld(i) + stress_power/density(i)
             
-            smean = ONE/THREE * &
-                (stressNew(i,1) + stressNew(i,2) + stressNew(i,3))
-            equiv_stress = SQRT(THREE/TWO * &
-                    ((stressNew(i,1) - smean) ** 2 + &
-                    (stressNew(i,2) - smean) ** 2 + &
-                    (stressNew(i,3) - smean) ** 2 + &
-                    TWO * stressNew(i,4) ** 2 + &
-                    TWO * stressNew(i,5) ** 2 + &
-                    TWO * stressNew(i,6) ** 2))
-            plastic_work_inc = equiv_stress * (stateNew(1, i)-stateOld(1, i))
-            enerInelasNew(i) = enerInelasOld(i) + plastic_work_inc / density(i)
-		END DO
-            !C  write(*,*)"DDSDDE", DDSDDE
-        DEALLOCATE(KMATERIAL)	
-        RETURN
+        smean = ONE/THREE * &
+            (stressNew(i,1) + stressNew(i,2) + stressNew(i,3))
+        equiv_stress = SQRT(THREE/TWO * &
+                ((stressNew(i,1) - smean) ** 2 + &
+                (stressNew(i,2) - smean) ** 2 + &
+                (stressNew(i,3) - smean) ** 2 + &
+                TWO * stressNew(i,4) ** 2 + &
+                TWO * stressNew(i,5) ** 2 + &
+                TWO * stressNew(i,6) ** 2))
+        plastic_work_inc = equiv_stress * (stateNew(1, i)-stateOld(1, i))
+        enerInelasNew(i) = enerInelasOld(i) + plastic_work_inc / density(i)
+	END DO
+        !C  write(*,*)"DDSDDE", DDSDDE
+    DEALLOCATE(KMATERIAL)	
+    RETURN
     END SUBROUTINE vumatXtrArg
 
 
@@ -677,6 +685,7 @@
                     IF (((KK==LL) .AND. (LL==MM)) .OR. & 
                     ((MOD(KK,2)==0) .AND. (MOD(LL,2)==0) &
                         .AND. (MOD(MM,2)==0))) THEN
+
                         YF = YF + KMATERIAL(N0) &
                         * DEVIA(1) ** DBLE(II) &
                         * DEVIA(2) ** DBLE(JJ) &

@@ -84,6 +84,13 @@ def simulate(test):
     
     subprocess.call(sim_command, shell=True, cwd=exec_dir)
 
+def pp(test):
+    job = f'{test}_{input_type}'
+    subroutine = f"{input_type}_PolyN_3D_{law}.for"
+
+    input_file = f"{job}.inp"
+    cp_input_file = f'temp_{input_file}'
+    odb = "{}.odb".format(job)
     copy_odb = f'copy temp_{odb} {odb}'
     subprocess.call(copy_odb, shell=True, cwd=exec_dir)
 
