@@ -28,7 +28,7 @@ def change_paras(test, material):
         res_filename = results_exp_dir + sep + test + "_1.csv"
         df_exp = pd.read_csv(res_filename, index_col=False)
         dtime = np.max(df_exp.iloc[:,0])
-        displ = np.max(df_exp.iloc[:,1]) * 5
+        displ = np.max(df_exp.iloc[:,1]) * 3
         thickness = df_exp.loc[0, "Thickness[mm]"]
         width = df_exp.loc[0, "OuterWidth[mm]"]
         tramp1 = dtime / 100
@@ -49,32 +49,31 @@ def change_paras(test, material):
             f.write("MAXDT = DTIME * 1e-2")
             f.close()
 
-def change_usermat(tests, material, degree, law, protomodel, input_type):
+def change_usermat(test, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
     """
         Change the input user material file in the all the abaqus files of test in tests
         Input :
             - usermatfile : string, filename of the user material file
     """
-    usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}.inp"
-    for test in tests:
+    usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}_{var_optim}_{n_try}.inp"
 
-        filename = run_dir + sep + test + f"_{input_type}.inp"
-        with open(filename, "r") as f:
-            content = f.readlines()
-        i = 0
-        line = content[i]
-        vu = 0
+    filename = run_dir + sep + test + f"_{input_type}.inp"
+    with open(filename, "r") as f:
+        content = f.readlines()
+    i = 0
+    line = content[i]
+    vu = 0
         
-        while not vu :
-            if len(line) > 9 and line[:9] == "*MATERIAL":
-                vu = 1
-            i = i + 1
-            line = content[i]
-        content[i] = f"*INCLUDE, INPUT={usermatfile}\n"
-        with open(filename, "w") as f:
-            f.writelines(content)
+    while not vu :
+        if len(line) > 9 and line[:9] == "*MATERIAL":
+            vu = 1
+        i = i + 1
+        line = content[i]
+    content[i] = f"*INCLUDE, INPUT={usermatfile}\n"
+    with open(filename, "w") as f:
+        f.writelines(content)
 
-def simulate(test, input_type, law):
+def simulate(test, input_type, law, n_try=0, var_optim=0):
     """
         Run the abaqus simulation of the test_polyN.inp and generate a csv file in results_sim folder
         Input :
@@ -85,45 +84,33 @@ def simulate(test, input_type, law):
     subroutine = f"{input_type}_PolyN_3D_{law}.for"
 
     input_file = f"{job}.inp"
-    number = 0
-    cp_input_file = f'temp_{job}_{number}.inp'
-    cp_input_filepath = run_dir + sep + cp_input_file
-    odb = "{}.odb".format(job)
-
-    while os.path.exists(cp_input_filepath):
-        number = number + 1
-        cp_input_file = f'temp_{job}_{number}.inp'
-        cp_input_filepath = run_dir + sep + cp_input_file
+    cp_input_file = f'temp_{job}_{var_optim}_{n_try}.inp'
 
     copy_sim_cmd = f'cp {input_file} {cp_input_file} '
     subprocess.call(copy_sim_cmd, shell=True, cwd=run_dir)
 
     abq = r'"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\env\vars.bat" -arch intel64 vs2019 &'
-    job_command = f'sbatch -n 24 -t 0-2 --mem-per-cpu=300 --tmp=300 --wrap "abaqus job={cp_input_file} double interactive user={subroutine} cpus=24 scratch=\$TMPDIR"'
+    job_command = f'sbatch -n 24 -t 0-1 --mem-per-cpu=300 --tmp=300 --wrap "abaqus job={cp_input_file} double interactive user={subroutine} cpus=24 scratch=\$TMPDIR"'
     
     subprocess.call(job_command, shell=True, cwd=run_dir)
 
-    return(number)
-
-def post_process(test, number, material, input_type):
+def post_process(test, material, input_type, var_optim=0, n_try=0):
     """
         Run the abaqus simulation of the test_polyN.inp and generate a csv file in results_sim folder
         Input :
             - test : string, name of the test (ex : UT_00)
     """
 
-
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
     job = f'{test}_{input_type}'
-    cp_input_file = f'temp_{job}_{number}.odb'
+    cp_input_file = f'temp_{job}_{var_optim}_{n_try}.odb'
 
-    input_file = f"{job}.inp"
-    odb = "{}.odb".format(job)
+    odb = "{}_{}_{}.odb".format(job, var_optim, n_try)
 
     copy_odb = f'cp {cp_input_file} {odb}'
     subprocess.call(copy_odb, shell=True, cwd=run_dir)
 
-    delete_cmd = f'rm -r temp_{job}*'
+    delete_cmd = f'rm -r temp_{job}_{var_optim}_{n_try}*'
     subprocess.call(delete_cmd, shell=True, cwd=run_dir)
 
     print("Simulation {} ended".format(job))
@@ -342,38 +329,41 @@ def post_process(test, number, material, input_type):
             fac = 1
         df["U2"] = df["U2"] / 10
         df["RF2"] = df["RF2"] / 10000 * fac       
-        filename = "{}.csv".format(job)
+        filename = "{}_{}_{}.csv".format(job, var_optim, n_try)
         if not(os.path.exists(results_sim_dir)):
             os.makedirs(results_sim_dir)
         filepath = results_sim_dir + sep + filename
         print("Post processing {} ended".format(job))
         df.to_csv(filepath)  
+    
+def sim_finished(test, input_type, var_optim=0, n_try=0):
+    test_file = f"temp_{test}_{input_type}_{var_optim}_{n_try}.lck"
+    test_filepath = run_dir + sep + test_file
+    if os.path.exists(test_filepath):
+        return(False)
+    return(True)
 
-def run(tests, material, degree, law, protomodel, input_type):
+
+def launch_run(tests, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
     #Run les tests disponibles experimentalement
     
     #Changer les parametres pour les inp
     
-    """for test in tests:
+    for test in tests:
         change_paras(test, material)
-
-    change_usermat(tests, material, degree, law, protomodel, input_type)
+        change_usermat(test, material, degree, law, protomodel, input_type, var_optim, n_try)
 
     #Simulation de tous les tests
-    numbers = []
     for test in tests:
-        numbers.append(simulate(test, input_type, law))
-    
-    time.sleep(60)
-    
+        simulate(test, input_type, law, n_try, var_optim)
+
+
+def create_csv(tests, material, input_type, var_optim=0, n_try=0):
     #Attente de la fin de l'exécution
-    lck_files = glob.glob(run_dir + sep + "*.lck")
-    while len(lck_files) > 0:
-        time.sleep(5)
-        lck_files = glob.glob(run_dir + sep + "*.lck")"""
+    for test in tests:
+        while not(sim_finished(test, input_type, var_optim, n_try)):
+            time.sleep(60)
 
     #Post-processing des tests
-    i = 0
     for test in tests:
-        post_process(test, 0, material, input_type)
-        i = i + 1
+        post_process(test, material, input_type, var_optim, n_try)

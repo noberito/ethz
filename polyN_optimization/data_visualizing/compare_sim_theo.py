@@ -20,6 +20,7 @@ p = read_param()
 material = p["material"]
 degree = int(p["degree"])
 law = p["law"]
+input_type = p["input_type"]
 
 polyN_coeff_path = polyN_cali_dir + sep + "polyN_coeff.npy"
 polyN_coeff = np.load(polyN_coeff_path)
@@ -213,7 +214,7 @@ def curve_theo_ebt(polyN_coeff, law_coeff):
     S = np.concatenate((S_elastic, S_plastic))
     return(e, S)
 
-def compare(material, polyN_coeff, law_coeff):
+def compare(material, input_type, polyN_coeff, law_coeff):
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
     ut_tests_mat = analyze_exp_data(material)["UT"]
     n = len(ut_tests_mat.keys())
@@ -226,7 +227,7 @@ def compare(material, polyN_coeff, law_coeff):
         #PLOT SIMULATION
         j = i // 3
         k = i % 3
-        sim_res_path = results_sim_dir + sep + "UT_" + ori + "_polyN.csv"
+        sim_res_path = results_sim_dir + sep + "UT_" + ori + "_" + input_type + ".csv"
         df_sim = pd.read_csv(sim_res_path)
         df_sim["S21"] = df_sim["S12"]
         df_sim["S31"] = df_sim["S13"]
@@ -253,4 +254,4 @@ def compare(material, polyN_coeff, law_coeff):
     plt.legend()
     plt.show()
 
-compare(material, polyN_coeff, law_coeff)
+compare(material, input_type, polyN_coeff, law_coeff)
