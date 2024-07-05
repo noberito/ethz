@@ -1,7 +1,7 @@
 ** Definition of Parameters of Analysis
 ** UT Single Element EXP
 **---------------------------------------------------
-*INCLUDE, INPUT=UT_UMAT_param.inp
+*INCLUDE, INPUT=UT_15_paras.inp
 **---------------------------------------------------
 ** Geometry and Orientation
 **---------------------------------------------------
@@ -10,7 +10,7 @@
 0., 0., 0., 1., 0., 0.,
 0., 1., 0.,
 ** Width & Thickness factor
-<WIDTH>,1., <THICKNESS>
+<WIDTH>,<WIDTH>, <THICKNESS>
 ** 0deg axis aligned with y-direction
 *ORIENTATION, name=Ori-00
          0.,     1.,     0.,	-1.,     0.,     0.
@@ -42,7 +42,7 @@
 *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-15, material=mat
 **
 *MATERIAL,NAME=mat
-*INCLUDE, INPUT=AA7020-T6_abq_deg4_swift_mises.inp
+*INCLUDE, INPUT=DP600_abq_deg6mini_swift_mises.inp
 *DEPVAR
 1,
 1,EPBAR,"EPBAR"
@@ -67,7 +67,7 @@ ZMIN, 3, 5, 0.
 **
 *AMPLITUDE, NAME=ccr, DEFINITION=TABULAR, SMOOTH=0.05
 0.,0.,
-**<TRAMP1>, <RAMP1>,
+<TRAMP1>, <RAMP1>,
 <DTIME>, <DISPL>,
 ** ----------------------------------------------------
 *Step, name=Step-1, nlgeom=YES, inc=1000

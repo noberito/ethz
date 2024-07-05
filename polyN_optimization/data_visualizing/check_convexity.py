@@ -235,7 +235,7 @@ def hessian_polyN(S, coeff_hessian, powers_hessian):
 
     hessian_polyN = np.zeros((6,6))
     jac_grad_f = np.zeros((len(X), 5, 5))
-    nmon = len(powers_hessian)
+    nmon = len(powers_hessian[0][0])
 
     for i in range(5):
         for j in range(5):

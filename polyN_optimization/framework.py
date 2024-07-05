@@ -7,11 +7,11 @@ import pandas as pd
 import time
 import numpy as np
 import time
-from optimize_polyN import first_opti
 from scipy.interpolate import interp1d
 from scipy.integrate import simps, simpson
 from get_calibration_data import analyze_exp_data
-from optimize_polyN import get_param_polyN, write_coeff_abq
+from optimize_polyN import first_opti, get_param_polyN, write_coeff_abq
+from optimize_polyN_mini import firstopti_mini, get_param_polyN_mini, write_coeff_abq_mini
 from running.run_ut import launch_run, create_csv
 from data_visualizing.compare_sim_exp import compare_ut
 from tests_parameters import ut_tests
@@ -24,6 +24,7 @@ sys.path.append(polyN_cali_dir)
 from read_param import read_param
 
 p = read_param()
+func = p["func"]
 material = p["material"]
 law = p["law"]
 degree = int(p["degree"])
@@ -53,10 +54,9 @@ def numerical_gradient(f, x, n_try):
 
         temp_val = x[i]
         x[i] = temp_val + h
-        fxh1 = f(x, 2 * n_try)
-        
+        fxh1 = f(x, 2 * x.size * n_try + 2 * i)
         x[i] = temp_val - h 
-        fxh2 = f(x, 2 * n_try + 1)  
+        fxh2 = f(x, 2 * x.size * n_try + 2 * i + 1)
         
         grad[i] = (fxh1 - fxh2) / (2 * h)
         x[i] = temp_val  
@@ -130,7 +130,7 @@ def framework(var_optim):
         new_coeff[var_optim - 1] = new_coeff[var_optim - 1] + x
         write_coeff_abq(new_coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, n_try=n_try)
         time.sleep(5)
-        launch_run(tests, material, degree, law, protomodel, input_type, n_try=n_try)
+        launch_run(tests, func, material, degree, law, protomodel, input_type, n_try=n_try)
         create_csv(tests, material, input_type, n_try=n_try)
         compare_ut(material, degree, input_type, n_try=n_try)
 
@@ -151,4 +151,51 @@ def framework(var_optim):
     np.save(coeff_polyN, coeff_file)
     print(coeff_polyN)
 
-framework(var_optim)
+def framework_mini(var_optim):
+    """
+        TODO, CHANGE RUN AND CREATE CSV
+    """
+    t0 = time.time()
+    if(1):
+        coeff_polyN_mini = np.load(polyN_cali_dir + sep + "polyN_mini_coeff.npy")
+    else:
+        coeff_polyN_mini = firstopti_mini()
+    coeff_law = np.load(polyN_cali_dir + sep + f"{law}_mini_coeff.npy")
+    a = coeff_law[0]
+    b = coeff_law[1]
+    c = coeff_law[2]
+    ymod = coeff_law[3]
+
+    def f_cost(x, n_try):
+        powers = get_param_polyN_mini(degree)
+        nmon = len(powers)
+        new_coeff = np.copy(coeff_polyN_mini)
+        new_coeff[var_optim - 1] = new_coeff[var_optim - 1] + x
+        write_coeff_abq_mini(new_coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, n_try=n_try)
+        time.sleep(5)
+        launch_run(tests, func, material, degree, law, protomodel, input_type, n_try=n_try)
+        create_csv(tests, material, input_type, n_try=n_try)
+        compare_ut(material, degree, input_type, n_try=n_try)
+
+        err = 0
+
+        for test in tests:
+            err = err + mean_square_error(test, n_try=n_try)
+            print("err:", err)
+        
+        return(err)
+    
+
+    x0 = np.zeros(len(var_optim))
+    result = gradient_descent(f_cost, x0)
+
+    coeff_polyN_mini[var_optim] = coeff_polyN_mini[var_optim] + result
+    coeff_file = polyN_cali_dir + sep + "polyN_mini_coeff.npy"
+    np.save(coeff_polyN_mini, coeff_file)
+    print(coeff_polyN_mini)
+
+if __name__ == "__main__":
+    if func == "polyN":
+        framework(var_optim)
+    elif func == "polyN_mini":
+        framework_mini(var_optim)

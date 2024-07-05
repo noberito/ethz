@@ -2,10 +2,12 @@
 THICKNESS    = 1.
 WIDTH        = 1.
 **
-DISPL        = 0.05
+DISPL        = 0.1
 DTIME        = 1.0
+TRAMP1       = 0.1
+RAMP1        = 0.4 * 1e-3
 **
 DT           = DTIME/2.E5
-MAXDT        = 1e-3
-MINDT        = 1e-5
-DT1          = 1e-5
+MAXDT        = DTIME * 1e-3
+MINDT        = DTIME * 1e-5
+DT1          = DTIME * 1e-5

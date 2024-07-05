@@ -10,6 +10,7 @@ sep = os.sep
 sys.path.append(polyN_dir)
 
 from optimize_polyN import get_param_polyN, polyN, jac_polyN_param, grad_polyN, readData, read_param, mises
+from optimize_polyN_mini import get_param_polyN_mini, f_min_squared, jac_polyN_2d_param, grad_polyN_2d, polyN_2d
 
 
 
@@ -250,8 +251,236 @@ def plot_implicit_coeff(material, coeff, powers, weight_exp, weight_rval, nb_vir
     plt.savefig(filepath)
     plt.show()
 
+def ys_ut_mini(thetas, coeff, powers):
+    """
+        For given loading angles, returns the stress value for a uniaxial tensile test in the direction theta
+        Input :
+            - thetas : ndarray of shape (n_theta,), angles to check
+            - coeff : ndarray of shape (nmon + 2,), coefficients of the yield function
+            - powers : ndarray of shape (nmon, 3), powers of the polyN function
+        Output :
+            - ms : ndarray of shape (n_theta,)
+    """
+    n_theta = len(thetas)
+    us = np.zeros((n_theta, 6))
+    ms = []
+    for i in range(n_theta):
+        theta = thetas[i]
+        us[i] = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
+    
+    def f(S):
+        return(f_min_squared(S, coeff, powers))
+
+    for u in us:
+        ys = 0.1
+        lamb = 1.1
+        eps = 1e-7
+
+        while f(u * ys) < 1:
+            ys = ys * lamb
+        s = 0.1
+        e = ys
+        m = (s + e) / 2
+        res = f(u * m) - 1
+
+        while (np.abs(res) > eps):
+            if res > 0:
+                e = m
+            else:
+                s = m
+            m = (s + e) / 2
+            res = f(u * m) - 1
+        ms.append(m)
+    return(np.array(ms))
+
+def rval_ut_mini(thetas, coeff_mini, powers):
+    """
+        For given loading angles, returns the rvalue for a uniaxial tensile test in the direction theta
+        Input :
+            - thetas : ndarray of shape (n_theta,), angles to check
+            - coeff_mini : ndarray of shape (nmon + 2,), coefficients of the polyN function
+            - powers : ndarray of shape (nmon, 3), powers of the polyN function
+        Output :
+            - rval : ndarray of shape (n_theta,)
+    """
+    n_theta = len(thetas)
+    S = np.zeros((n_theta, 6))
+    v2 = np.zeros((n_theta, 3))
+    r_val = np.zeros(n_theta)
+    for i in range(n_theta):
+        theta = thetas[i]
+        S[i] = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
+        v2[i] = np.array([np.square(np.sin(theta)), np.square(np.cos(theta)), - np.cos(theta) * np.sin(theta)])
+
+    degree = np.sum(powers[0])
+    coeff_grad, powers_grad = jac_polyN_2d_param(coeff_mini, powers)
+    grad_P = grad_polyN_2d(S, coeff_grad, powers_grad)[:,[0,1,3]]
+    grad_f_plane = np.zeros((n_theta,3))
+
+    for i in range(n_theta):
+        for j in range(3):
+            grad_f_plane[i,j] = (2 / degree) * grad_P[i,j] * np.float_power(polyN_2d(S[i], coeff_mini, powers),(2/degree - 1))[0]
+
+    for i in range(n_theta):
+        r_val[i] = - np.dot(grad_f_plane[i], v2[i]) / (grad_f_plane[i,0] + grad_f_plane[i,1])
+    return(r_val)
+
+def plot_rval_ut_mini(df, coeff, powers):
+    
+    n_thetas = 100
+    thetas_theo = np.linspace(0, np.pi/2, n_thetas)
+    r_vals_theo = rval_ut_mini(thetas_theo, coeff[:-2], powers)
+    index_rval = np.where(df["Rval"]< 0.00001, False, True)
+    r_vals_exp = df["Rval"].iloc[index_rval].values
+    thetas_exp = df["LoadAngle"].iloc[index_rval].values
+    plt.plot(thetas_theo, r_vals_theo, c="red", label="R_val model")
+    plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
+    plt.show()
+
+def plot_yield_stresses_ut_mini(df, coeff, powers):
+
+    def f(S):
+        return(f_min_squared(S, coeff, powers))
+    
+    def ys_theta(theta):
+        """
+            For a given loading angle, returns the norm of the yield stress in a ut_theta test
+            Input :
+                - theta : float (radians)
+            Output :
+                - m : float, norm of yield stress
+        """
+        u = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
+        ys = 0.1
+        lamb = 1.1
+        eps = 1e-7
+
+        while f(u * ys) < 1:
+            ys = ys * lamb
+        s = 0.1
+        e = ys
+        m = (s + e) / 2
+        res = f(u * m) - 1
+
+        while (np.abs(res) > eps):
+            if res > 0:
+                e = m
+            else:
+                s = m
+            m = (s + e) / 2
+            res = f(u * m) - 1
+
+        return(m)
+    
+    ntheta=100
+    thetas=np.linspace(0, np.pi / 2, ntheta)
+    ys_theta = np.vectorize(ys_theta)
+    ys_model = ys_theta(thetas)
+
+    df_exp = df[df["Rval"] > 0.001]
+    sigma0 = df_exp["YieldStress"].iloc[0]
+    fig, ax1 = plt.subplots()
+
+    ys_exp = df_exp["YieldStress"]
+    theta_exp = df_exp["LoadAngle"].values
+
+    plt.scatter(theta_exp, ys_exp/sigma0, color="blue", label="YS exp", marker="x")
+    plt.xlabel(r"$\theta$[rad]", size=12)
+    plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
+    plt.plot(thetas, ys_model, color="blue", label="YS model")
+    plt.show()
+
+def plot_check_mini(df, coeff, powers, material, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel):
+    n_thetas = 100
+    thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
+
+    ys_model = ys_ut_mini(thetas_theo, coeff, powers)
+    r_vals_model = rval_ut_mini(thetas_theo, coeff[:-2], powers)
+
+    df_exp = df[df["Rval"] > 0.001]
+    sigma0 = df_exp["YieldStress"].iloc[0]
+    ys_exp = df_exp["YieldStress"]
+
+    index_rval = np.where(df["Rval"]< 0.00001, False, True)
+    thetas_exp = df["LoadAngle"].iloc[index_rval].values
+    r_vals_exp = df["Rval"].iloc[index_rval].values
+
+    plt.plot(thetas_theo, r_vals_model, c="red", label="R_val model")
+    plt.plot(thetas_theo, ys_model, color="blue", label="YS model")
+    plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
+    plt.scatter(thetas_exp, ys_exp/sigma0, color="blue", label="YS exp", marker="x")
+    plt.title("Check poly")
+    plt.xlabel(r"$\theta$[rad]", size=12)
+    plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend()
+    plt.grid(1)
+    plt.title(f"Poly{degree}_mini model on {material} : Yield Stresses and R-values from UT tests", size=12)
+
+    foldername_out = polyN_dir + sep + "plots" + sep + material
+    if not os.path.exists(foldername_out):
+        os.makedirs(foldername_out)
+    filename = f"ysrval_{material}_poly{degree}mini_{weight_exp}_{weight_rval}_{nb_virtual_pt}_{protomodel}.png"
+    filepath = foldername_out + sep + filename
+    plt.savefig(filepath)
+
+def plot_planestress_mini(material, coeff, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel):
+    zs = np.linspace(0, 1, 10)
+    mises_plot = False
+    fig, ax = plt.subplots()
+
+
+    sx = np.linspace(-1.5, 1.5, 100)
+    sy = np.linspace(-1.5, 1.5, 100)
+    sx, sy = np.meshgrid(sx,sy)
+
+    for z in zs:
+        def mises_plane(x,y):
+            return(mises(np.array([x,y,0,z,0,0])))
+
+        def f(x,y):
+            return(f_min_squared(np.array([x,y,0,z,0,0]), coeff, powers))
+
+        f = np.vectorize(f)
+        mises_plane = np.vectorize(mises_plane)
+
+        ys_polyN = f(sx, sy)
+        ys_mises = mises_plane(sx, sy)
+
+        # Create the contour plot
+        cs1 = ax.contour(sx, sy, ys_polyN, levels=[1], colors='blue', linewidths=1)
+        if mises_plot:
+            cs2 = ax.contour(sx, sy, ys_mises, levels=[1], colors='red', linewidths=1)
+
+    # Set labels
+    ax.set_xlabel(r"$\sigma_{xx}/\sigma_0$[-]", size=12)
+    ax.set_ylabel(r"$\sigma_{yy}/\sigma_0$[-]", size=12)
+    ax.set_aspect('equal', adjustable='box')
+    ax.grid(1)
+    
+    nm1, labels = cs1.legend_elements()
+    if mises_plot:
+        nm2, labels = cs2.legend_elements()
+
+
+    ax.set_title(rf'{material} Yield surface in the $\sigma_{{xx}},\sigma_{{yy}}$ plane', size=12)
+    plt.legend(nm1, ["polyN_mini"])
+    if mises_plot:
+        plt.legend(nm2, ["Mises"])
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+
+    foldername_out = polyN_dir + sep + "plots" + sep + material
+    if not os.path.exists(foldername_out):
+        os.makedirs(foldername_out)
+    filename = f"planexy_{material}_poly{degree}mini_{weight_exp}_{weight_rval}_{nb_virtual_pt}_{protomodel}.png"
+    filepath = foldername_out + sep + filename
+    plt.savefig(filepath)
+
 def main():
     p = read_param()
+    func = p["func"]
     material = p["material"]
     law = p["law"]
     degree = int(p["degree"])
@@ -262,13 +491,22 @@ def main():
     weight_exp = float(p["weight_exp"])
     weight_rval = float(p["weight_rval"])
     nb_virtual_pt = int(p["nb_virtual_pt"])
-    powers = get_param_polyN(degree)
+
     df = readData(material, protomodel)
 
     coeff_polyN = np.load(polyN_dir + sep + "polyN_coeff.npy")
+    coeff_polyN_mini = np.load(polyN_dir + sep + "polyN_mini_coeff.npy")
 
-    plot_check(df, coeff_polyN, powers, material, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
-    plot_planestress(material, coeff_polyN, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
-    plot_implicit_coeff(material, coeff_polyN, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
+    if func == "polyN":
+        powers = get_param_polyN(degree)
+        plot_check(df, coeff_polyN, powers, material, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
+        plot_planestress(material, coeff_polyN, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
+        plot_implicit_coeff(material, coeff_polyN, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
+
+    if func == "polyN_mini":
+        powers = get_param_polyN_mini(degree)
+        plot_check_mini(df, coeff_polyN_mini, powers, material, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
+        plot_planestress_mini(material, coeff_polyN_mini, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
+
 
 main()

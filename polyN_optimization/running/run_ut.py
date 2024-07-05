@@ -27,13 +27,23 @@ tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 
 dt = 1
 
-def change_usermat(test, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
+def change_usermat(test, func, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
     """
         Change the input user material file in the all the abaqus files of test in tests
         Input :
             - usermatfile : string, filename of the user material file
     """
-    usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}_{var_optim}_{n_try}.inp"
+    if func=="polyN":
+        if var_optim==0 and n_try==0:
+            usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}.inp"
+        else:
+            usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}_{var_optim}_{n_try}.inp"
+    if func=="polyN_mini":
+        if var_optim==0 and n_try==0:
+            usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}.inp"
+        else:
+            usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}_{var_optim}_{n_try}.inp"
+            
     filename = run_dir + sep + test + f"_{input_type}.inp"
     with open(filename, "r") as f:
         content = f.readlines()
@@ -240,11 +250,8 @@ def post_process(test, material, input_type, is_optim, var_optim=0, n_try=0):
         print("Post processing {} ended".format(job))
         df.to_csv(filepath)
 
-        delete_cmd = f'del *{var_optim}_{n_try}*'
+        delete_cmd = f'del {test}*{var_optim}_{n_try}*'
         subprocess.call(delete_cmd, shell=True, cwd=run_dir)
-        delete_cmd = f'del {job}*'
-        subprocess.call(delete_cmd, shell=True, cwd=run_dir)
-        
     else:
         field = "S,LE,SDV_EPBAR"
         command = f"abq2023 odbreport job={job} odb={odb} field={field} components ask_delete=OFF"
@@ -362,9 +369,9 @@ def post_process(test, material, input_type, is_optim, var_optim=0, n_try=0):
         df.to_csv(filepath)
         
 
-def launch_run(tests, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
+def launch_run(tests, func, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
     for test in tests:
-        change_usermat(test, material, degree, law, protomodel, input_type, var_optim, n_try)
+        change_usermat(test, func, material, degree, law, protomodel, input_type, var_optim, n_try)
         change_paras(test, material)
 
     time.sleep(5)

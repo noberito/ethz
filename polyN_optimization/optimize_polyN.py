@@ -24,6 +24,7 @@ from read_param import read_param
 from get_calibration_data import export_exp_data, export_virtual_data
 import shutil
 from get_hardening_law import get_hardening_law
+from convexity_domain.generating_convexity_data import check_convexity_lpm
 import random
 
 
@@ -138,8 +139,6 @@ def get_param_polyN(degree):
         Input :
             - degree : integer, degree of the polyN function
         Output :
-            - nmon : integer, number of monomials im the polyN function of degree n
-            - nmon_abq : integer, number of monomials of degree n in a homogeneous function of degree n
             - powers : ndarray of shape (nmon, 5), powers[i, j] is the power of the variable j in the monomial i
     """
     x0 = np.zeros((2,5))
@@ -333,7 +332,7 @@ def hessian_polyN(S, coeff_hessian, powers_hessian):
 
     hessian_polyN = np.zeros((6,6))
     jac_grad_f = np.zeros((len(X), 5, 5))
-    nmon = len(powers_hessian)
+    nmon = len(powers_hessian[0][0])
 
     for i in range(5):
         for j in range(5):
@@ -341,7 +340,7 @@ def hessian_polyN(S, coeff_hessian, powers_hessian):
                 p = powers_hessian[i][j][k]
                 jac_grad_f[:,i,j] = jac_grad_f[:,i,j] + coeff_hessian[i][j][k] * np.prod(X ** p, axis=1)
     
-    jac_d = jac_dev(S)
+    jac_d = jac_dev()
     hessian_polyN = np.transpose(np.dot(jac_d.T,np.dot(jac_grad_f[:], jac_d)), (1, 2, 0))
     return(hessian_polyN)
 
@@ -354,7 +353,7 @@ def hessian_polyN(S, coeff_hessian, powers_hessian):
 
 
 
-def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval, gseed):
+def optiCoeff_polyN(df, degree, weight_exp, weight_rval, gseed, tau=0.0):
     """
         Returns the optimized coefficients of polyN on experimental data (UTs) and virtual data from a protomodel
         Input :
@@ -414,26 +413,31 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval, gseed):
         v = np.array([rval + np.square(np.sin(theta)), rval + np.square(np.cos(theta)), 0,  -np.cos(theta) * np.sin(theta), 0, 0])
         X_rval[i] = np.dot(v, dX_stress_stress[i])
     
-    weigth_s = np.where(df["Type"] == "e", weigth_exp, 1-weigth_exp)
-    weigth_r = np.ones(ndata_rval) * weigth_rval
+    weight_s = np.where(df["Type"] == "e", 1 ,0)
+    n_data_exp = np.sum(weight_s)
+    weight_s = np.where(weight_s == 1, weight_exp / n_data_exp, (1 - weight_exp) / (ndata - n_data_exp))
+    weight_s = (1 - weight_rval) * weight_s / np.sum(weight_s)
+    weight_r = np.ones(ndata_rval)
+    weight_r = weight_rval *  weight_r / np.sum(weight_r)
 
-    weigth = np.concatenate((weigth_s, weigth_r), axis = 0)
+    weight = np.concatenate((weight_s, weight_r), axis = 0)
+    print(weight, np.sum(weight))
     v = np.concatenate((X_stress, X_rval), axis = 0)
     d = np.concatenate((np.ones(ndata), np.zeros(ndata_rval)))
     M = np.zeros((nmon, nmon))
 
     for j in range(v.shape[0]):
         vj = np.expand_dims(v[j], axis=0)
-        M = M + weigth[j] * np.dot(vj.T, vj)
+        M = M + weight[j] * np.dot(vj.T, vj)
     M = M / 2
 
     V = np.zeros(v.shape[1])
     
     for j in range(v.shape[0]):
         vj = v[j]
-        V = V + weigth[j] * d[j] * vj
+        V = V + weight[j] * d[j] * vj
 
-    D = np.sum(weigth * np.square(d)) / 2
+    D = np.sum(weight * np.square(d)) / 2
 
     def J(a):
         return np.dot(np.dot(a, M), a) - np.dot(V, a) + D
@@ -503,7 +507,6 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval, gseed):
         J_val = J_norm(a)
 
         #Assumption that a polyN function is convex when model(coeff) > 0.5 + tau
-        tau = 0.0
         res = model.predict(a)[0,0] - 0.5 - tau
         i = 0
         if res < 0 :
@@ -575,7 +578,14 @@ def optiCoeff_polyN(df, degree, weigth_exp, weigth_rval, gseed):
         print("Without constraints : J =", J_val)
         print("With constraints : J =", J_val_fin)
 
-        return(X_scaler.inverse_transform(a)[0])
+        coeff = X_scaler.inverse_transform(a)[0]
+        #lpm = check_convexity_lpm(coeff, powers, 100, 10000)
+        lpm = 0
+        if lpm < -1:
+            return(optiCoeff_polyN(df, degree, weight_exp, weight_rval, gseed, tau=tau + 0.1))
+        else:
+            return(coeff)
+
 
     else :
         opt = scipy.optimize.minimize(J, C, method='BFGS', jac=Grad_J)
@@ -657,7 +667,7 @@ def optiCoeff_pflow(law, coeff_polyN, material, degree, powers):
         return np.power(polyN(S, coeff_polyN, powers), 1/degree)
 
     foldername = file_dir + sep + "calibration_data" + sep + material
-    filename_out = "data_plasticlaw.csv"
+    filename_out = f"data_plasticlaw_{material}.csv"
     filepath = foldername + sep + filename_out
 
     df_law = pd.read_csv(filepath)
@@ -670,7 +680,6 @@ def optiCoeff_pflow(law, coeff_polyN, material, degree, powers):
     S = np.concatenate((S, np.zeros((sigma.shape[0],5))), axis = 1)
 
     sig0 = f(S[0])[0]
-    print(sig0)
     
     if law == "swift" :
 
@@ -740,6 +749,8 @@ def optiCoeff_pflow(law, coeff_polyN, material, degree, powers):
         opt = scipy.optimize.minimize(J, x0, method="BFGS", jac=Grad_J,)
 
         b, c = opt.x
+
+        print(a,b,c)
     
     return(a, b, c, ymod)
 
@@ -803,133 +814,6 @@ def check_coeff(a, b, c, law, material):
 
 # In[212]:
 
-    
-def plot_check(df, coeff_polyN, powers, material, weigth_exp, savefigyr, nb_virtual_pt, degree, protomodel):
-    """
-        Plot the yield surface in the sx, sy plane and the yield stresses and r-values according to the loading angle.
-        Input :
-            - df : pd.Dataframe, must contain columns ["d11", "d22", "s12", "s13", "s23"] of yield stresses points. And if available ["Rval"] with ["LoadAngle"]
-            - coeff_polyN : ndarray of shape (nmon,)
-    """
-    def f(S):
-        return(polyN(S, coeff_polyN, powers))
-
-    coeff_grad, powers_grad = jac_polyN_param(coeff_polyN, powers)
-
-    def grad(S):
-        return grad_polyN(S, coeff_grad, powers_grad)
-
-
-    df_exp = df[df["Rval"] > 0.001]
-    sigma0 = df_exp["YieldStress"].iloc[0]
-    fig, ax1 = plt.subplots()
-
-    ys_exp = df_exp["YieldStress"]
-    n_data = len(ys_exp)
-    theta_exp = df_exp["LoadAngle"].values
-    R_exp = df_exp["Rval"].values
-
-    ax1.scatter(theta_exp, ys_exp/sigma0, color="blue", label="YS exp", marker="x")
-    ax1.set_xlabel(r"$\theta$[rad]", size=12)
-    ax1.set_ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
-
-    ax1.scatter(theta_exp, R_exp, color="red", label="Rval exp", marker="x")
-    #plt.scatter(theta_exp, R_theo, label="Modelisation", marker="x", color="red")
-
-    ntheta=100
-    thetas=np.linspace(0, np.pi / 2, ntheta)
-
-    def ys_theta(theta):
-        """
-            For a given loading angle, returns the norm of the yield stress in a ut_theta test
-            Input :
-                - theta : float (radians)
-            Output :
-                - m : float, norm of yield stress
-        """
-        u = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
-        ys = 0.1
-        lamb = 1.1
-        eps = 1e-7
-
-        while f(u * ys) < 1:
-            ys = ys * lamb
-        s = 0.1
-        e = ys
-        m = (s + e) / 2
-        res = f(u * m) - 1
-
-        while (np.abs(res) > eps):
-            if res > 0:
-                e = m
-            else:
-                s = m
-            m = (s + e) / 2
-            res = f(u * m) - 1
-
-        return(m)
-    
-    ys_theta = np.vectorize(ys_theta)
-    ys_model = ys_theta(thetas)
-    ax1.plot(thetas, ys_model, color="blue", label="YS model")
-
-
-    def ys_component_theta(theta):
-        """
-            For a given loading angle, returns the yield stress (sx, sy, sz, sxy, sxz, syz) in a ut_theta test
-            Input :
-                - theta : float (radians)
-            Output :
-                - m : ndarray of shape (6,), yield stress
-        """
-        u = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
-        ys = 0.1 * u
-        lamb = 1.1
-        eps = 1e-7
-
-        while f(ys) < 1:
-            ys = ys * lamb
-
-        s = 0.1 * u
-        e = ys
-        m = (s + e) / 2
-        res = f(m) - 1
-
-        while (np.abs(res) > eps):
-            if res > 0:
-                e = m
-            else:
-                s = m
-            m = (s + e) / 2
-            res = f(m) - 1
-
-        return(m)
-
-
-    #TO UNDERSTAND HOW R-VALUES ARE CALCULATED, REFER TO ARTICLE OF SOARE 2023 ABOUT HOMOGENEOUS YIELD FUNCTIONS
-    X = np.array([ys_component_theta(theta) for theta in thetas])
-    gradX = grad(X)
-    vs = np.array([- np.sin(thetas), np.cos(thetas), np.zeros(ntheta)]).T
-    vs = np.expand_dims(vs, axis=1)
-    V = np.matmul(np.transpose(vs, (0, 2, 1)), vs).reshape(ntheta, 9)[:, [0, 4, 8, 1, 3, 2]]
-    R_model = - np.sum(gradX * V, axis = 1)/(gradX[:,0] + gradX[:,1])
-
-    ax1.plot(thetas, R_model, label="Rval model", color="red")
-    ax1.set_title(f"Poly{degree} model on {material} : Yield Stresses and R-values from UT tests", size=12)
-    plt.legend()
-    plt.grid(1)
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
-
-    if savefigyr :
-        foldername_out = file_dir + sep + "plots" + sep + material
-        if not os.path.exists(foldername_out):
-            os.makedirs(foldername_out)
-        filename = f"ysrval_{material}_poly{degree}_{weigth_exp}_{nb_virtual_pt}_{protomodel}.png"
-        filepath = foldername_out + sep + filename
-        plt.savefig(filepath)
-    else:
-        plt.show()
 
 def mises(sigma):
     """
@@ -949,7 +833,7 @@ def mises(sigma):
     res = np.sqrt(0.5 * (s22 - s33)**2 + 0.5 * (s33 - s11)**2 + 0.5 * (s11 - s22)**2 + 3 * (s23**2 + s13**2 + s12**2))
     return res
 
-def plot_planestress(material, coeff, powers, savefigplane, weigth_exp, nb_virtual_pt, degree, protomodel):
+def plot_planestress(material, coeff, powers, savefigplane, weight_exp, nb_virtual_pt, degree, protomodel):
     zs = np.linspace(0, 1, 10)
     mises_plot = False
     fig, ax = plt.subplots()
@@ -999,7 +883,7 @@ def plot_planestress(material, coeff, powers, savefigplane, weigth_exp, nb_virtu
         foldername_out = file_dir + sep + "plots" + sep + material
         if not os.path.exists(foldername_out):
             os.makedirs(foldername_out)
-        filename = f"planexy_{material}_poly{degree}_{weigth_exp}_{nb_virtual_pt}_{protomodel}.png"
+        filename = f"planexy_{material}_poly{degree}_{weight_exp}_{nb_virtual_pt}_{protomodel}.png"
         filepath = foldername_out + sep + filename
         plt.savefig(filepath)
     else:
@@ -1054,59 +938,7 @@ def plot_implicit(yf, bbox=(-1.5,1.5)):
 # In[213]:
 
 
-def plot_implicit_coeff(coeff, powers, bbox=(-1.5,1.5)):
-    ''' create a plot of an implicit function
-    fn  ...implicit function (plot where fn==0)
-    bbox ..the x,y,and z limits of plotted interval'''
 
-    xmin, xmax, ymin, ymax, zmin, zmax = bbox*3
-    fig, ax = plt.subplots(nrows = 1, ncols = 3, subplot_kw={"projection":"3d"})
-    A = np.linspace(xmin, xmax, 50) # resolution of the contour
-    B = np.linspace(xmin, xmax, 20) # number of slices
-    A1,A2 = np.meshgrid(A,A) # grid on which the contour is plotted
-
-    def f(S):
-        return polyN(S, coeff, powers)
-
-    for i in range(3):
-
-        if i == 0:
-            f_plane = lambda x, y, z : f(np.array([x, y, 0, z, 0, 0]))
-        elif i == 1:
-            f_plane = lambda x, y, z : f(np.array([x, y, 0, 0, z, 0]))
-        else :
-            f_plane = lambda x, y, z : f(np.array([x, y, 0, 0, 0, z]))
-        
-        f_plane = np.vectorize(f_plane)
-
-        print("Début du plot sur XY")
-        for z in B: # plot contours in the XY plane
-            X,Y = A1,A2
-            Z = f_plane(X,Y,z) - 1
-            ax[i].contour(X, Y, Z+z, [z], zdir='z')
-            # [z] defines the only level to plot for this contour for this value of z
-        print("Fin du plot sur XY")
-        print("Début du plot sur XZ")
-        for y in B: # plot contours in the XZ plane
-            X,Z = A1,A2
-            Y = f_plane(X,y,Z) - 1
-            ax[i].contour(X, Y+y, Z, [y], zdir='y')
-
-        print("Fin du plot sur XZ")
-        print("Début du plot sur YZ")
-        for x in B: # plot contours in the YZ plane
-            Y,Z = A1,A2
-            X = f_plane(x,Y,Z) - 1
-            ax[i].contour(X+x, Y, Z, [x], zdir='x')
-        print("Fin du plot sur YZ")
-        # must set plot limits because the contour will likely extend
-        # way beyond the displayed level.  Otherwise matplotlib extends the plot limits
-        # to encompass all values in the contour.
-        ax[i].set_zlim3d(zmin,zmax)
-        ax[i].set_xlim3d(xmin,xmax)
-        ax[i].set_ylim3d(ymin,ymax)
-
-    plt.show()
 
 
 # In[214]:
@@ -1144,8 +976,11 @@ def write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt, powers)
                                 n0 = n0 + 1
         file.write("])")
             
-def write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers):
-    filename = "{}_abq_deg{}_{}_{}.inp".format(material, degree, law, protomodel)
+def write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, var_optim=0, n_try=0):
+    if var_optim==0 and n_try==0:
+        filename = "{}_abq_deg{}_{}_{}.inp".format(material, degree, law, protomodel)
+    else:
+        filename = "{}_abq_deg{}mini_{}_{}_{}_{}.inp".format(material, degree, law, protomodel, var_optim, n_try)
     foldername = file_dir + sep + "running"
     filepath = foldername + sep + filename
 
@@ -1188,8 +1023,8 @@ def first_opti():
     density = float(p["density"])
     nb_virtual_pt = int(p["nb_virtual_pt"])
     degree = int(p["degree"])
-    weigth_exp = float(p["weigth_exp"])
-    weigth_rval = float(p["weigth_rval"])
+    weight_exp = float(p["weight_exp"])
+    weight_rval = float(p["weight_rval"])
     protomodel = p["protomodel"]
     law = p["law"]
 
@@ -1227,7 +1062,6 @@ def first_opti():
 
     get_hardening_law(material)
     df = readData(material, protomodel)
-    nb_virtual_pt = len(df[df["Type"] == "v"])
 
     if degree==2:
         C = np.array([3, 3, 3, 3, 3, 3], dtype=float)
@@ -1237,7 +1071,7 @@ def first_opti():
         C = np.array([27, 81, 162, 189, 162, 81, 27, 81, 162, 243, 162, 81, 81, 81, 81, 27, 81, 162, 243, 162, 81, 162, 162, 162, 81, 81, 81, 81, 81, 27, 0, 0, 0, 0, 81, 162, 243, 162, 81, 162, 162, 162, 81, 162, 162, 162, 162, 81, 81, 81, 81, 81, 81, 27,])
 
     if opti:
-        coeff = optiCoeff_polyN(df, degree, weigth_exp, weigth_rval, gseed)
+        coeff = optiCoeff_polyN(df, degree, weight_exp, weight_rval, gseed)
     elif loadcoeff:
         coeff = np.load("polyN_coeff.npy")
     else :
@@ -1245,7 +1079,7 @@ def first_opti():
 
     coeff = adapt_coeff(adapt, degree, coeff)
     a, b, c, ymod = optiCoeff_pflow(law, coeff, material, degree, powers)
-    check_coeff(a,b,c,law, material)
+    #check_coeff(a,b,c,law, material)
 
     if savecoeff:
         np.save(file_dir + sep + "polyN_coeff.npy", coeff)
@@ -1254,9 +1088,12 @@ def first_opti():
     #plot_check(df, coeff)
     #plot_planestress(material, coeff)
 
-    if plot:
-        plot_implicit_coeff(coeff, powers)
     if export_coeff_user:
         write_coeff_user(coeff, protomodel, degree, material, nb_virtual_pt, powers)
     if export_coeff_abq:
         write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers)
+
+    return(coeff)
+
+if __name__ == "__main__":
+    first_opti()

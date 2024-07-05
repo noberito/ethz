@@ -22,6 +22,7 @@ from read_param import read_param
 from running.run_large_sim_cluster import launch_run, create_csv
 
 p = read_param()
+func = p["func"]
 material = p["material"]
 law = p["law"]
 degree = int(p["degree"])
@@ -142,7 +143,7 @@ def framework_param_study(lb, ub, step):
             create_csv(tests, material, input_type, i_var + 1, i)
             compare_large_strain(material, degree, input_type, i_var + 1, i)
 
-def framework_2(var_optim):
+def framework(var_optim):
     """
         TODO, CHANGE RUN AND CREATE CSV
     """
@@ -164,7 +165,7 @@ def framework_2(var_optim):
 
         write_coeff_abq(new_coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, n_try=n_try)
         launch_run(tests, material, degree, law, protomodel, input_type, n_try=n_try)
-        time.sleep(90)
+        time.sleep(300)
         create_csv(tests, material, input_type, n_try=n_try)
         compare_large_strain(material, degree, input_type, n_try=n_try)
 
@@ -185,4 +186,9 @@ def framework_2(var_optim):
     np.save(coeff_polyN, coeff_file)
     print(coeff_polyN)
 
-framework_param_study(-10, 10, 2)
+
+if __name__ == "__main__":
+    if func == "polyN":
+        framework(var_optim)
+    elif func == "polyN_mini":
+        framework_mini(var_optim)

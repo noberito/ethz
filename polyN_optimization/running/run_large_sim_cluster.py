@@ -28,7 +28,7 @@ def change_paras(test, material):
         res_filename = results_exp_dir + sep + test + "_1.csv"
         df_exp = pd.read_csv(res_filename, index_col=False)
         dtime = np.max(df_exp.iloc[:,0])
-        displ = np.max(df_exp.iloc[:,1]) * 3
+        displ = np.max(df_exp.iloc[:,1]) * 10
         thickness = df_exp.loc[0, "Thickness[mm]"]
         width = df_exp.loc[0, "OuterWidth[mm]"]
         tramp1 = dtime / 100
@@ -49,14 +49,23 @@ def change_paras(test, material):
             f.write("MAXDT = DTIME * 1e-2")
             f.close()
 
-def change_usermat(test, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
+def change_usermat(test, func, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
     """
         Change the input user material file in the all the abaqus files of test in tests
         Input :
             - usermatfile : string, filename of the user material file
     """
-    usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}_{var_optim}_{n_try}.inp"
-
+    if func=="polyN":
+        if var_optim==0 and n_try==0:
+            usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}.inp"
+        else:
+            usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}_{var_optim}_{n_try}.inp"
+    if func=="polyN_mini":
+        if var_optim==0 and n_try==0:
+            usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}.inp"
+        else:
+            usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}_{var_optim}_{n_try}.inp"
+            
     filename = run_dir + sep + test + f"_{input_type}.inp"
     with open(filename, "r") as f:
         content = f.readlines()
@@ -73,7 +82,7 @@ def change_usermat(test, material, degree, law, protomodel, input_type, var_opti
     with open(filename, "w") as f:
         f.writelines(content)
 
-def simulate(test, input_type, law, n_try=0, var_optim=0):
+def simulate(test, func, input_type, law, n_try=0, var_optim=0):
     """
         Run the abaqus simulation of the test_polyN.inp and generate a csv file in results_sim folder
         Input :
@@ -81,7 +90,10 @@ def simulate(test, input_type, law, n_try=0, var_optim=0):
     """
     print(f"Simulating {test}")
     job = f'{test}_{input_type}'
-    subroutine = f"{input_type}_PolyN_3D_{law}.for"
+    if func == "polyN":
+        subroutine = f"{input_type}_PolyN_3D_{law}.for"
+    elif func == "polyN_mini":
+        subroutine = f"{input_type}_PolyNmini_3D_{law}.for"
 
     input_file = f"{job}.inp"
     cp_input_file = f'temp_{job}_{var_optim}_{n_try}.inp'
@@ -90,8 +102,8 @@ def simulate(test, input_type, law, n_try=0, var_optim=0):
     subprocess.call(copy_sim_cmd, shell=True, cwd=run_dir)
 
     abq = r'"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\env\vars.bat" -arch intel64 vs2019 &'
-    job_command = f'sbatch -n 24 -t 0-1 --mem-per-cpu=300 --tmp=300 --wrap "abaqus job={cp_input_file} double interactive user={subroutine} cpus=24 scratch=\$TMPDIR"'
-    
+    job_command = f'''sbatch -n 24 -t 0-2 --mem-per-cpu=300 --tmp=300 --wrap "abaqus job={cp_input_file} double interactive user={subroutine} cpus=24 scratch=\$TMPDIR"'''
+
     subprocess.call(job_command, shell=True, cwd=run_dir)
 
 def post_process(test, material, input_type, var_optim=0, n_try=0):
@@ -344,18 +356,18 @@ def sim_finished(test, input_type, var_optim=0, n_try=0):
     return(True)
 
 
-def launch_run(tests, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
+def launch_run(tests, func, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
     #Run les tests disponibles experimentalement
     
     #Changer les parametres pour les inp
     
     for test in tests:
         change_paras(test, material)
-        change_usermat(test, material, degree, law, protomodel, input_type, var_optim, n_try)
+        change_usermat(test, func, material, degree, law, protomodel, input_type, var_optim, n_try)
 
     #Simulation de tous les tests
     for test in tests:
-        simulate(test, input_type, law, n_try, var_optim)
+        simulate(test, func, input_type, law, n_try, var_optim)
 
 
 def create_csv(tests, material, input_type, var_optim=0, n_try=0):
@@ -367,3 +379,34 @@ def create_csv(tests, material, input_type, var_optim=0, n_try=0):
     #Post-processing des tests
     for test in tests:
         post_process(test, material, input_type, var_optim, n_try)
+
+sys.path.append(polyN_cali_dir)
+
+from read_param import read_param
+from tests_parameters import large_tests
+
+p = read_param()
+
+material = p["material"]
+gseed = int(p["gseed"])
+enu = float(p["enu"])
+density = float(p["density"])
+nb_virtual_pt = int(p["nb_virtual_pt"])
+degree = int(p["degree"])
+weight_exp = float(p["weight_exp"])
+weight_rval = float(p["weight_rval"])
+protomodel = p["protomodel"]
+law = p["law"]
+input_type = p["input_type"]
+
+gen_v_data = int(p["gen_v_data"])
+gen_e_data = int(p["gen_e_data"])
+
+opti = int(p["opti"])
+loadcoeff = int(p["loadcoeff"])
+adapt = int(p["adapt"])
+
+export_coeff_abq = int(p["export_coeff_abq"])
+export_coeff_user = int(p["export_coeff_user"])
+
+launch_run(large_tests, material, degree, law, protomodel, input_type, 10, 10)

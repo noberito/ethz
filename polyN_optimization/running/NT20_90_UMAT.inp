@@ -41,7 +41,7 @@
 *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-90, material=mat
 **
 *MATERIAL,NAME=mat
-*INCLUDE, INPUT=DP780_abq_deg4_swift_mises.inp
+*INCLUDE, INPUT=DP780_abq_deg4_swift_mises_0_0.inp
 **
 **
 *DEPVAR
