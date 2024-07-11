@@ -1148,8 +1148,8 @@ def first_opti():
     check_coeff(a,b,c,law, material)
 
     if savecoeff:
-        np.save(file_dir + sep + "polyN_coeff.npy", coeff)
-        np.save(file_dir + sep + f"{law}_coeff.npy", np.array([a, b, c, ymod]))
+        np.save(file_dir + sep + material + "_polyN_coeff.npy", coeff)
+        np.save(file_dir + sep + material + f"_{law}_coeff.npy", np.array([a, b, c, ymod]))
 
     #plot_check(df, coeff)
     #plot_planestress(material, coeff)

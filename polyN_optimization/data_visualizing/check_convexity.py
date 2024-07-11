@@ -517,7 +517,7 @@ def check_convexity_lpm_spec(coeff, powers, itermax, n_pt_angle):
     m = min(L.flatten())
     return(m)
 
-coeff = np.load(polyN_dir + sep + "polyN_coeff.npy")
+coeff = np.load(polyN_dir + sep + material + "_polyN_coeff.npy")
 powers = get_param_polyN(degree)
 
 coeff[0] = coeff[0]

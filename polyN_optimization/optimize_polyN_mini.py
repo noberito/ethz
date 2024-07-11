@@ -14,7 +14,7 @@ import os
 import sklearn
 import sklearn.preprocessing 
 from read_param import read_param
-from get_calibration_data import export_exp_data, export_virtual_data
+from get_calibration_data import export_exp_data, export_virtual_data, analyze_exp_data
 from get_hardening_law import get_hardening_law
 import shutil
 import random
@@ -98,8 +98,7 @@ def readData_2d(material, protomodel):
     df = pd.concat([df_e, df_v])
     
     df["Norm"] = np.linalg.norm(df[["s11", "s22", "s33", "s12", "s13", "s23"]].values, axis=1)
-    df["d11"] = df["s11"] - df["s33"]
-    df["d22"] = df["s22"] - df["s33"]
+
 
     return(df)
 
@@ -398,6 +397,27 @@ def f1(S, coeff_mini, powers):
     res = np.float_power(polyN_2d(S, coeff_mini, powers),(2/degree))
     return(res)
 
+def gradf1(S, coeff_mini, powers):
+    if S.ndim==1:
+        S = np.expand_dims(S, axis=0)
+    coeff_grad, powers_grad = jac_polyN_2d_param(coeff_mini, powers)
+    n = np.sum(powers[0])
+
+    p = polyN_2d(S, coeff_mini, powers)
+    gradP = grad_polyN_2d(S, coeff_grad, powers_grad)
+
+
+    gradf1 = (2/n) * gradP * np.float_power(p, (2/n) - 1)[:, np.newaxis]
+
+    return(gradf1)
+
+def test_gradf1(degree):
+    powers = get_param_polyN_mini(degree)
+    ncoeff = len(powers)
+    coeff = np.ones(ncoeff)
+    S = np.array([[1,0,0,0,0,0], [1,0,0,0,0,0]])
+    print(gradf1(S, coeff, powers))
+
     
 def f2(S, coeff):
     """
@@ -414,6 +434,29 @@ def f2(S, coeff):
     res = coeff[-2] * np.square(X[:,3]) + coeff[-1] * np.square(X[:,4])
     return(res)
 
+def gradf2(S, coeff):
+    if S.ndim==1:
+        S = np.expand_dims(S, axis=0)
+
+    k1 = coeff[-2]
+    k2 = coeff[-1]
+
+    ndata = len(S)
+    gradf2 = np.zeros((ndata, 6))
+
+    gradf2[:,4] = 2 * k1 * S[:,4]
+    gradf2[:,5] = 2 * k2 * S[:,5]
+
+    return(gradf2)
+
+def test_gradf2(degree):
+    powers = get_param_polyN_mini(degree)
+    ncoeff = len(powers)
+    coeff = 7 * np.ones(ncoeff + 2)
+    S = np.array([[1,0,0,0,1,1],[1,0,0,0,1,1]] )
+    print(gradf2(S, coeff))
+
+
 
 # In[208]:
 
@@ -429,6 +472,9 @@ def f_min_squared(S, coeff, powers):
             - res : float, result of polyN_min(t_linear(S)) **(2/degree)       
     """
     return(f1(S, coeff[:-2], powers) + f2(S, coeff[-2:]))
+
+def grad_f_min_squared(S, coeff, powers):
+    return(gradf1(S, coeff[:-2], powers) + gradf2(S, coeff))
 
 
 """ ---------------------------------------------PARAMETERS OPTIMIZATION-----------------------------------------------------------------------------"""
@@ -756,7 +802,7 @@ def constraint_pos(X, powers):
             else:
                 A[i,j - 1] = np.prod(x ** p)
 
-    cons = scipy.optimize.LinearConstraint(A, lb=B)
+    cons = scipy.optimize.LinearConstraint(A, lb=B, keep_feasible=True)
     return(cons)
 
 def grad_P_a(x, powers):
@@ -803,7 +849,10 @@ def constraint_convex(x, v, a, powers):
         dP = np.dot(grad_P, v)
         d2P = np.dot(np.matmul(hess_P, v), v) + np.dot(grad_P, a)
 
-        return(n**2 * P**2 - (n-1) * dP ** 2 + n * P * d2P)
+        res = n**2 * P**2 - (n-1) * dP ** 2 + n * P * d2P
+        if res <0 :
+            print(res)
+        return(res)
 
     def grad_cons(coeff):
         b = np.ones(len(coeff) + 1)
@@ -864,8 +913,159 @@ def test_cons():
         print(grad_cons(coeff))
         print(hess_cons(coeff))
 
+def get_yield_stress_NT6(sigma0, material):
+    mat_tests = analyze_exp_data(material)
+    results_exp_dir = file_dir + sep + "results_exp" + sep + material
+    ys_ratio_nt6 = {}
+
+    for type_test in mat_tests:
+
+        if type_test == "NT6":
+            for ori in mat_tests[type_test]:
+
+                    test = type_test + "_" + ori
+                    ys_exp = np.array([])
+                    for i in range(mat_tests[type_test][ori]):
+
+                        filename = test + "_" + str(i+1) + ".csv"
+                        filepath = results_exp_dir + sep + filename
+                        df_NT6 = pd.read_csv(filepath)
+                        df_NT6["Stress"] = df_NT6["Force[kN]"] * 1000 / (df_NT6.loc[0, "Thickness[mm]"] * df_NT6.loc[0, "InnerWidth[mm]"])
+                        df_NT6["Strain"] = df_NT6["Displacement[mm]"] / 30
+                        yield_stress = df_NT6[df_NT6["Strain"] > 0.002]["Stress"].iloc[0]
+                        ys_exp = np.append(ys_exp,yield_stress)
+
+                    ys = np.mean(ys_exp)
+                    ys_ratio = ys / sigma0
+                    ys_ratio_nt6[ori] = ys_ratio
+
+    return(ys_ratio_nt6)
+
+def get_yield_stress_SH(sigma0, material):
+    mat_tests = analyze_exp_data(material)
+    results_exp_dir = file_dir + sep + "results_exp" + sep + material
+    ys_ratio_SH = {}
+
+    for type_test in mat_tests:
+
+        if type_test == "SH":
+            for ori in mat_tests[type_test]:
+                    
+                    test = type_test + "_" + ori
+                    ys_exp = np.array([])
+                    for i in range(mat_tests[type_test][ori]):
+
+                        filename = test + "_" + str(i+1) + ".csv"
+                        filepath = results_exp_dir + sep + filename
+                        df_SH = pd.read_csv(filepath)
+                        df_SH["Stress"] = df_SH["Force[kN]"] * 1000 / (df_SH.loc[0, "Thickness[mm]"] * 3.15)
+                        df_SH["Strain"] = df_SH["Displacement longi[mm]"] / 50
+                        yield_stress = df_SH[df_SH["Strain"] > 0.002]["Stress"].iloc[0]
+                        ys_exp = np.append(ys_exp,yield_stress)
+
+                    ys = np.mean(ys_exp)
+                    ys_ratio = ys / sigma0
+                    ys_ratio_SH[ori] = ys_ratio
+
+    return(ys_ratio_SH)
+
+def get_dir_pst(coeff, powers):
+
+    def gradg(S):
+        return(grad_f_min_squared(S, coeff, powers))
     
-def optiCoeff_polyN_mini(df, degree, weight_exp, weight_rval):
+    n_phi = 100
+    phis = np.linspace(0, np.pi/2, n_phi)
+    S = np.zeros((n_phi, 6))
+
+    for i in range(n_phi):
+        phi = phis[i]
+        S[i] = np.array([np.cos(phi), np.sin(phi), 0, 0, 0, 0]) 
+
+    grad00 = np.abs(gradg(S)[:,1])
+    grad90 = np.abs(gradg(S)[:,0])
+
+    phi_00 = phis[np.argmin(grad00)]
+    theta_00 = np.pi/2
+    phi_90 = phis[np.argmin(grad90)]
+    theta_90 = np.pi/2
+
+    #PART 45 DEGREES
+    n_theta = 100
+    thetas = np.linspace(0, np.pi/2)
+    score = np.zeros((n_phi, n_theta))
+    v = np.array([1/2, 1/2, 1])
+    
+    def f(phi, theta):
+        u = np.array([np.cos(phi) * np.sin(theta), np.sin(phi) * np.sin(theta), 0, np.cos(theta), 0, 0]) 
+        gradf = gradg(u)[0,[0, 1, 3]]
+        w = np.cross(gradf, v)
+        norm = np.linalg.norm(w)
+        return(norm)
+    
+    X, Y = np.meshgrid(phis, thetas, indexing='ij')
+
+    score = np.vectorize(f)(X, Y)
+    index_colinear = np.argmin(score)
+    min_index_2d = np.unravel_index(index_colinear, score.shape)
+    phi_45 = phis[min_index_2d[0]]
+    theta_45 = thetas[min_index_2d[1]]
+
+    dir_pst = {"00" : (phi_00, theta_00), "45": (phi_45, theta_45), "90" : (phi_90, theta_90)}
+    return(dir_pst)
+
+def add_nt6(old_df, ys_ratio_nt6, dir_pst):
+
+    new_df = old_df.copy(deep=True)
+
+    for ori in ys_ratio_nt6:
+        phi, theta = dir_pst[ori]
+        ys = ys_ratio_nt6[ori]
+
+        psi = float(ori) / 360 * 2 * np.pi
+        dep = np.array([np.square(np.cos(psi)), np.square(np.sin(psi)), np.sin(2 * psi)])
+        #only sigma axial
+        ds = np.array([np.cos(phi) * np.sin(theta), np.sin(phi) * np.sin(theta), np.cos(theta)])
+
+        r = ys / np.dot(ds, dep)
+        s = r * ds
+
+        x = s[0]
+        y = s[1]
+        z = s[2]
+        row = {"s11" : x, "s22":y , "s33":0, "s12":z, "s13":0, "s23":0, "Type":"e2", "Rval":0.0}
+
+        for key in new_df:
+            if not(key in row):
+                row[key] = np.nan
+
+        new_df.loc[len(new_df)] = row
+    return(new_df)
+
+def add_sh(old_df, ys_ratio_sh):
+    new_df = old_df.copy(deep=True)
+    for ori in ys_ratio_sh:
+        ys = ys_ratio_sh[ori]
+
+        theta = float(ori[1:]) / 360 * 2 * np.pi
+        if ori[0] == "m":
+            theta = - theta
+
+        #only shear comp
+        ds = np.array([-np.sin(2 * theta), np.sin(2 * theta), np.cos(2 * theta)])
+        s = ys * ds
+
+        x = s[0]
+        y = s[1]
+        z = s[2]
+        row = {"s11" : x, "s22":y , "s33":0, "s12":z, "s13":0, "s23":0, "Type":"e2", "Rval":0.0 }
+        for key in new_df:
+            if not(key in row):
+                row[key] = np.nan
+        new_df.loc[len(new_df)] = row
+    return(new_df)
+
+def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_vir, old_coeff):
     """
         Returns the optimized coefficients of polyN on experimental data (UTs) and virtual data from a protomodel
         Input :
@@ -876,6 +1076,7 @@ def optiCoeff_polyN_mini(df, degree, weight_exp, weight_rval):
         Output :
             - coeff : ndarray of shape (nmon), coeff of polyN model
     """
+
     data = df[["s11", "s22", "s33", "s12", "s13", "s23"]].values
     polyN = sklearn.preprocessing.PolynomialFeatures(degree, include_bias=False)
     X_stress = polyN.fit_transform(t_linear(data)[:,[0,1,2]])
@@ -896,19 +1097,36 @@ def optiCoeff_polyN_mini(df, degree, weight_exp, weight_rval):
     powers = powers.T[sorted_indices]
     X_stress = X_stress[:,sorted_indices]
     nmon = len(powers)
-    ndata = len(data)
+    n_data = len(data)
 
     index_rval = np.where(df["Rval"]< 0.00001, False, True)
     ndata_rval = np.count_nonzero(index_rval)
     r_vals = df["Rval"].iloc[index_rval].values
     thetas = df["LoadAngle"].iloc[index_rval].values
 
-    weight_s = np.where(df["Type"] == "e", 1 ,0)
-    n_data_exp = np.sum(weight_s)
-    weight_s = np.where(weight_s == 1, weight_exp / n_data_exp, (1 - weight_exp) / (ndata - n_data_exp))
-    weight_s = (1 - weight_rval) * weight_s / np.sum(weight_s)
+    index_s = np.where(df["Type"] == "e", True ,False)
+    index_ns = np.where(df["Type"] == "e2", True ,False)
+    index_v = ~index_s & ~index_ns
+
+    n_data_ut = np.sum(index_s)
+    n_data_ns = np.sum(index_ns)
+    n_data_v = n_data - n_data_ut - n_data_ns
+    weight_s = np.zeros(n_data)
+
+    w = weight_ut / (n_data_ut + weight_e2 * n_data_ns + weight_vir * n_data_v)
+
+    w_ut = w
+    w_e2 = w * weight_e2
+    w_v = w * weight_vir
+
+    weight_s[index_s] = w_ut
+    weight_s[index_ns] = w_e2
+    weight_s[index_v] = w_v
+
     weight_r = np.ones(ndata_rval)
-    weight_r = weight_rval *  weight_r / np.sum(weight_r)
+    weight_r = (1 - weight_ut) *  weight_r / np.sum(weight_r)
+
+    print(weight_s, np.sum(weight_s), np.sum(weight_r))
 
     def J(a):
         b = np.ones(len(a) + 1)
@@ -919,6 +1137,7 @@ def optiCoeff_polyN_mini(df, degree, weight_exp, weight_rval):
 
         c = np.sum(weight_s * np.square(eq_ys))
         d = np.sum(weight_r * np.square(eq_rval))
+
         res = 0.5 * (c + d)
         return(res)
 
@@ -946,25 +1165,41 @@ def optiCoeff_polyN_mini(df, degree, weight_exp, weight_rval):
     
     constraints = []
 
-    X, V, A = points(5, 5, 5, 5)
+    X, V, A = points(5, 15, 7, 15)
     cons_pos = constraint_pos(X, powers)
     constraints.append(cons_pos)
 
     for x,v,a in zip(X, V, A):
         cons, grad_cons, hess_cons = constraint_convex(x, v, a, powers)
-        cons_convex = scipy.optimize.NonlinearConstraint(cons, 0, np.inf, jac=grad_cons)
+        cons_convex = scipy.optimize.NonlinearConstraint(cons, lb=0, ub=np.inf, jac=grad_cons, keep_feasible=True)
         constraints.append(cons_convex)
 
     print(f"Number of coefficients for degree {degree}:", nmon + 2)
 
-    if degree==2:
-        a0 = np.array([-1, 1, 3, 3, 3])
-    if degree==4:
-        a0 = np.array([-2, 3, -2, 1, 6, -6, 6, 9, 3, 3])
-    if degree==6:
-        a0 = np.array([-3, 6, -7, 6, -3, 1, 12, -24, 30, -24, 12, 14, -2, 14, 30, 3, 3])
+    b = np.zeros(len(old_coeff))
+    b[-2] = 3
+    b[-1] = 3
 
-    opt = scipy.optimize.minimize(J, x0=a0, jac=grad_J, method="trust-constr", constraints=constraints, tol=1e-7, options={"verbose":3, "maxiter":10000})
+    res = 0
+    for i in range(degree // 2, -1, -1):
+        n = 2 * i + 1
+        val = np.max(np.abs(old_coeff[res:res + n]))
+        b[res:res + n] = 1.5 * val
+        res = res + n
+
+    a0 = old_coeff[1:]
+    b = b[1:]
+    I = np.eye(len(a0))
+    cons_hypercube = scipy.optimize.LinearConstraint(I, lb = a0 - b, ub= a0 + b, keep_feasible=True)
+    constraints.append(cons_hypercube)
+
+    options = {"verbose":3, "maxiter":300}
+
+    opt = scipy.optimize.minimize(J, x0=a0, jac=grad_J, method="trust-constr", constraints=constraints, options=options)
+    while (not opt.success and opt.nit == options['maxiter']):
+        new_a0 = a0 + 0.1 * np.random.uniform(low= - np.ones(len(a0)), high=np.ones(len(a0)))
+        print(new_a0)
+        opt = scipy.optimize.minimize(J, x0=new_a0, jac=grad_J, method="trust-constr", constraints=constraints, options=options)
     coeff_temp = opt.x
     coeff = np.ones(len(coeff_temp) + 1)
     coeff[1:] = coeff_temp
@@ -1103,6 +1338,18 @@ def write_coeff_abq_mini(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, ma
         file.write("*DENSITY\n")
         file.write("{}".format(density))
 
+def test_sh():
+    p = read_param()
+    material = p["material"]
+    protomodel = p["protomodel"]
+    
+    get_hardening_law(material)
+    df = readData_2d(material, protomodel)
+    sigma0 = df["YieldStress"].iloc[0]
+    
+    print(get_yield_stress_SH(sigma0, material))
+
+
 def firstopti_mini():
     p = read_param()
     material = p["material"]
@@ -1111,8 +1358,9 @@ def firstopti_mini():
     density = float(p["density"])
     nb_virtual_pt = int(p["nb_virtual_pt"])
     degree = int(p["degree"])
-    weight_exp = float(p["weight_exp"])
-    weight_rval = float(p["weight_rval"])
+    weight_ut = float(p["weight_ut"])
+    weight_vir = float(p["weight_vir"])
+    weight_e2 = float(p["weight_e2"])
     protomodel = p["protomodel"]
     law = p["law"]
 
@@ -1127,7 +1375,6 @@ def firstopti_mini():
     export_coeff_user = int(p["export_coeff_user"])
     savecoeff = int(p["savecoeff"])
 
-
     if gen_v_data :
         print("Generation of virtual data")
         export_virtual_data(protomodel, material, nb_virtual_pt)
@@ -1140,20 +1387,45 @@ def firstopti_mini():
 
     get_hardening_law(material)
     df = readData_2d(material, protomodel)
+    sigma0 = df["YieldStress"].iloc[0]
+
+    ys_ratio_sh = get_yield_stress_SH(sigma0, material)
+    ys_ratio_nt6 = get_yield_stress_NT6(sigma0, material)
+
+    df = add_sh(df, ys_ratio_sh)
     powers = get_param_polyN_mini(degree)
     nmon = len(powers)
 
-    coeff = optiCoeff_polyN_mini(df, degree, weight_exp, weight_rval)
+
+    if degree==2:
+        C = np.array([1, -1, 1, 3, 3, 3])
+    if degree==4:
+        C = np.array([1, -2, 3, -2, 1, 6, -6, 6, 9, 3, 3])
+    if degree==6:
+        C = np.array([1, -3, 6, -7, 6, -3, 1, 12, -24, 30, -24, 12, 14, -2, 14, 30, 3, 3])
+
+    if opti:
+        new_df = df.copy(deep=True)
+
+        for i in range(5):
+            coeff = optiCoeff_polyN_mini(new_df, degree, weight_ut, weight_e2, weight_vir, C)
+            dir_pst = get_dir_pst(coeff, powers)
+            new_df = add_nt6(df, ys_ratio_nt6, dir_pst)
+
+    elif loadcoeff:
+        coeff = np.load(file_dir + sep + material + "_polyN_mini_coeff.npy")
+    else :
+        coeff = C
+
     a, b, c, ymod = optiCoeff_pflow_mini(law, coeff, material, powers)
 
     if savecoeff:
-        np.save(file_dir + sep + "polyN_mini_coeff.npy", coeff)
-        np.save(file_dir + sep + f"{law}_mini_coeff.npy", np.array([a, b, c, ymod]))
+        np.save(file_dir + sep + material + "_polyN_mini_coeff.npy", coeff)
+        np.save(file_dir + sep + material + f"_{law}_mini_coeff.npy", np.array([a, b, c, ymod]))
 
     if export_coeff_abq:
         print(nmon, coeff)
         write_coeff_abq_mini(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, var_optim=0, n_try=0)
 
 if __name__ == "__main__":
-    #test_cons()
-    firstopti_mini()
+    firstopti_mini() 

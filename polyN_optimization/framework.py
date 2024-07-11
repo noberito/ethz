@@ -13,7 +13,7 @@ from get_calibration_data import analyze_exp_data
 from optimize_polyN import first_opti, get_param_polyN, write_coeff_abq
 from optimize_polyN_mini import firstopti_mini, get_param_polyN_mini, write_coeff_abq_mini
 from running.run_ut import launch_run, create_csv
-from data_visualizing.compare_sim_exp import compare_ut
+from data_visualizing.compare_sim_exp import compare_ut_fd
 from tests_parameters import ut_tests
 
 sep = os.sep
@@ -175,7 +175,7 @@ def framework_mini(var_optim):
         time.sleep(5)
         launch_run(tests, func, material, degree, law, protomodel, input_type, n_try=n_try)
         create_csv(tests, material, input_type, n_try=n_try)
-        compare_ut(material, degree, input_type, n_try=n_try)
+        compare_ut_fd(material, degree, input_type, n_try=n_try)
 
         err = 0
 

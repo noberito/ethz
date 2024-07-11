@@ -10,11 +10,11 @@ sep = os.sep
 sys.path.append(polyN_dir)
 
 from optimize_polyN import get_param_polyN, polyN, jac_polyN_param, grad_polyN, readData, read_param, mises
-from optimize_polyN_mini import get_param_polyN_mini, f_min_squared, jac_polyN_2d_param, grad_polyN_2d, polyN_2d
+from optimize_polyN_mini import get_param_polyN_mini, f_min_squared, jac_polyN_2d_param, grad_polyN_2d, polyN_2d, get_dir_pst, get_yield_stress_SH, get_yield_stress_NT6, add_sh, add_nt6
 
 
 
-def plot_check(df, coeff_polyN, powers, material, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel):
+def plot_check(df, coeff_polyN, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel):
     """
         Plot the yield surface in the sx, sy plane and the yield stresses and r-values according to the loading angle.
         Input :
@@ -134,11 +134,11 @@ def plot_check(df, coeff_polyN, powers, material, weight_exp, weight_rval, nb_vi
     foldername_out = polyN_dir + sep + "plots" + sep + material
     if not os.path.exists(foldername_out):
         os.makedirs(foldername_out)
-    filename = f"ysrval_{material}_poly{degree}_{weight_exp}_{weight_rval}_{nb_virtual_pt}_{protomodel}.png"
+    filename = f"ysrval_{material}_poly{degree}_{weight_ut}_{weight_e2}_{weight_vir}_{nb_virtual_pt}_{protomodel}.png"
     filepath = foldername_out + sep + filename
     plt.savefig(filepath)
 
-def plot_planestress(material, coeff, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel):
+def plot_planestress(material, coeff, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel):
     zs = np.linspace(0, 1, 10)
     mises_plot = False
     fig, ax = plt.subplots()
@@ -187,11 +187,11 @@ def plot_planestress(material, coeff, powers, weight_exp, weight_rval, nb_virtua
     foldername_out = polyN_dir + sep + "plots" + sep + material
     if not os.path.exists(foldername_out):
         os.makedirs(foldername_out)
-    filename = f"planexy_{material}_poly{degree}_{weight_exp}_{weight_rval}_{nb_virtual_pt}_{protomodel}.png"
+    filename = f"planexy_{material}_poly{degree}_{weight_ut}_{weight_e2}_{weight_vir}_{nb_virtual_pt}_{protomodel}.png"
     filepath = foldername_out + sep + filename
     plt.savefig(filepath)
 
-def plot_implicit_coeff(material, coeff, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel, bbox=(-1.5,1.5)):
+def plot_implicit_coeff(material, coeff, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel, bbox=(-1.5,1.5)):
     ''' create a plot of an implicit function
     fn  ...implicit function (plot where fn==0)
     bbox ..the x,y,and z limits of plotted interval'''
@@ -246,7 +246,7 @@ def plot_implicit_coeff(material, coeff, powers, weight_exp, weight_rval, nb_vir
     foldername_out = polyN_dir + sep + "plots" + sep + material
     if not os.path.exists(foldername_out):
         os.makedirs(foldername_out)
-    filename = f"3dcuts_{material}_poly{degree}_{weight_exp}_{weight_rval}_{nb_virtual_pt}_{protomodel}.png"
+    filename = f"3dcuts_{material}_poly{degree}_{weight_ut}_{weight_e2}_{weight_vir}_{nb_virtual_pt}_{protomodel}.png"
     filepath = foldername_out + sep + filename
     plt.savefig(filepath)
     plt.show()
@@ -326,6 +326,13 @@ def rval_ut_mini(thetas, coeff_mini, powers):
     return(r_val)
 
 def plot_rval_ut_mini(df, coeff, powers):
+    """
+        Plot the rvalues for UTs for polyN mini
+        Input :
+            - df : Dataframe, must contains ["Rval"] and ["LoadAngle"] for UTs
+            - coeff : ndarray of shape (nmon + 2,), coeff of the polyN mini function
+            - powers : ndarray of shape (nmon, 3), powers of the polyN mini function
+    """
     
     n_thetas = 100
     thetas_theo = np.linspace(0, np.pi/2, n_thetas)
@@ -338,6 +345,13 @@ def plot_rval_ut_mini(df, coeff, powers):
     plt.show()
 
 def plot_yield_stresses_ut_mini(df, coeff, powers):
+    """
+        Plot the ys for UTs for polyN mini
+        Input :
+            - df : Dataframe, must contains ["YieldStress"], ["Rval"] and ["LoadAngle"] for UTs
+            - coeff : ndarray of shape (nmon + 2,), coeff of the polyN mini function
+            - powers : ndarray of shape (nmon, 3), powers of the polyN mini function
+    """
 
     def f(S):
         return(f_min_squared(S, coeff, powers))
@@ -390,7 +404,15 @@ def plot_yield_stresses_ut_mini(df, coeff, powers):
     plt.plot(thetas, ys_model, color="blue", label="YS model")
     plt.show()
 
-def plot_check_mini(df, coeff, powers, material, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel):
+def plot_check_mini(df, coeff, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel):
+    """
+        Plot the rvalues and ys for UTs for polyN mini
+        Input :
+            - df : Dataframe, must contains ["YieldStress"], ["Rval"] and ["LoadAngle"] for UTs
+            - coeff : ndarray of shape (nmon + 2,), coeff of the polyN mini function
+            - powers : ndarray of shape (nmon, 3), powers of the polyN mini function
+            - rest of the usual parameters for plot's title
+    """
     n_thetas = 100
     thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
 
@@ -421,15 +443,88 @@ def plot_check_mini(df, coeff, powers, material, weight_exp, weight_rval, nb_vir
     foldername_out = polyN_dir + sep + "plots" + sep + material
     if not os.path.exists(foldername_out):
         os.makedirs(foldername_out)
-    filename = f"ysrval_{material}_poly{degree}mini_{weight_exp}_{weight_rval}_{nb_virtual_pt}_{protomodel}.png"
+    filename = f"ysrval_{material}_poly{degree}mini_{weight_ut}_{weight_e2}_{weight_vir}_{nb_virtual_pt}_{protomodel}.png"
     filepath = foldername_out + sep + filename
     plt.savefig(filepath)
+    plt.show()
 
-def plot_planestress_mini(material, coeff, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel):
-    zs = np.linspace(0, 1, 10)
+def plot_planestress_mini(material, coeff, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel):
+    """
+        Plot the yield surface in the plane sx sy for different sxy
+    """
+    zs = [0.0, 0.3, 0.4, 0.5, 0.6, 0.63]
     mises_plot = False
     fig, ax = plt.subplots()
 
+
+    sx = np.linspace(-1.5, 1.5, 100)
+    sy = np.linspace(-1.5, 1.5, 100)
+    sx, sy = np.meshgrid(sx,sy)
+
+    for z in zs:
+        def mises_plane(x,y):
+            return(mises(np.array([x,y,0,z,0,0])))
+
+        def f(x,y):
+            return(f_min_squared(np.array([x,y,0,z,0,0]), coeff, powers))
+
+        f = np.vectorize(f)
+        mises_plane = np.vectorize(mises_plane)
+
+        ys_polyN = f(sx, sy)
+        ys_mises = mises_plane(sx, sy)
+
+        # Create the contour plot
+        cs1 = ax.contour(sx, sy, ys_polyN, levels=[1], linewidths=1)
+        ax.clabel(cs1, inline=1, fontsize=10, fmt={1: z})
+        if mises_plot:
+            cs2 = ax.contour(sx, sy, ys_mises, levels=[1], colors='red', linewidths=1)
+
+    # Set labels
+    ax.set_xlabel(r"$\sigma_{xx}/\sigma_0$[-]", size=12)
+    ax.set_ylabel(r"$\sigma_{yy}/\sigma_0$[-]", size=12)
+    ax.set_aspect('equal', adjustable='box')
+    ax.grid(1)
+    
+    nm1, labels = cs1.legend_elements()
+    if mises_plot:
+        nm2, labels = cs2.legend_elements()
+
+
+    ax.set_title(rf'{material} Yield surface in the $\sigma_{{xx}},\sigma_{{yy}}$ plane', size=12)
+    plt.legend(nm1, ["polyN_mini"])
+    if mises_plot:
+        plt.legend(nm2, ["Mises"])
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+
+    foldername_out = polyN_dir + sep + "plots" + sep + material
+    if not os.path.exists(foldername_out):
+        os.makedirs(foldername_out)
+    filename = f"planexy_{material}_poly{degree}mini_{weight_ut}_{weight_e2}_{weight_vir}_{nb_virtual_pt}_{protomodel}.png"
+    filepath = foldername_out + sep + filename
+    plt.savefig(filepath)
+
+def check_pst_points(df, material, coeff, powers):
+    sigma0 = df["YieldStress"].iloc[0]
+    ys_ratio_nt6 = get_yield_stress_NT6(sigma0, material)
+    dir_pst = get_dir_pst(coeff, powers)
+    new_df = add_nt6(df, ys_ratio_nt6, dir_pst)
+
+    zs = [0]
+    mises_plot = False
+    fig, ax = plt.subplots()
+
+    try:
+        ebt = df[df["q"] == 1][["s11","s22"]].values[0]
+        plt.scatter(ebt[0], ebt[1], marker="x", label = "UT_EBT")
+    except IndexError:
+        print("EBT non disponible")
+        
+    ut0 = df[df["LoadAngle"] == 0.0][["s11","s22"]].values[0]
+    plt.scatter(ut0[0], ut0[1], marker="x", label = "UT_00")
+    ut90 = df[df["LoadAngle"] > np.pi/2.1][["s11","s22"]].values[0]
+    plt.scatter(ut90[0], ut90[1], marker="x", label = "UT_90")
 
     sx = np.linspace(-1.5, 1.5, 100)
     sy = np.linspace(-1.5, 1.5, 100)
@@ -460,53 +555,91 @@ def plot_planestress_mini(material, coeff, powers, weight_exp, weight_rval, nb_v
     ax.grid(1)
     
     nm1, labels = cs1.legend_elements()
-    if mises_plot:
-        nm2, labels = cs2.legend_elements()
+    nt6 = new_df[new_df["Type"] == "e2"][["s11", "s22"]].values
 
+    for i in range(len(nt6)):
+        
+        plt.scatter(nt6[i,0], nt6[i,1], marker="x", label = i)
 
-    ax.set_title(rf'{material} Yield surface in the $\sigma_{{xx}},\sigma_{{yy}}$ plane', size=12)
     plt.legend(nm1, ["polyN_mini"])
-    if mises_plot:
-        plt.legend(nm2, ["Mises"])
+    plt.title(f"{material} : PST points")
+    plt.legend()
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
+    plt.show()
 
-    foldername_out = polyN_dir + sep + "plots" + sep + material
-    if not os.path.exists(foldername_out):
-        os.makedirs(foldername_out)
-    filename = f"planexy_{material}_poly{degree}mini_{weight_exp}_{weight_rval}_{nb_virtual_pt}_{protomodel}.png"
-    filepath = foldername_out + sep + filename
-    plt.savefig(filepath)
+def check_sh_points(df, material, coeff, powers):
+    sigma0 = df["YieldStress"].iloc[0]
+    ys_ratio_sh = get_yield_stress_SH(sigma0, material)
+    new_df = add_sh(df, ys_ratio_sh)
+
+    fig, ax = plt.subplots()
+
+    sx = np.linspace(-1.5, 1.5, 100)
+    sy = np.linspace(-1.5, 1.5, 100)
+    sx, sy = np.meshgrid(sx,sy)
+
+    def f(x,y):
+        return(f_min_squared(np.array([x * 1 / np.sqrt(2),x * 1 / np.sqrt(2),0,y,0,0]), coeff, powers))
+
+    f = np.vectorize(f)
+
+    ys_polyN = f(sx, sy)
+
+    # Create the contour plot
+    cs1 = ax.contour(sx, sy, ys_polyN, levels=[1], colors='blue', linewidths=1)
+
+    # Set labels
+    ax.set_xlabel(r"$ \frac{1}{\sqrt{2}}(\sigma_{xx} + \sigma_{yy})/\sigma_0$[-]", size=12)
+    ax.set_ylabel(r"$\sigma_{xy}/\sigma_0$[-]", size=12)
+    ax.set_aspect('equal', adjustable='box')
+    ax.grid(1)
+    
+    nm1, labels = cs1.legend_elements()
+
+    sh = new_df[new_df["Type"] == "e2"][["s11", "s22", "s12"]]
+    sh["sbis"] = 1/ np.sqrt(2) * (sh["s11"] + sh["s22"])
+    sh = sh[["sbis", "s12"]].values
+    
+    for i in range(len(sh)):
+        
+        plt.scatter(sh[i,0], sh[i,1], marker="x", label = i)
+
+    plt.legend(nm1, ["polyN_mini"])
+    plt.title(f"{material} : SH_000 and SH_090 points")
+    plt.legend()
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.show()
 
 def main():
     p = read_param()
     func = p["func"]
     material = p["material"]
-    law = p["law"]
     degree = int(p["degree"])
     protomodel = p["protomodel"]
-    input_type = p["input_type"]
-    n_opti = int(p["n_opti"])
-    density = p["density"]
-    weight_exp = float(p["weight_exp"])
-    weight_rval = float(p["weight_rval"])
+    weight_ut = float(p["weight_ut"])
+    weight_e2 = float(p["weight_e2"])
+    weight_vir = float(p["weight_vir"])
     nb_virtual_pt = int(p["nb_virtual_pt"])
 
     df = readData(material, protomodel)
 
     coeff_polyN = np.load(polyN_dir + sep + "polyN_coeff.npy")
-    coeff_polyN_mini = np.load(polyN_dir + sep + "polyN_mini_coeff.npy")
+    coeff_polyN_mini = np.load(polyN_dir + sep + material + "_polyN_mini_coeff.npy")
 
     if func == "polyN":
         powers = get_param_polyN(degree)
-        plot_check(df, coeff_polyN, powers, material, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
-        plot_planestress(material, coeff_polyN, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
-        plot_implicit_coeff(material, coeff_polyN, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
+        plot_check(df, coeff_polyN, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
+        plot_planestress(material, coeff_polyN, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
+        plot_implicit_coeff(material, coeff_polyN, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
 
     if func == "polyN_mini":
         powers = get_param_polyN_mini(degree)
-        plot_check_mini(df, coeff_polyN_mini, powers, material, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
-        plot_planestress_mini(material, coeff_polyN_mini, powers, weight_exp, weight_rval, nb_virtual_pt, degree, protomodel)
+        check_sh_points(df, material, coeff_polyN_mini, powers)
+        check_pst_points(df, material, coeff_polyN_mini, powers)
+        plot_check_mini(df, coeff_polyN_mini, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
+        plot_planestress_mini(material, coeff_polyN_mini, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
 
 
 main()

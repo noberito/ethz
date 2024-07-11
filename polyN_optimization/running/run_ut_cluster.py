@@ -32,8 +32,6 @@ tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT",
          "NT20_00", "NT20_45",
          "SH_000", "SH_090", "SH_p45"]
 
-
-
 def change_usermat(usermatfile):
     """
         Change the input user material file in the all the abaqus files of test in tests

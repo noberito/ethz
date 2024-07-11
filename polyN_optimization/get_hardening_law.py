@@ -7,13 +7,15 @@
 import os
 import pandas as pd
 import numpy as np
-
+import sys
+from get_calibration_data import analyze_exp_data
 
 # In[2]:
 
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
-dir = os.sep
+sep = os.sep
+
 
 # In[3]:
 
@@ -34,13 +36,14 @@ def get_hardening_law(material):
             - material : string
     """
     
-    n_ut_00 = n_ut_00_mat[material]
+    mat_tests = analyze_exp_data(material)
+    n_ut_00 = mat_tests["UT"]["00"]
     df_out = pd.DataFrame(columns = ["PlasticStrain", "PlasticStress", "YoungModulus"])
     ymod = 0
     for i in range(1, n_ut_00 + 1):
 
         filename_in = "UT_00_{}.csv".format(i)
-        foldername_in = file_dir + dir + "results_exp" + dir + material + dir
+        foldername_in = file_dir + sep + "results_exp" + sep + material + sep
 
         filepath = foldername_in + filename_in
         
@@ -56,7 +59,7 @@ def get_hardening_law(material):
 
     df_out.iloc[0, df_out.columns.get_loc('YoungModulus')] = ymod / n_ut_00
 
-    foldername_out = file_dir + dir + "calibration_data" + dir + material
-    filename_out = foldername_out + dir + f"data_plasticlaw_{material}.csv"
+    foldername_out = file_dir + sep + "calibration_data" + sep + material
+    filename_out = foldername_out + sep + f"data_plasticlaw_{material}.csv"
     df_out.to_csv(filename_out, index=False)
 

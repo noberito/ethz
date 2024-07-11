@@ -24,30 +24,40 @@ dt = 1
 def change_paras(test, material):
     type_test = test.split("_")[0]
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
-    if type_test != "UT":
-        res_filename = results_exp_dir + sep + test + "_1.csv"
-        df_exp = pd.read_csv(res_filename, index_col=False)
-        dtime = np.max(df_exp.iloc[:,0])
-        displ = np.max(df_exp.iloc[:,1]) * 10
-        thickness = df_exp.loc[0, "Thickness[mm]"]
-        width = df_exp.loc[0, "OuterWidth[mm]"]
-        tramp1 = dtime / 100
-        ramp1 = displ / 100
-        dt = dtime / 10000
+    facs_displ = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 2., "SH": 1.}
+    facs_thick = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 1., "SH": 8/5}
+    facs_width = {"UT": 20, "NT6" : 10, "NT20": 10, "CH": 20, "SH": 20}
 
-        para_filename = run_dir + sep + test + "_paras.inp"
-        with open(para_filename, "w") as f:
-            f.write("*PARAMETER\n")
-            f.write(f"DISPL = {displ}\n")
-            f.write(f"DTIME = {dtime}\n")
-            f.write(f"THICKNESS = {thickness}\n")
-            f.write(f"WIDTH = {width}\n")
-            f.write(f"TRAMP1 = {tramp1}\n")
-            f.write(f"RAMP1 = {ramp1}\n")
-            f.write(f"DT = {dt}\n")
-            f.write("MINDT = DTIME * 1e-6\n")
-            f.write("MAXDT = DTIME * 1e-2")
-            f.close()
+    res_filename = results_exp_dir + sep + test + "_1.csv"
+    df_exp = pd.read_csv(res_filename, index_col=False)
+    dtime = np.max(df_exp.iloc[:,0])
+
+    if type_test != "UT":
+        displ = np.max(df_exp.iloc[:,1]) / facs_displ[type_test]
+        thickness = df_exp.loc[0, "Thickness[mm]"] / facs_thick[type_test]
+        width = df_exp.loc[0, "OuterWidth[mm]"] / facs_width[type_test]
+    else:
+        displ = 0.1
+        thickness = 1
+        width = 1
+
+    tramp1 = dtime / 100
+    ramp1 = displ / 1000
+    dt = dtime / 20000
+
+    para_filename = run_dir + sep + test + "_paras.inp"
+    with open(para_filename, "w") as f:
+        f.write("*PARAMETER\n")
+        f.write(f"DISPL = {displ}\n")
+        f.write(f"DTIME = {dtime}\n")
+        f.write(f"THICKNESS = {thickness}\n")
+        f.write(f"WIDTH = {width}\n")
+        f.write(f"TRAMP1 = {tramp1}\n")
+        f.write(f"RAMP1 = {ramp1}\n")
+        f.write(f"DT = {dt}\n")
+        f.write("MINDT = DTIME * 1e-6\n")
+        f.write("MAXDT = DTIME * 1e-2")
+        f.close()
 
 def change_usermat(test, func, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
     """
@@ -98,6 +108,7 @@ def simulate(test, func, input_type, law, n_try=0, var_optim=0):
     input_file = f"{job}.inp"
     cp_input_file = f'temp_{job}_{var_optim}_{n_try}.inp'
 
+    print(input_file)
     copy_sim_cmd = f'cp {input_file} {cp_input_file} '
     subprocess.call(copy_sim_cmd, shell=True, cwd=run_dir)
 
@@ -331,16 +342,12 @@ def post_process(test, material, input_type, var_optim=0, n_try=0):
 
                 i = i + (1 + len_data) * n_frame
                 data = np.concatenate((data, Y), axis=1)
-                
+
+        facs_displ = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 2., "SH": 1.}  
+
         df = pd.DataFrame(data, columns = labels)
-        if type_test == "CH":
-            fac = 2
-        elif type_test == "SH":
-            fac = 1 / np.sqrt(2)
-        else :
-            fac = 1
-        df["U2"] = df["U2"] / 10
-        df["RF2"] = df["RF2"] / 10000 * fac       
+        df["U2"] = df["U2"] * facs_displ[type_test]
+        df["RF2"] = df["RF2"] / 1000 
         filename = "{}_{}_{}.csv".format(job, var_optim, n_try)
         if not(os.path.exists(results_sim_dir)):
             os.makedirs(results_sim_dir)
@@ -380,33 +387,3 @@ def create_csv(tests, material, input_type, var_optim=0, n_try=0):
     for test in tests:
         post_process(test, material, input_type, var_optim, n_try)
 
-sys.path.append(polyN_cali_dir)
-
-from read_param import read_param
-from tests_parameters import large_tests
-
-p = read_param()
-
-material = p["material"]
-gseed = int(p["gseed"])
-enu = float(p["enu"])
-density = float(p["density"])
-nb_virtual_pt = int(p["nb_virtual_pt"])
-degree = int(p["degree"])
-weight_exp = float(p["weight_exp"])
-weight_rval = float(p["weight_rval"])
-protomodel = p["protomodel"]
-law = p["law"]
-input_type = p["input_type"]
-
-gen_v_data = int(p["gen_v_data"])
-gen_e_data = int(p["gen_e_data"])
-
-opti = int(p["opti"])
-loadcoeff = int(p["loadcoeff"])
-adapt = int(p["adapt"])
-
-export_coeff_abq = int(p["export_coeff_abq"])
-export_coeff_user = int(p["export_coeff_user"])
-
-launch_run(large_tests, material, degree, law, protomodel, input_type, 10, 10)

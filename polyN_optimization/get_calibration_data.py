@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import matplotlib.pyplot as plt
 
 file_dir = os.path.dirname(os.path.abspath(__file__)) 
 sep = os.sep
@@ -32,7 +33,11 @@ def analyze_exp_data(material):
             else:
                 d[test][ori] = d[test][ori] + 1
     return(d)
-        
+
+
+
+                    
+    
 
 def export_exp_data_old(material, thetas):
     """
@@ -171,6 +176,7 @@ def export_exp_data(material):
                 pttype = "e"
                 row = pd.DataFrame({"q": [q], "LoadAngle" : [theta], "YieldStress" : [ys], "Rval" : [rval], "Type" : [pttype]})
                 ut_data = pd.concat([ut_data, row])
+
 
     foldername_out = f"{file_dir}{sep}calibration_data{sep}{material}"
     if not os.path.exists(foldername_out):

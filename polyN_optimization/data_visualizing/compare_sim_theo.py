@@ -22,9 +22,9 @@ degree = int(p["degree"])
 law = p["law"]
 input_type = p["input_type"]
 
-polyN_coeff_path = polyN_cali_dir + sep + "polyN_coeff.npy"
+polyN_coeff_path = polyN_cali_dir + sep + material + "_polyN_coeff.npy"
 polyN_coeff = np.load(polyN_coeff_path)
-law_coeff_path = polyN_cali_dir + sep + f"{law}_coeff.npy"
+law_coeff_path = polyN_cali_dir + sep + material + f"_{law}_coeff.npy"
 law_coeff = np.load(law_coeff_path)
 
 def get_param_polyN(degree):

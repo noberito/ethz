@@ -17,7 +17,7 @@ sys.path.append(polyN_cali_dir)
 from tests_parameters import load_points
 from read_param import read_param
 
-ut_tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
+ut_tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90"]
 
 tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 """"CH_00", "CH_45",
@@ -63,56 +63,42 @@ def change_usermat(test, func, material, degree, law, protomodel, input_type, va
 def change_paras(test, material):
     type_test = test.split("_")[0]
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
+    facs_displ = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 2., "SH": 1.}
+    facs_thick = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 1., "SH": 8/5}
+    facs_width = {"UT": 20, "NT6" : 10, "NT20": 10, "CH": 20, "SH": 20}
+
+    res_filename = results_exp_dir + sep + test + "_1.csv"
+    df_exp = pd.read_csv(res_filename, index_col=False)
+    dtime = np.max(df_exp.iloc[:,0])
     if type_test != "UT":
-        res_filename = results_exp_dir + sep + test + "_1.csv"
-        df_exp = pd.read_csv(res_filename, index_col=False)
-        dtime = np.max(df_exp.iloc[:,0])
-        displ = np.max(df_exp.iloc[:,1]) / 20
-        thickness = df_exp.loc[0, "Thickness[mm]"]
-        width = df_exp.loc[0, "OuterWidth[mm]"]
-        tramp1 = dtime / 100
-        ramp1 = displ / 100
-        dt = dtime / 10000
-
-        para_filename = run_dir + sep + test + "_paras.inp"
-        with open(para_filename, "w") as f:
-            f.write("*PARAMETER\n")
-            f.write(f"DISPL = {displ}\n")
-            f.write(f"DTIME = {dtime}\n")
-            f.write(f"THICKNESS = {thickness}\n")
-            f.write(f"WIDTH = {width}\n")
-            f.write(f"TRAMP1 = {tramp1}\n")
-            f.write(f"RAMP1 = {ramp1}\n")
-            f.write(f"DT = {dt}\n")
-            f.write("MINDT = DTIME * 1e-6\n")
-            f.write("MAXDT = DTIME * 1e-2")
-            f.close()
+        displ = np.max(df_exp.iloc[:,1]) / facs_displ[type_test]
+        thickness = df_exp.loc[0, "Thickness[mm]"] / facs_thick[type_test]
+        width = df_exp.loc[0, "OuterWidth[mm]"] / facs_width[type_test]
     else:
-        res_filename = results_exp_dir + sep + test + "_1.csv"
-        df_exp = pd.read_csv(res_filename, index_col=False)
-        dtime = np.max(df_exp.iloc[:,0])
-        displ = np.max(df_exp.iloc[:,1]) / 10
-        thickness = df_exp.loc[0, "Thickness[mm]"]
-        width = df_exp.loc[0, "Width[mm]"]
-        tramp1 = dtime / 100
-        ramp1 = displ / 100
-        dt = dtime / 10000
+        displ = 0.1
+        thickness = 1
+        width = 1
+    tramp1 = dtime / 100
+    ramp1 = displ / 1000
+    dt = dtime / 20000
 
-        para_filename = run_dir + sep + test + "_paras.inp"
-        with open(para_filename, "w") as f:
-            f.write("*PARAMETER\n")
-            f.write(f"DISPL = {displ}\n")
-            f.write(f"DTIME = {dtime}\n")
-            f.write(f"THICKNESS = {thickness}\n")
-            f.write(f"WIDTH = {width}\n")
-            f.write(f"TRAMP1 = {tramp1}\n")
-            f.write(f"RAMP1 = {ramp1}\n")
-            f.write(f"DT = {dt}\n")
-            f.write("MINDT = DTIME * 1e-6\n")
-            f.write("MAXDT = DTIME * 1e-2")
-            f.close()        
+    para_filename = run_dir + sep + test + "_paras.inp"
+    with open(para_filename, "w") as f:
+        f.write("*PARAMETER\n")
+        f.write(f"DISPL = {displ}\n")
+        f.write(f"DTIME = {dtime}\n")
+        f.write(f"THICKNESS = {thickness}\n")
+        f.write(f"WIDTH = {width}\n")
+        f.write(f"TRAMP1 = {tramp1}\n")
+        f.write(f"RAMP1 = {ramp1}\n")
+        f.write(f"DT = {dt}\n")
+        f.write("MINDT = DTIME * 1e-6\n")
+        f.write("MAXDT = DTIME * 1e-2")
+        f.close()
 
-def run(test, input_type, law, var_optim=0, n_try=0):
+
+
+def run(test, func, input_type, law, var_optim=0, n_try=0):
     """
         Run the abaqus simulation of the test_polyN.inp and generate a csv file in results_sim folder
         Input :
@@ -120,7 +106,10 @@ def run(test, input_type, law, var_optim=0, n_try=0):
     """
     print(f"Simulating {test}")
     job = f'{test}_{input_type}'
-    subroutine = f"{input_type}_PolyN_3D_{law}.for"
+    if func=="polyN":
+        subroutine = f"{input_type}_PolyN_3D_{law}.for"
+    elif func== "polyN_mini":
+        subroutine = f"{input_type}_PolyNmini_3D_{law}.for"
 
     input_file = f"{job}.inp"
     cp_input_file = f'temp_{job}_{var_optim}_{n_try}.inp'
@@ -240,8 +229,6 @@ def post_process(test, material, input_type, is_optim, var_optim=0, n_try=0):
                 data = np.concatenate((data, Y), axis=1)
                 
         df = pd.DataFrame(data, columns = labels)
-        df["U2"] = df["U2"] * 20
-        df["RF2"] = df["RF2"] / 10
         filename = "{}.csv".format(job)
         if not(os.path.exists(results_sim_dir)):
             os.makedirs(results_sim_dir)
@@ -252,9 +239,10 @@ def post_process(test, material, input_type, is_optim, var_optim=0, n_try=0):
 
         delete_cmd = f'del {test}*{var_optim}_{n_try}*'
         subprocess.call(delete_cmd, shell=True, cwd=run_dir)
+
     else:
         field = "S,LE,SDV_EPBAR"
-        command = f"abq2023 odbreport job={job} odb={odb} field={field} components ask_delete=OFF"
+        command = f"abq2023 odbreport job={job} odb={odb} field={field} components"
         full_command = f"{abq} {command}"
         result = subprocess.run(full_command, shell=True, capture_output=True, text=True, cwd=run_dir)
 
@@ -376,18 +364,21 @@ def launch_run(tests, func, material, degree, law, protomodel, input_type, var_o
 
     time.sleep(5)
     for test in tests:
-        run(test, input_type, law, var_optim, n_try)
+        run(test, func, input_type, law, var_optim, n_try)
 
 def create_csv(tests, material, input_type, var_optim=0, n_try=0):
     for test in tests:
-        post_process(test, material, input_type, 1, var_optim, n_try)
+        #0 to ut report field, 1 to optim
+        post_process(test, material, input_type, 0, var_optim, n_try)
 
 
-"""p = read_param()
+p = read_param()
+func = p["func"]
 material = p["material"]
 degree = int(p["degree"])
 law = p["law"]
 protomodel = p["protomodel"]
 input_type = p["input_type"]
 
-launch_run(ut_tests, material, degree, law, protomodel, input_type, var_optim=0, n_try=0)"""
+launch_run(ut_tests, func, material, degree, law, protomodel, input_type, var_optim=0, n_try=0)
+create_csv(ut_tests, material, input_type, var_optim=0, n_try=0)

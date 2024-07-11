@@ -10,6 +10,7 @@ import time
 from scipy.interpolate import interp1d
 from scipy.integrate import simps
 from optimize_polyN_cluster import first_opti, write_coeff_abq, get_param_polyN
+from optimize_polyN_mini_cluster import first_opti_mini, write_coeff_abq_mini, get_param_polyN_mini
 from get_calibration_data import analyze_exp_data
 
 sep = os.sep
@@ -185,6 +186,55 @@ def framework(var_optim):
     coeff_file = polyN_cali_dir + sep + "polyN_coeff.npy"
     np.save(coeff_polyN, coeff_file)
     print(coeff_polyN)
+
+def framework_mini(var_optim):
+    """
+        TODO, CHANGE RUN AND CREATE CSV
+    """
+    t0 = time.time()
+
+    coeff_file = polyN_cali_dir + sep + material + "_polyN_mini_coeff.npy"
+    
+    if os.path.exists(coeff_file):
+        coeff_polyN_mini = np.load(coeff_file)
+    else :
+        coeff_polyN_mini = first_opti_mini()
+
+    coeff_law = np.load(polyN_cali_dir + sep + f"{material}_{law}_mini_coeff.npy")
+    a = coeff_law[0]
+    b = coeff_law[1]
+    c = coeff_law[2]
+    ymod = coeff_law[3]
+
+    def f_cost(x, n_try):
+
+        powers = get_param_polyN_mini(degree)
+        nmon = len(powers)
+
+        new_coeff = np.copy(coeff_polyN_mini)
+        new_coeff[var_optim - 1] = new_coeff[var_optim - 1] + x
+
+        write_coeff_abq_mini(new_coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, n_try=n_try)
+        launch_run(tests, func, material, degree, law, protomodel, input_type, n_try=n_try)
+        time.sleep(300)
+        create_csv(tests, material, input_type, n_try=n_try)
+        compare_large_strain(material, func, degree, input_type, n_try=n_try)
+
+        err = 0
+
+        for test in tests:
+            err = err + mean_square_error(test, n_try=n_try)
+            print("err:", err)
+        
+        return(err)
+    
+    x0 = np.zeros(len(var_optim))
+    result = gradient_descent(f_cost, x0)
+
+    coeff_polyN_mini[var_optim] = coeff_polyN_mini[var_optim] + result
+    coeff_file = polyN_cali_dir + sep + "polyN_mini_coeff_final.npy"
+    np.save(coeff_polyN_mini, coeff_file)
+    print(coeff_polyN_mini)
 
 
 if __name__ == "__main__":

@@ -47,4 +47,4 @@ def test_evolution(test, input_type, material, var_optim):
     plt.grid(1)
     plt.show()
 
-test_evolution("NT6_90", "UMAT", "DP780", 4)
+test_evolution("NT6_00", "UMAT", "DP780", 1)
