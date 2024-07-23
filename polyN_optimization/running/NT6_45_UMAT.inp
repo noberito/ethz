@@ -67,7 +67,7 @@ YMIN, 4, 4, 0.
 ZMIN, 3, 5, 0.
 **
 *AMPLITUDE, NAME=ccr, SMOOTH=0.25
-0.,0.,<DTIME>,<DISPL>
+0.,0.,<TRAMP1>,<RAMP1>,<DTIME>,<DISPL>
 ** ----------------------------------------------------
 *Step, name=Step-1, nlgeom=YES, inc=10000
 *Static
@@ -83,7 +83,7 @@ LOAD, 2, 2, 1.
 *NODE OUTPUT
  U, V, RF
 **
-*OUTPUT, HISTORY, FREQUENCY=4
+*OUTPUT, HISTORY, FREQUENCY=2
 *NODE OUTPUT, NSET=LOAD
  U2, RF2
 *NODE OUTPUT, NSET=BASE

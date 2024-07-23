@@ -1,31 +1,30 @@
-* To use new params, write "{variable} = {value}"
+* To use new params, write "{variable} = {value}", explanation of the different parameters in param.md
 
+func = polyN_mini
 material = DP780
-gseed = 6
 enu = 0.3
 density = 7.85e-9
-nb_virtual_pt = 100
-degree = 4
-weigth_exp = 0.95
-weigth_rval = 1
+degree = 6
+nt6 = 1
+sh = 0
+weight_ut = 0.8
+weight_e2 = 0.01
+weight_vir = 0.001
+nb_virtual_pt = 5
 protomodel = mises
-law = swift
-n_opti = 10
+law = swiftvoce
+n_opti = 3
 input_type = UMAT
-var_optim = 8
-
+var_optim = 1
 gen_v_data = 1
-gen_e_data = 1
-
-opti = 1
-loadcoeff = 0
-adapt = 0
-
+gen_e_data = 0
+opti = 0
+loadcoeff = 1
+adapt = 1
 export_coeff_abq = 1
 export_coeff_user = 1
-
 plot = 0
 savefigyr = 0
 savefigplane = 0
 savecoeff = 1
-
+gseed = 6

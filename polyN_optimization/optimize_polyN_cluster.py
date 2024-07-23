@@ -1162,5 +1162,3 @@ def first_opti():
         write_coeff_abq(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, 0, 0)
     
     return(coeff)
-
-first_opti()

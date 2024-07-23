@@ -6,8 +6,17 @@ import numpy as np
 import time
 import multiprocessing
 import os
+import sys
 
-degree = 6
+file_dir = os.path.dirname(os.path.abspath(__file__))
+polyN_dir = os.path.dirname(file_dir)
+sys.path.append(polyN_dir)
+
+from read_param import read_param
+
+p = read_param()
+
+degree = int(p["degree"])
 nb_dir = 1
 
 tol_kg = 1e-7
@@ -21,38 +30,35 @@ minor_max = tol_minor
 
 np.random.seed(6)
 
+
 if degree==2:
     M = np.array([3, 3, 3, 3, 3, 3])
 if degree==4:
     M = np.array([9, 18, 27, 18, 9, 18, 18, 18, 9, 18, 18, 18, 18, 9, 0, 0, 18, 18, 18, 18, 18, 9])
 if degree==6:
     M = np.array([27, 81, 162, 189, 162, 81, 27, 81, 162, 243, 162, 81, 81, 81, 81, 27, 81, 162, 243, 162, 81, 162, 162, 162, 81, 81, 81, 81, 81, 27, 0, 0, 0, 0, 81, 162, 243, 162, 81, 162, 162, 162, 81, 162, 162, 162, 162, 81, 81, 81, 81, 81, 81, 27,])
+if degree==8:
+    M = 1
 
-nb_coeff = len(M)
 
-
-
-"""-----------------------------------PARAMETERS FOR POLYN------------------------------------------"""
 def get_param_polyN(degree):
     """
         Returns the parameters of polyN according to the degree
         Input :
             - degree : integer, degree of the polyN function
         Output :
-            - nmon : integer, number of monomials im the polyN function of degree n
-            - nmon_abq : integer, number of monomials of degree n in a homogeneous function of degree n
             - powers : ndarray of shape (nmon, 5), powers[i, j] is the power of the variable j in the monomial i
     """
     x0 = np.zeros((2,5))
-    polyN = sklearn.preprocessing.PolynomialFeatures((degree, degree), include_bias=False)
+    polyN = sklearn.preprocessing.PolynomialFeatures(degree, include_bias=False)
     X = polyN.fit_transform(x0)
     powers = polyN.powers_
-    nmon_abq = len(powers)
+    nmon_degree = len(powers)
 
     selected_indices = []
-    for i in range(nmon_abq):
+    for i in range(nmon_degree):
         k,l,m,n,p = powers[i]
-        if ((m==n) and (n==p)) or ((m%2==0) and (n%2==0) and (p%2==0)):
+        if (k + l + m + n + p == degree) and (((m==n) and (n==p)) or ((m%2==0) and (n%2==0) and (p%2==0))) :
             selected_indices.append(i)
 
     powers = powers[selected_indices].T
@@ -62,12 +68,15 @@ def get_param_polyN(degree):
     powers = powers.T[sorted_indices]
     X = X[:,sorted_indices]
 
-    ndata, nmon = X.shape
 
-    return(powers, nmon, nmon_abq)
+    return(powers)
 
-powers, nmon, nmon_abq = get_param_polyN(degree)
+#degree = int(p["degree"])
+#powers, nmon = get_param_polyN(degree)
+# In[207]:
 
+
+""" ---------------------------------------------------POLYN DEFINITION------------------------------------------------------------------------------"""
 def dev(S):
     """
         Returns the deviatoric stress.
@@ -86,7 +95,7 @@ def dev(S):
     D[:,2] = S[:,2] - (1/3) * trace_dev
     return(D)
 
-def polyN(S, coeff):
+def polyN(S, coeff, powers):
     """
         Compute the polyN function.
         Input :
@@ -94,20 +103,22 @@ def polyN(S, coeff):
             - coeff : ndarray of shape (nmon,), coefficients of the polyN function
         Output :
             - res : float, result of polyN
-    """ 
+    """
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
     D = dev(S)
     X = D[:,[0, 1, 3, 4, 5]]
     res = np.zeros(len(X))
+    nmon = len(powers)
     for i in range(nmon) :
         p = powers[i]
         res = res + coeff[i] * np.prod(X ** p, axis=1)
     return(res)
 
-"""----------------------------------------------GRADIENT AND HESSIAN OF POLYN DEFINITION-----------------------------------------------------------"""
+"""---------------------------------------------- GRADIENT AND HESSIAN OF POLYN DEFINITION -----------------------------------------------------------"""
 
 #True we lose time here but ok
+
 def jac_dev():
     """
         Returns the jacobian of the deviatoric operator
@@ -133,11 +144,12 @@ def jac_polyN_param(coeff, powers):
             PolyN function
         
         Output :
-            - coeff_grad (float ndarray of shape (5, nmon)) : coeff_grad[i] contains the 
-            coefficients of each monomial derived with respect to dev[i]
+            - coeff_grad (float ndarray of shape (5, nmon)) : coeff_grad[i,j] contains the 
+            coefficients of the monomial j derived with respect to dev[i]
             - powers_grad (float ndarray of shape (5, nmon, 5)) : powers_grad[i,j] contains
             the monomial j derived with respect to dev[i]
     """
+
     coeff_grad = np.zeros((5, coeff.shape[0]))
     powers_grad = np.zeros((5, powers.shape[0], powers.shape[1]))
     for i in range(5):
@@ -165,8 +177,10 @@ def grad_polyN(S, coeff_grad, powers_grad):
     D = dev(S)
     X = D[:,[0, 1, 3, 4, 5]]
 
-    grad = np.zeros(6)
+    grad_polyN = np.zeros(6)
     grad_f = np.zeros((len(X),5))
+
+    nmon = len(powers_grad[0])
 
     for i in range(5):
         for j in range(nmon):
@@ -175,8 +189,8 @@ def grad_polyN(S, coeff_grad, powers_grad):
     
     jac_d = jac_dev()
 
-    grad= np.dot(grad_f, jac_d)
-    return(grad)
+    grad_polyN = np.dot(grad_f, jac_d)
+    return(grad_polyN)
 
 def hessian_polyN_param(coeff_grad, powers_grad):
     """
@@ -224,8 +238,9 @@ def hessian_polyN(S, coeff_hessian, powers_hessian):
     D = dev(S)
     X = D[:,[0, 1, 3, 4, 5]]
 
-    hessian = np.zeros((6,6))
+    hessian_polyN = np.zeros((6,6))
     jac_grad_f = np.zeros((len(X), 5, 5))
+    nmon = len(powers_hessian)
 
     for i in range(5):
         for j in range(5):
@@ -234,8 +249,9 @@ def hessian_polyN(S, coeff_hessian, powers_hessian):
                 jac_grad_f[:,i,j] = jac_grad_f[:,i,j] + coeff_hessian[i][j][k] * np.prod(X ** p, axis=1)
     
     jac_d = jac_dev()
-    hessian = np.transpose(np.dot(jac_d.T,np.dot(jac_grad_f[:], jac_d)), (1, 2, 0))
-    return(hessian)
+    hessian_polyN = np.transpose(np.dot(jac_d.T,np.dot(jac_grad_f[:], jac_d)), (1, 2, 0))
+    return(hessian_polyN)
+
 """-----------------------------------------------------------------------------------------"""
 
 def generate_dir(n, dim):
@@ -410,7 +426,7 @@ def gauss_curv(f, grad_f, hessian_f, nb_pt_check):
 
     return(K)
 
-def check_convexity_kg(coeff, nb_pt_check):
+def check_convexity_kg(coeff, powers, nb_pt_check):
     """
         Checking of gauss curvature. Not used cause of bad perf
     """
@@ -418,7 +434,7 @@ def check_convexity_kg(coeff, nb_pt_check):
     coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
 
     def f(S):
-        return(polyN(S, coeff))
+        return(polyN(S, coeff, powers))
                 
     def grad_f(S):
         return(grad_polyN(S, coeff_grad, powers_grad))
@@ -435,7 +451,7 @@ def check_convexity_kg(coeff, nb_pt_check):
 
     return(M, m, moy, n_pos, n_neg)
 
-def gauss_curv_coeff(coeff, nb_pt_check, val_test=np.array([2, 1, 0, 1, 1, 1])):
+def gauss_curv_coeff(coeff, powers, nb_pt_check, val_test=np.array([2, 1, 0, 1, 1, 1])):
     """
         Returns the gauss curvature. Not used cause of bad performance
     """
@@ -453,7 +469,7 @@ def gauss_curv_coeff(coeff, nb_pt_check, val_test=np.array([2, 1, 0, 1, 1, 1])):
     
     return(gauss_curv(f, grad_f, hessian_f, nb_pt_check))
 
-def check_convexity_lpm(coeff, itermax, nb_pt):
+def check_convexity_lpm(coeff, powers, itermax, nb_pt):
     """
         Returns the minimum leading principal minor among nb_pt points of the polyN definded by the coefficients coeff
         Input :
@@ -465,7 +481,7 @@ def check_convexity_lpm(coeff, itermax, nb_pt):
     coeff_hessian, powers_hessian = hessian_polyN_param(coeff_grad, powers_grad)
 
     def f(S):
-        return(polyN(S, coeff))
+        return(polyN(S, coeff, powers))
                 
     def hessian_f(S):
         return(hessian_polyN(S, coeff_hessian, powers_hessian))
@@ -591,6 +607,7 @@ def dc_lpm(direction, M=M):
     pt_set = np.empty((0, nb_coeff))
     #0 if not-convex, 1 if convex
     convex_set = np.empty(0, dtype=int)
+    powers = get_param_polyN(degree)
 
     for j in [1, -1]:
 
@@ -602,7 +619,7 @@ def dc_lpm(direction, M=M):
         #Find coefficients where polyN not convex by trial and error
         while lpm > - tol_minor :
             coeff = M + lamb * u
-            lpm = check_convexity_lpm(coeff, itermax, nb_pt_check_1)
+            lpm = check_convexity_lpm(coeff, powers, itermax, nb_pt_check_1)
             #print(i, j, it, lamb)
             print("lpm", lpm)
             lamb = lamb * 3
@@ -622,7 +639,7 @@ def dc_lpm(direction, M=M):
             I = (S+E)/2
             print(I)
 
-            lpm = check_convexity_lpm(I, itermax, nb_pt_check_2)
+            lpm = check_convexity_lpm(I, powers, itermax, nb_pt_check_2)
             pt_set = np.concatenate((pt_set, np.atleast_2d(I)), axis=0)
                 
             if lpm > 0 :
@@ -640,7 +657,7 @@ def dc_lpm(direction, M=M):
     return(pt_set, convex_set)
 
 
-if __name__ == "__main__":
+"""if __name__ == "__main__":
 
     file_dir = os.path.dirname(os.path.abspath(__file__))
     sep = os.sep
@@ -665,7 +682,7 @@ if __name__ == "__main__":
     np.save(file_dir + sep + "X_convex_{}.npy".format(degree), X)
     np.save(file_dir + sep + "Y_convex_{}.npy".format(degree), Y)
 
-    print(time.time() - t, ":", len(X),"points")
+    print(time.time() - t, ":", len(X),"points")"""
     
 
 

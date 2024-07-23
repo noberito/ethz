@@ -109,7 +109,7 @@
 
 !C  CONVERGENCE TOLERANCES
 !    REAL(PREC),PARAMETER::TOL1=1.0E-006, TOL2=1.0E-008
-	REAL(PREC),PARAMETER::TOL1=1.0E-004
+	REAL(PREC),PARAMETER::TOL1=1.0E-006
 
 !C  TEMPORARY HOLDERS
 	REAL(PREC)::TT, TTA, TTB, ZALPHA, F1, FZERO, TDEPBAR, EBULK3, &
@@ -124,7 +124,7 @@
     INTEGER::K1,K2,NRK,KK,LL,MM,II,JJ
 
 !C  NEWTON-RAPHSON MAXIMUM NUMBER OF ITERATIONS
-    INTEGER,PARAMETER:: NRMAX=10000
+    INTEGER,PARAMETER:: NRMAX=100
 	
 !C PolyN interface variables 
     INTEGER::DEGREE,NCOEFF,NMON	
@@ -149,8 +149,7 @@
 !C     WRITE TO A FILE
 !C**********************************************************************
 
-    OPEN(80, FILE = 'C:\temp\polyN_optimization\execution\output.txt')
-    1 FORMAT(30F30.8)
+
       
 !C!********************************************
 !C INITIALIZE THE STIFFNESS TENSOR (IT WILL BE STORED IN DDSDDE)

@@ -17,7 +17,7 @@ sys.path.append(polyN_cali_dir)
 from tests_parameters import load_points
 from read_param import read_param
 
-ut_tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90"]
+ut_tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 
 tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 """"CH_00", "CH_45",
@@ -43,7 +43,6 @@ def change_usermat(test, func, material, degree, law, protomodel, input_type, va
             usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}.inp"
         else:
             usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}_{var_optim}_{n_try}.inp"
-            
     filename = run_dir + sep + test + f"_{input_type}.inp"
     with open(filename, "r") as f:
         content = f.readlines()
@@ -373,6 +372,7 @@ def create_csv(tests, material, input_type, var_optim=0, n_try=0):
 
 
 p = read_param()
+
 func = p["func"]
 material = p["material"]
 degree = int(p["degree"])

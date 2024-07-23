@@ -1,7 +1,7 @@
 **---------------------------------------------------
 ** Load Parameters
 **---------------------------------------------------
-*INCLUDE, INPUT=NT20_00_paras.inp
+*INCLUDE, INPUT=NT20_90_paras.inp
 **---------------------------------------------------
 ** Geometry and Orientation
 **---------------------------------------------------
@@ -84,7 +84,7 @@ LOAD, 2, 2, 1.
 *NODE OUTPUT
  U, V, RF
 **
-*OUTPUT, HISTORY, FREQUENCY=4
+*OUTPUT, HISTORY, FREQUENCY=2
 *NODE OUTPUT, NSET=LOAD
  U2, RF2
 *NODE OUTPUT, NSET=BASE

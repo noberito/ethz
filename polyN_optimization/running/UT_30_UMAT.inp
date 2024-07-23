@@ -42,7 +42,7 @@
 *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-30, material=mat
 **
 *MATERIAL,NAME=mat
-*INCLUDE, INPUT=DP600_abq_deg6mini_swift_mises.inp
+*INCLUDE, INPUT=AA7020-T6_abq_deg6mini_swift_mises.inp
 *DEPVAR
 1,
 1,EPBAR,"EPBAR"

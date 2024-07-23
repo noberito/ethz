@@ -1,0 +1,275 @@
+# -*- coding: mbcs -*-
+#
+# Abaqus/Viewer Release 2023 replay file
+# Internal Version: 2022_09_28-20.11.55 183150
+# Run by cnober on Fri Jul 19 14:10:50 2024
+#
+
+# from driverUtils import executeOnCaeGraphicsStartup
+# executeOnCaeGraphicsStartup()
+#: Executing "onCaeGraphicsStartup()" in the site directory ...
+from abaqus import *
+from abaqusConstants import *
+session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=297.310424804688, 
+    height=142.020004272461)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].maximize()
+from viewerModules import *
+from driverUtils import executeOnCaeStartup
+executeOnCaeStartup()
+o2 = session.openOdb(name='NT6_45_UMAT_10_10.odb')
+#: Model: C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb
+#: Number of Assemblies:         1
+#: Number of Assembly instances: 0
+#: Number of Part instances:     1
+#: Number of Meshes:             1
+#: Number of Element Sets:       3
+#: Number of Node Sets:          10
+#: Number of Steps:              1
+session.viewports['Viewport: 1'].setValues(displayedObject=o2)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].odbDisplay.setFrame(step=0, frame=5 )
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    CONTOURS_ON_DEF, ))
+session.viewports['Viewport: 1'].view.setValues(nearPlane=28.0352, 
+    farPlane=45.5178, width=11.44, height=6.2997, viewOffsetX=-0.358052, 
+    viewOffsetY=-2.36742)
+session.viewports['Viewport: 1'].view.setValues(session.views['Bottom'])
+session.viewports['Viewport: 1'].view.setValues(nearPlane=28.7259, 
+    farPlane=46.2816, width=8.98167, height=4.94597, viewOffsetX=-0.197443, 
+    viewOffsetY=-0.00624371)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 80 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.XYPlot('XYPlot-1')
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.viewports['Viewport: 1'].setValues(displayedObject=xyp)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 80 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xy2 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c2 = session.Curve(xyData=xy2)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, c2, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xy2 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S12 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c2 = session.Curve(xyData=xy2)
+xy3 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S13 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c3 = session.Curve(xyData=xy3)
+xy4 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S22 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c4 = session.Curve(xyData=xy4)
+xy5 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S23 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c5 = session.Curve(xyData=xy5)
+xy6 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c6 = session.Curve(xyData=xy6)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, c2, c3, c4, c5, c6, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.xyPlots[session.viewports['Viewport: 1'].displayedObject.name].setValues(
+    transform=(1.02343, 0, 0, 0.1352, 0, 1.02343, 0, 0.204991, 0, 0, 1.02343, 
+    0, 0, 0, 0, 1))
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S11 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xy2 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S12 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c2 = session.Curve(xyData=xy2)
+xy3 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S13 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c3 = session.Curve(xyData=xy3)
+xy4 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S22 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c4 = session.Curve(xyData=xy4)
+xy5 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S23 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c5 = session.Curve(xyData=xy5)
+xy6 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c6 = session.Curve(xyData=xy6)
+xy7 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 2 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c7 = session.Curve(xyData=xy7)
+xy8 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 3 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c8 = session.Curve(xyData=xy8)
+xy9 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 4 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c9 = session.Curve(xyData=xy9)
+xy10 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 5 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c10 = session.Curve(xyData=xy10)
+xy11 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 6 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c11 = session.Curve(xyData=xy11)
+xy12 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 7 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c12 = session.Curve(xyData=xy12)
+xy13 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 8 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c13 = session.Curve(xyData=xy13)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, 
+    c12, c13, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.xyPlots[session.viewports['Viewport: 1'].displayedObject.name].setValues(
+    transform=(6.51483, 0, 0, 0.395026, 0, 6.51483, 0, 0.434257, 0, 0, 6.51483, 
+    0, 0, 0, 0, 1))
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xy2 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 2 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c2 = session.Curve(xyData=xy2)
+xy3 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 3 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c3 = session.Curve(xyData=xy3)
+xy4 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 4 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c4 = session.Curve(xyData=xy4)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, c2, c3, c4, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 1 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 2 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 3 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 4 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 5 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 6 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 7 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Stress components: S33 at Element 14888 Int Point 8 in ELSET ONSET', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.xyPlots[session.viewports['Viewport: 1'].displayedObject.name].setValues(
+    transform=(0.497526, 0, 0, 0.000366051, 0, 0.497526, 0, -0.0538374, 0, 0, 
+    0.497526, 0, 0, 0, 0, 1))
+odb = session.odbs['C:/temp/polyN_optimization/NT6_45_UMAT_10_10.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Spatial displacement: U2 at Node 528 in NSET EXT_Y05', 
+    steps=('Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.xyPlots['XYPlot-1']
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)

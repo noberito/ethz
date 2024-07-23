@@ -1,0 +1,139 @@
+# -*- coding: mbcs -*-
+#
+# Abaqus/Viewer Release 2023 replay file
+# Internal Version: 2022_09_28-20.11.55 183150
+# Run by cnober on Fri Jul 19 11:27:52 2024
+#
+
+# from driverUtils import executeOnCaeGraphicsStartup
+# executeOnCaeGraphicsStartup()
+#: Executing "onCaeGraphicsStartup()" in the site directory ...
+from abaqus import *
+from abaqusConstants import *
+session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=297.310424804688, 
+    height=142.020004272461)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].maximize()
+from viewerModules import *
+from driverUtils import executeOnCaeStartup
+executeOnCaeStartup()
+o2 = session.openOdb(name='temp_SH_090_UMAT_10_10.odb')
+#: Model: C:/temp/polyN_optimization/temp_SH_090_UMAT_10_10.odb
+#: Number of Assemblies:         1
+#: Number of Assembly instances: 0
+#: Number of Part instances:     1
+#: Number of Meshes:             1
+#: Number of Element Sets:       12
+#: Number of Node Sets:          12
+#: Number of Steps:              1
+session.viewports['Viewport: 1'].setValues(displayedObject=o2)
+session.viewports['Viewport: 1'].makeCurrent()
+#: 
+#: Node: PART-1-1.60
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  5.00575e+00,  2.75316e+00,  7.56550e-01,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Node: PART-1-1.53
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  5.00575e+00,  2.75316e+00,  0.00000e+00,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Nodes for distance: PART-1-1.60, PART-1-1.53
+#:                                        1             2             3        Magnitude
+#: Base distance:                     0.00000e+00,  0.00000e+00, -7.56550e-01,  7.56550e-01
+#: No deformed coordinates for current plot.
+#: 
+#: Node: PART-1-1.58
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  5.00575e+00, -3.25374e+00,  7.56550e-01,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Node: PART-1-1.60
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  5.00575e+00,  2.75316e+00,  7.56550e-01,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Nodes for distance: PART-1-1.58, PART-1-1.60
+#:                                        1             2             3        Magnitude
+#: Base distance:                     0.00000e+00,  6.00690e+00,  0.00000e+00,  6.00690e+00
+#: No deformed coordinates for current plot.
+#: 
+#: Node: PART-1-1.45
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  1.15132e+00,  3.25374e+00,  7.56550e-01,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Node: PART-1-1.58
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  5.00575e+00, -3.25374e+00,  7.56550e-01,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Nodes for distance: PART-1-1.45, PART-1-1.58
+#:                                        1             2             3        Magnitude
+#: Base distance:                     3.85443e+00, -6.50747e+00,  0.00000e+00,  7.56332e+00
+#: No deformed coordinates for current plot.
+#: 
+#: Node: PART-1-1.991
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  1.15132e+00,  3.25374e+00,  9.45688e-02,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Node: PART-1-1.992
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  1.15132e+00,  3.25374e+00,  1.89138e-01,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Nodes for distance: PART-1-1.991, PART-1-1.992
+#:                                        1             2             3        Magnitude
+#: Base distance:                     0.00000e+00,  0.00000e+00,  9.45688e-02,  9.45688e-02
+#: No deformed coordinates for current plot.
+#: 
+#: Node: PART-1-1.58
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  5.00575e+00, -3.25374e+00,  7.56550e-01,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Node: PART-1-1.998
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                 -5.00575e+00,  3.25374e+00,  9.45688e-02,      -      
+#: No deformed coordinates for current plot.
+#: 
+#: Nodes for distance: PART-1-1.58, PART-1-1.998
+#:                                        1             2             3        Magnitude
+#: Base distance:                    -1.00115e+01,  6.50747e+00, -6.61981e-01,  1.19589e+01
+#: No deformed coordinates for current plot.
+session.viewports['Viewport: 1'].view.setValues(nearPlane=18.378, 
+    farPlane=32.7538, width=17.4219, height=7.84925, viewOffsetX=0.129323, 
+    viewOffsetY=-0.0997102)
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    SYMBOLS_ON_DEF, ))
+session.viewports['Viewport: 1'].view.setValues(nearPlane=23.5089, 
+    farPlane=37.5044, width=11.3295, height=5.10436, viewOffsetX=-5.39854, 
+    viewOffsetY=2.66825)
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    ORIENT_ON_DEF, ))
+#: 
+#: Node: PART-1-1.60
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  5.00575e+00,  2.75316e+00,  7.56550e-01,      -      
+#: Scale:                             1.00000e+00,  1.00000e+00,  1.00000e+00,      -      
+#: Deformed coordinates (unscaled):  -3.94767e+00,  2.68832e+00,  7.56568e-01,      -      
+#: Deformed coordinates (scaled):    -3.94767e+00,  2.68832e+00,  7.56568e-01,      -      
+#: Displacement (unscaled):          -8.95342e+00, -6.48462e-02,  1.75090e-05,  8.95365e+00
+#: 
+#: Node: PART-1-1.55
+#:                                         1             2             3        Magnitude
+#: Base coordinates:                  5.00575e+00, -3.25374e+00,  0.00000e+00,      -      
+#: Scale:                             1.00000e+00,  1.00000e+00,  1.00000e+00,      -      
+#: Deformed coordinates (unscaled):  -4.13318e+00, -3.25374e+00,  0.00000e+00,      -      
+#: Deformed coordinates (scaled):    -4.13318e+00, -3.25374e+00,  0.00000e+00,      -      
+#: Displacement (unscaled):          -9.13893e+00,  8.01509e-34,  0.00000e+00,  9.13893e+00
+#: 
+#: Nodes for distance: PART-1-1.60, PART-1-1.55
+#:                                        1             2             3        Magnitude
+#: Base distance:                     0.00000e+00, -6.00690e+00, -7.56550e-01,  6.05436e+00
+#: Scale:                             1.00000e+00,  1.00000e+00,  1.00000e+00,      -      
+#: Deformed distance (unscaled):     -1.85514e-01, -5.94205e+00, -7.56568e-01,  5.99290e+00
+#: Deformed distance (scaled):       -1.85514e-01, -5.94205e+00, -7.56568e-01,  5.99290e+00
+#: Relative displacement (unscaled): -1.85514e-01,  6.48462e-02, -1.75090e-05,  1.96521e-01

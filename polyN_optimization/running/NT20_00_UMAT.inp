@@ -41,7 +41,7 @@
 *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-00, material=mat
 **
 *MATERIAL,NAME=mat
-*INCLUDE, INPUT=AA7020-T6_abq_deg4_swift_mises.inp
+*INCLUDE, INPUT=AA6014-T4_abq_deg4_swift_mises_0_0.inp
 **
 **
 *DEPVAR
@@ -72,7 +72,6 @@ ZMIN, 3, 5, 0.
 *Step, name=Step-1, nlgeom=YES, inc=10000
 *Static
 <MINDT>, <DTIME>, ,<MAXDT>
-**
 *BOUNDARY, TYPE=DISPLACEMENT, AMPLITUDE=ccr
 LOAD, 2, 2, 1.
 **-----------------------------------
@@ -84,7 +83,7 @@ LOAD, 2, 2, 1.
 *NODE OUTPUT
  U, V, RF
 **
-*OUTPUT, HISTORY, FREQUENCY=4
+*OUTPUT, HISTORY, FREQUENCY=2
 *NODE OUTPUT, NSET=LOAD
  U2, RF2
 *NODE OUTPUT, NSET=BASE

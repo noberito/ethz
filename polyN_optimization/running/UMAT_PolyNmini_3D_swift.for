@@ -369,6 +369,7 @@
 	          FZERO=FZERO+TT*TT
 	    END DO
         FZERO=DSQRT(FZERO)
+        WRITE(*,*)FZERO, F1, FZERO - F1
 !C      CHECK TOLERANCES
 !C        IF ((DABS(F1)<TOL1).AND.(DSQRT(TTB)<TOL2)) EXIT
         !c  write(80,1)F1/TOL1  
@@ -945,6 +946,8 @@
     GRADG = GRADF1 + GRADF2
     
     GYF = ONEHALF * GRADG / (G**ONEHALF)
+    
+    
 	RETURN
     
 	END SUBROUTINE GYFUNCTION

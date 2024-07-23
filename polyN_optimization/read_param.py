@@ -16,6 +16,10 @@ def read_param():
         params = f.readlines()[1:]
         for l in params:
             if not(l == "\n"):
-                v, _, value = l.strip("\n").split(" ")
-                dic[v] = value
+                try:
+                    v, _, value = l.strip("\n").split(" ")
+                    dic[v] = value
+                except ValueError :
+                    pass
+                
     return(dic)

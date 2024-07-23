@@ -10,7 +10,7 @@
 0., 0., 0., 1., 0., 0.,
 0., 1., 0.,
 ** Width & Thickness factor
-<WIDTH>,<WIDTH>, <THICKNESS>
+<WIDTH>,1., <THICKNESS>
 *ORIENTATION, name=Ori-00
          0.,     1.,     0.,	-1.,     0.,     0.
 3, 0.
@@ -83,13 +83,13 @@ LOAD, 2, 2, 1.
 **-----------------------------------
 ** OUTPUT REQUESTS
 **------------------------------------------------------
-*OUTPUT, FIELD, FREQUENCY=20
+*OUTPUT, FIELD, FREQUENCY=5
 *ELEMENT OUTPUT
  S, LEP, SDV, TRIAX, SP, MISES
 *NODE OUTPUT
  U, V, RF
 **
-*OUTPUT, HISTORY, FREQUENCY=4
+*OUTPUT, HISTORY, FREQUENCY=2
 *NODE OUTPUT, NSET=LOAD
  U2, RF2
 *NODE OUTPUT, NSET=BASE
