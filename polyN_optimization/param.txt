@@ -14,6 +14,7 @@ nb_virtual_pt = 5
 protomodel = mises
 law = swiftvoce
 n_opti = 3
+optiscipy = 1
 input_type = UMAT
 var_optim = 1
 gen_v_data = 1

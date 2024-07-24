@@ -33,6 +33,7 @@ protomodel = p["protomodel"]
 input_type = p["input_type"]
 n_opti = int(p["n_opti"])
 density = p["density"]
+optiscipy = int(p["optiscipy"])
 var_optim = p["var_optim"].split(",")
 var_optim = np.array([int(var_optim[i]) for i in range(len(var_optim))])
 enu = p["enu"]
@@ -247,7 +248,7 @@ def framework_mini(var_optim):
         nmon = len(powers)
 
         new_coeff = np.copy(coeff_polyN_mini)
-        new_coeff[var_optim - 1] = new_coeff[var_optim - 1] + x
+        new_coeff[var_optim] = new_coeff[var_optim] + x
 
         write_coeff_abq_mini2(new_coeff, coeff_law, ymod, enu, nmon, protomodel, degree, material, law, density, powers, var_optim=var_optim, n_try=n_try)
         launch_run(tests, func, material, degree, law, protomodel, input_type, var_optim=var_optim, n_try=n_try)
@@ -269,7 +270,7 @@ def framework_mini(var_optim):
     result = gradient_descent(f_cost, x0)
 
     coeff_polyN_mini[var_optim] = coeff_polyN_mini[var_optim] + result
-    coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final.npy"
+    coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_ " + var_optim + ".npy"
     np.save(coeff_file, coeff_polyN_mini)
     print(coeff_polyN_mini)
 
@@ -286,8 +287,8 @@ def framework_mini2(var_optim):
     else :
         coeff_polyN_mini = firstopti_mini()
 
-    b = 0.1 * np.abs(coeff_polyN_mini)
-    b = b[var_optim - 1]
+    b = 0.5 * np.abs(coeff_polyN_mini)
+    b = b[var_optim]
 
     coeff_law = np.load(polyN_cali_dir + sep + f"{material}_{law}_mini_coeff.npy")
     ymod = coeff_law[-1]
@@ -299,7 +300,7 @@ def framework_mini2(var_optim):
         nmon = len(powers)
 
         new_coeff = np.copy(coeff_polyN_mini)
-        new_coeff[var_optim - 1] = new_coeff[var_optim - 1] + x
+        new_coeff[var_optim] = new_coeff[var_optim] + x
 
         write_coeff_abq_mini2(new_coeff, coeff_law, ymod, enu, nmon, protomodel, degree, material, law, density, powers, var_optim=var_optim, n_try=n_try)
         launch_run(tests, func, material, degree, law, protomodel, input_type, var_optim=var_optim, n_try=n_try)
@@ -322,7 +323,7 @@ def framework_mini2(var_optim):
     result = scipy.optimize.minimize(f_cost, x0, method="SLSQP", jac="3-point", bounds=bounds)
 
     coeff_polyN_mini[var_optim] = coeff_polyN_mini[var_optim] + result.x
-    coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final.npy"
+    coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_scipy_ " + var_optim + ".npy"
     np.save(coeff_file, coeff_polyN_mini)
     print(coeff_polyN_mini)
 
@@ -331,4 +332,7 @@ if __name__ == "__main__":
     if func == "polyN":
         framework(var_optim)
     elif func == "polyN_mini":
-        framework_mini2(var_optim)
+        if optiscipy:
+            framework_mini2(var_optim)
+        else:
+            framework_mini(var_optim)

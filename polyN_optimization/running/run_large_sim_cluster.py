@@ -150,8 +150,15 @@ def post_process(test, material, input_type, var_optim=0, n_try=0):
     copy_odb = f'cp {cp_input_file} {odb}'
     subprocess.call(copy_odb, shell=True, cwd=run_dir)
 
-    delete_cmd = f'rm -r temp_{job}_{var_optim}_{n_try}*'
-    subprocess.call(delete_cmd, shell=True, cwd=run_dir)
+    pattern = "temp_{job}_{var_optim}_{n_try}*"
+    os.chdir(run_dir)
+    files_to_delete = glob.glob(pattern)
+
+    for file in files_to_delete:
+        if os.path.isdir(file):
+            subprocess.run(['rm', '-r', file])
+        else:
+            subprocess.run(['rm', file])
 
     print("Simulation {} ended".format(job))
 
@@ -494,7 +501,7 @@ def launch_run(tests, func, material, degree, law, protomodel, input_type, var_o
         batch = simulate(test, func, input_type, law, n_try, var_optim)
         batchs.append(batch)
     #Waiting for simulations to start
-    time.sleep(100 + 26)
+    time.sleep(250 + 26)
 
     tests_failure = []
     tests_success = []
@@ -504,7 +511,7 @@ def launch_run(tests, func, material, degree, law, protomodel, input_type, var_o
             tests_failure.append(tests[i])
         else:
             tests_success.append(tests[i])
-            
+
     print(tests_failure)
     if len(tests_failure) != 0:
         launch_run(tests_failure, func, material, degree, law, protomodel, input_type, var_optim, n_try)
