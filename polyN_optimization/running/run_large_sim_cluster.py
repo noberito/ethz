@@ -150,7 +150,7 @@ def post_process(test, material, input_type, var_optim=0, n_try=0):
     copy_odb = f'cp {cp_input_file} {odb}'
     subprocess.call(copy_odb, shell=True, cwd=run_dir)
 
-    pattern = "temp_{job}_{var_optim}_{n_try}*"
+    pattern = f"temp_{job}_{var_optim}_{n_try}*"
     os.chdir(run_dir)
     files_to_delete = glob.glob(pattern)
 
