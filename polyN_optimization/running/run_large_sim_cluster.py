@@ -126,11 +126,13 @@ def simulate(test, func, input_type, law, n_try=0, var_optim=0):
 
     abq = r'"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\env\vars.bat" -arch intel64 vs2019 &'
     if type_test != "UT":
-        job_command = f'''sbatch -C ib -n {cpus} -t 0-2 --mem-per-cpu=300 --tmp=300 --wrap "abaqus job={cp_input_file} double interactive user={subroutine} cpus={cpus} scratch=\$TMPDIR"'''
+        job_command = f'''sbatch -C ib -n {cpus} -t 0-2 --mem-per-cpu=300 --tmp=300 --wrap "bash -c 'abaqus job={cp_input_file} double interactive user={subroutine} cpus={cpus} scratch=\$TMPDIR'"'''
     else :
-        job_command = f'''sbatch -C ib -n 1 -t 0-2 --mem-per-cpu=300 --tmp=300 --wrap "abaqus job={cp_input_file} double interactive user={subroutine} cpus=1 scratch=\$TMPDIR"'''
+        job_command = f'''sbatch -C ib -n 1 -t 0-2 --mem-per-cpu=300 --tmp=300 --wrap "bash -c 'abaqus job={cp_input_file} double interactive user={subroutine} cpus=1 scratch=\$TMPDIR'"'''
 
-    subprocess.call(job_command, shell=True, cwd=run_dir)
+    res = subprocess.run(job_command, shell=True, cwd=run_dir, capture_output=True)
+    n_batch = res.stdout.decode('utf-8').strip("\n").split(" ")[-1]
+    return(n_batch)
 
 def post_process(test, material, input_type, var_optim=0, n_try=0):
     """
@@ -465,12 +467,19 @@ def sim_finished(test, input_type, var_optim=0, n_try=0):
         return(False)
     return(True)
 
+def has_failed(n_batch):
+    out_file = "slurm-" + n_batch + ".out"
+    out_filepath = run_dir + sep + out_file
+    with open(out_filepath, "r") as f :
+        lines = f.readlines()
+        if lines[-2] == "Abaqus Error: Problem during linking - Abaqus/Standard User Subroutines\n":
+            return(True)
+        return(False)
+
 
 def launch_run(tests, func, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
     #Run les tests disponibles experimentalement
-    
-
-
+    n = len(tests)
 
     for test in tests:
         #Creating and changing paras file
@@ -479,15 +488,29 @@ def launch_run(tests, func, material, degree, law, protomodel, input_type, var_o
         #Changing the user material file
         change_usermat(test, func, material, degree, law, protomodel, input_type, var_optim, n_try)
 
+    batchs = []
     #Launching simulations job
     for test in tests:
-        simulate(test, func, input_type, law, n_try, var_optim)
-
+        batch = simulate(test, func, input_type, law, n_try, var_optim)
+        batchs.append(batch)
     #Waiting for simulations to start
-    time.sleep(100)
+    time.sleep(100 + 26)
 
+    tests_failure = []
+    tests_success = []
+
+    for i in range(n): 
+        if has_failed(batchs[i]):
+            tests_failure.append(tests[i])
+        else:
+            tests_success.append(tests[i])
+            
+    print(tests_failure)
+    if len(tests_failure) != 0:
+        launch_run(tests_failure, func, material, degree, law, protomodel, input_type, var_optim, n_try)
+    
     #Waiting for simulations to end
-    for test in tests:
+    for test in tests_success:
         while not(sim_finished(test, input_type, var_optim, n_try)):
             time.sleep(5)
 

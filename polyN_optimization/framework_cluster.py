@@ -47,7 +47,7 @@ for type_test in mat_exp.keys():
             tests.append(test)
 
 def numerical_gradient(f, x, n_try):
-    h = 0.2
+    h = 0.05
     grad = np.zeros_like(x)
     for i in range(x.size):
 
@@ -64,7 +64,7 @@ def numerical_gradient(f, x, n_try):
         
     return grad
 
-def gradient_descent(f, x0, learning_rate=0.2, n_opti=n_opti):
+def gradient_descent(f, x0, learning_rate=0.1, n_opti=n_opti):
     x = x0
     for i in range(n_opti):
         grad = numerical_gradient(f, x, i)
@@ -270,7 +270,7 @@ def framework_mini(var_optim):
 
     coeff_polyN_mini[var_optim] = coeff_polyN_mini[var_optim] + result
     coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final.npy"
-    np.save(coeff_polyN_mini, coeff_file)
+    np.save(coeff_file, coeff_polyN_mini)
     print(coeff_polyN_mini)
 
 def framework_mini2(var_optim):
@@ -319,11 +319,11 @@ def framework_mini2(var_optim):
     
     x0 = np.zeros(len(var_optim))
     bounds = scipy.optimize.Bounds(lb = -b, ub = b, keep_feasible=True)
-    result = scipy.optimize.minimize(f_cost, x0, method="SLSQP", bounds=bounds)
+    result = scipy.optimize.minimize(f_cost, x0, method="SLSQP", jac="3-point", bounds=bounds)
 
     coeff_polyN_mini[var_optim] = coeff_polyN_mini[var_optim] + result.x
     coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final.npy"
-    np.save(coeff_polyN_mini, coeff_file)
+    np.save(coeff_file, coeff_polyN_mini)
     print(coeff_polyN_mini)
 
 
