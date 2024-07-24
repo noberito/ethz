@@ -84,11 +84,14 @@ def mean_square_error_fd(test, var_optim=0, n_try=0):
 
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
     type_test, ori = test.split("_")
+    n_exp = mat_exp[type_test][ori]
     lens = []
     disps = np.empty(0)
     forces = np.empty(0)
 
-    for m in range(1):
+    area_between_curves = 0
+
+    for m in range(n_exp):
         exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
         df_exp = pd.read_csv(exp_res_path)
         e = df_exp["Displacement longi[mm]"] if type_test == "SH" else df_exp["Displacement[mm]"]
@@ -97,14 +100,14 @@ def mean_square_error_fd(test, var_optim=0, n_try=0):
         disps = np.concatenate((disps, e))
         forces = np.concatenate((forces, s))
     
-    f_exp = interp1d(disps, forces, kind="linear", fill_value="extrapolate")
-    x_common = np.linspace(0, min(max(x_sim), max(e)), num=500)
-    y1_common = f_sim(x_common)
-    y2_common = f_exp(x_common)
-    y1_common[0] = 0
-    y2_common[0] = 0
-    y_diff = np.abs(y1_common - y2_common)
-    area_between_curves = simps(y=y_diff, x=x_common)
+        f_exp = interp1d(disps, forces, kind="linear", fill_value="extrapolate")
+        x_common = np.linspace(0, min(max(x_sim), max(e)), num=500)
+        y1_common = f_sim(x_common)
+        y2_common = f_exp(x_common)
+        y1_common[0] = 0
+        y2_common[0] = 0
+        y_diff = np.abs(y1_common - y2_common)
+        area_between_curves = area_between_curves + simps(y=y_diff, x=x_common)
 
     return(area_between_curves)
 
@@ -115,16 +118,19 @@ def mean_square_error_str(test, var_optim=0, n_try=0):
 
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
     type_test, ori = test.split("_")
+    n_exp = mat_exp[type_test][ori]
     lens = []
     disps = np.empty(0)
     strains = np.empty(0)
+
+    area_between_curves = 0
 
     if "Strain_ext" in df_sim.columns:
         x_sim = df_sim["U2"]
         y_sim = df_sim["Strain_ext"]
         f_sim = interp1d(x_sim, y_sim, kind="linear", fill_value="extrapolate")
 
-        for m in range(1):
+        for m in range(n_exp):
             exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
             df_exp = pd.read_csv(exp_res_path)
             e = df_exp["Displacement longi[mm]"] if type_test == "SH" else df_exp["Displacement[mm]"]
@@ -133,16 +139,14 @@ def mean_square_error_str(test, var_optim=0, n_try=0):
             disps = np.concatenate((disps, e))
             strains = np.concatenate((strains, s))
             
-        f_exp = interp1d(disps, strains, kind="linear", fill_value="extrapolate")
-        x_common = np.linspace(0, min(max(x_sim), max(e)), num=500)
-        y1_common = f_sim(x_common)
-        y2_common = f_exp(x_common)
-        y1_common[0] = 0
-        y2_common[0] = 0
-        y_diff = np.abs(y1_common - y2_common)
-        area_between_curves = simps(y=y_diff, x=x_common)
-    else:
-        area_between_curves = 0
+            f_exp = interp1d(disps, strains, kind="linear", fill_value="extrapolate")
+            x_common = np.linspace(0, min(max(x_sim), max(e)), num=500)
+            y1_common = f_sim(x_common)
+            y2_common = f_exp(x_common)
+            y1_common[0] = 0
+            y2_common[0] = 0
+            y_diff = np.abs(y1_common - y2_common)
+            area_between_curves = area_between_curves + simps(y=y_diff, x=x_common)
         
     return(area_between_curves)
 
@@ -287,7 +291,7 @@ def framework_mini2(var_optim):
     else :
         coeff_polyN_mini = firstopti_mini()
 
-    b = 0.5 * np.abs(coeff_polyN_mini)
+    b = 0.2 * np.abs(coeff_polyN_mini)
     b = b[var_optim]
 
     coeff_law = np.load(polyN_cali_dir + sep + f"{material}_{law}_mini_coeff.npy")

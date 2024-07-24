@@ -482,7 +482,11 @@ def has_failed(n_batch):
         if lines[-2] == "Abaqus Error: Problem during linking - Abaqus/Standard User Subroutines\n":
             return(True)
         return(False)
-
+    
+def batch_running(batch):
+    out_file = "slurm-" + batch + ".out"
+    out_filepath = run_dir + sep + out_file
+    return(os.path.exists(out_filepath))
 
 def launch_run(tests, func, material, degree, law, protomodel, input_type, var_optim=0, n_try=0):
     #Run les tests disponibles experimentalement
@@ -500,11 +504,17 @@ def launch_run(tests, func, material, degree, law, protomodel, input_type, var_o
     for test in tests:
         batch = simulate(test, func, input_type, law, n_try, var_optim)
         batchs.append(batch)
+
     #Waiting for simulations to start
-    time.sleep(250 + 26)
+    for i in range(n):
+        while not(batch_running(batchs[i])):
+            time.sleep(1)
 
     tests_failure = []
     tests_success = []
+
+    #Average time to be able to see if one simulation crashed
+    time.sleep(30)
 
     for i in range(n): 
         if has_failed(batchs[i]):
@@ -512,14 +522,14 @@ def launch_run(tests, func, material, degree, law, protomodel, input_type, var_o
         else:
             tests_success.append(tests[i])
 
-    print(tests_failure)
+    #Relaunch the failed simulations
     if len(tests_failure) != 0:
         launch_run(tests_failure, func, material, degree, law, protomodel, input_type, var_optim, n_try)
     
     #Waiting for simulations to end
     for test in tests_success:
         while not(sim_finished(test, input_type, var_optim, n_try)):
-            time.sleep(5)
+            time.sleep(1)
 
 def create_csv(tests, material, input_type, var_optim=0, n_try=0):
 

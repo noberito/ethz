@@ -48,7 +48,7 @@ for type_test in mat_exp.keys():
         
 tests = ut_tests
 def numerical_gradient(f, x, n_try):
-    h = 0.1
+    h = 0.05
     grad = np.zeros_like(x)
     for i in range(x.size):
 
@@ -87,7 +87,8 @@ def mean_square_error(test, var_optim=0, n_try=0):
     disps = np.empty(0)
     forces = np.empty(0)
 
-    for m in range(1):
+    area_between_curves = 0
+    for m in range(n_exp):
         exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
         df_exp = pd.read_csv(exp_res_path)
         e = df_exp["Displacement longi[mm]"] if type_test == "SH" else df_exp["Displacement[mm]"]
@@ -96,14 +97,14 @@ def mean_square_error(test, var_optim=0, n_try=0):
         disps = np.concatenate((disps, e))
         forces = np.concatenate((forces, s))
     
-    f_exp = interp1d(disps, forces, kind="linear", fill_value="extrapolate")
-    x_common = np.linspace(0, min(max(x_sim), max(e)), num=500)
-    y1_common = f_sim(x_common)
-    y2_common = f_exp(x_common)
-    y1_common[0] = 0
-    y2_common[0] = 0
-    y_diff = np.abs(y1_common - y2_common)
-    area_between_curves = simpson(y=y_diff, x=x_common)
+        f_exp = interp1d(disps, forces, kind="linear", fill_value="extrapolate")
+        x_common = np.linspace(0, min(max(x_sim), max(e)), num=500)
+        y1_common = f_sim(x_common)
+        y2_common = f_exp(x_common)
+        y1_common[0] = 0
+        y2_common[0] = 0
+        y_diff = np.abs(y1_common - y2_common)
+        area_between_curves = area_between_curves + simpson(y=y_diff, x=x_common)
     print(test, y1_common, y2_common, x_common, var_optim, n_try)
     return(area_between_curves)
 
@@ -161,6 +162,7 @@ def framework_mini(var_optim):
     else:
         coeff_polyN_mini = firstopti_mini()
     coeff_law = np.load(polyN_cali_dir + sep + f"{law}_mini_coeff.npy")
+    
     a = coeff_law[0]
     b = coeff_law[1]
     c = coeff_law[2]

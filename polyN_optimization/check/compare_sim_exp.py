@@ -359,7 +359,7 @@ def compare_large_strain(material, func, degree, input_type, var_optim=0, n_try=
                     if "Strain_ext" in df_sim.columns:
                         ax2 = ax[i].twinx()
                         ax2.plot(df_sim["U2"], df_sim["Strain_ext"], label="abaqus", c="red")
-                    colors = plt.cm.viridis(np.linspace(0, 1, type_tests_mat[ori]))
+                    colors = plt.cm.viridis(np.linspace(0, 0.2, type_tests_mat[ori]))
                     for m in range(type_tests_mat[ori]):
                         exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
                         df_exp = pd.read_csv(exp_res_path)
