@@ -5,27 +5,28 @@ material = DP780
 enu = 0.3
 density = 7.85e-9
 degree = 6
+law = swift
+protomodel = mises
+
+nb_virtual_pt = 5
+gen_v_data = 1
+
+gen_e_data = 0
 nt6 = 1
 sh = 0
+
 weight_ut = 0.8
 weight_e2 = 0.01
 weight_vir = 0.001
-nb_virtual_pt = 5
-protomodel = mises
-law = swiftvoce
+
 n_opti = 3
-optiscipy = 1
 input_type = UMAT
-var_optim = 1
-gen_v_data = 1
-gen_e_data = 0
+var_optim = 1,2
+
 opti = 0
 loadcoeff = 1
-adapt = 1
-export_coeff_abq = 1
-export_coeff_user = 1
-plot = 0
-savefigyr = 0
-savefigplane = 0
-savecoeff = 1
+
+savecoeff = 0
+export_coeff_abq = 0
+
 gseed = 6

@@ -17,7 +17,7 @@ facs_displ = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 2., "SH": 1.}
 facs_thick = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 1., "SH": 8/5}
 facs_width = {"UT": 20, "NT6" : 10, "NT20": 10, "CH": 20, "SH": 20}
 
-def compare_ut_fd(material, degree, input_type, var_optim=0, n_try=0):
+def compare_ut_fd(material, degree, input_type, p=0, m=0):
     """
         Plot Force Displacement curves for UT except for EBT
     """
@@ -47,14 +47,14 @@ def compare_ut_fd(material, degree, input_type, var_optim=0, n_try=0):
 
             for ori in type_tests_mat.keys():
                 if ori != "EBT":
-                    sim_res_path = results_sim_dir + sep + f"{type_test}_{ori}_{input_type}_{var_optim}_{n_try}.csv"
+                    sim_res_path = results_sim_dir + sep + f"{type_test}_{ori}_{input_type}_{p}_{m}.csv"
                     print(sim_res_path)
                     plot = 1
 
                     if not os.path.exists(sim_res_path):
                         plot = 0
-                    for m in range(type_tests_mat[ori]):
-                        exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
+                    for k in range(type_tests_mat[ori]):
+                        exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{k+1}.csv"
                         if not os.path.exists(exp_res_path):
                             plot = 0
                     
@@ -62,12 +62,12 @@ def compare_ut_fd(material, degree, input_type, var_optim=0, n_try=0):
                         df_sim = pd.read_csv(sim_res_path)
                         ax[i].plot(df_sim["U2"], df_sim["RF2"], label="abaqus", c="red")
 
-                        for m in range(type_tests_mat[ori]):
-                            exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
+                        for k in range(type_tests_mat[ori]):
+                            exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{k+1}.csv"
                             df_exp = pd.read_csv(exp_res_path)
                             e = df_exp["Displacement longi[mm]"] if type_test == "SH" else df_exp["Displacement[mm]"]
                             s = df_exp["Force[kN]"]
-                            ax[i].plot(e, s, label=f"exp. {m+1}")
+                            ax[i].plot(e, s, label=f"exp. {k+1}")
 
                         ax[i].set_title(f"{type_test}_{ori}")
                         ax[i].set_xlabel("Displacement[mm]")
@@ -79,7 +79,7 @@ def compare_ut_fd(material, degree, input_type, var_optim=0, n_try=0):
     for j in range(i, nrows * ncols):
         fig.delaxes(ax[j])
 
-    fig.suptitle(f"{material} with poly{degree} : Check Experiments vs Abaqus results\n variable {var_optim}", fontsize=12)
+    fig.suptitle(f"{material} with poly{degree} : Check Experiments vs Abaqus results\n variable {p}", fontsize=12)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])  
     plt.subplots_adjust(hspace=0.5)
 
@@ -87,12 +87,12 @@ def compare_ut_fd(material, degree, input_type, var_optim=0, n_try=0):
     if not(os.path.exists(figdir)):
         os.makedirs(figdir)
     
-    filename = f"{material}_largestrain_{var_optim}_{n_try}.png"
+    filename = f"{material}_largestrain_{p}_{m}.png"
     filepath = figdir + sep + filename
 
     plt.savefig(filepath)
 
-def compare_ut_s(material, func, degree, input_type, var_optim=0, n_try=0):
+def compare_ut_s(material, func, degree, input_type, p=0, m=0):
     """
         Plot Stress Strain curves for each UT except for EBT
     """
@@ -116,7 +116,7 @@ def compare_ut_s(material, func, degree, input_type, var_optim=0, n_try=0):
                 if ori != "EBT":
                     j = i // 3
                     k = i % 3
-                    sim_res_path = results_sim_dir + sep + f"UT_{ori}_{input_type}_{var_optim}_{n_try}.csv"
+                    sim_res_path = results_sim_dir + sep + f"UT_{ori}_{input_type}_{p}_{m}.csv"
                     df_sim = pd.read_csv(sim_res_path)
                     df_sim["S21"] = df_sim["S12"]
                     df_sim["S31"] = df_sim["S13"]
@@ -125,19 +125,19 @@ def compare_ut_s(material, func, degree, input_type, var_optim=0, n_try=0):
 
                     ax[j,k].plot(df_sim["SDV_EPBAR"], df_sim["S"],label = "abaqus")
 
-                    for m in range(type_tests_mat[ori]):
-                        exp_res_path = results_exp_dir + sep + "UT_" + ori + f"_{m+1}.csv"
+                    for k in range(type_tests_mat[ori]):
+                        exp_res_path = results_exp_dir + sep + "UT_" + ori + f"_{k+1}.csv"
                         df_exp = pd.read_csv(exp_res_path)
                         if ori == "EBT":
                             df_exp = df_exp.rename(columns={df_exp.columns[0]:"TrueStrain", df_exp.columns[1]:"TrueStress[MPa]"})
                             e = df_exp["TrueStrain"]
                             s = df_exp["TrueStress[MPa]"] * np.sqrt(2) #In the EBT file, True stress corresponds to the stress applied in one direction which is 1/sqrt(2) * S
-                            ax[j,k].plot(e, s, label = f"exp. {m+1}")
+                            ax[j,k].plot(e, s, label = f"exp. {k+1}")
                         else:
                             imax = df_exp["EngStress[MPa]"].idxmax()
                             e = df_exp["TrueStrain"].values[:imax]
                             s = df_exp["TrueStress[MPa]"].values[:imax]
-                            ax[j,k].plot(e, s, label = f"exp. {m+1}") 
+                            ax[j,k].plot(e, s, label = f"exp. {k+1}") 
 
                     ax[j,k].set_title(f"UT_{ori}")
                     ax[j,k].set_xlabel(r"$\epsilon$")
@@ -152,16 +152,16 @@ def compare_ut_s(material, func, degree, input_type, var_optim=0, n_try=0):
     fig.suptitle(f"{material} with poly{degree} : Check Experiments vs Abaqus results", fontsize=12)
     plt.legend()
 
-    figdir = file_dir + sep + material + sep + "var_" + str(var_optim)
+    figdir = file_dir + sep + material + sep + "var_" + str(p)
     if not(os.path.exists(figdir)):
         os.makedirs(figdir)
     
-    filename = f"{material}_ut_{func}_{var_optim}_{n_try}.png"
+    filename = f"{material}_ut_{func}_{p}_{m}.png"
     filepath = figdir + sep + filename
     print(filepath)
     plt.savefig(filepath)
 
-def compare_ut_s_2(material, func, degree, input_type, var_optim=0, n_try=0):
+def compare_ut_s_2(material, func, degree, input_type, p=0, m=0):
     """
         Plot Stress Strain curves for UT on one and only plot
     """
@@ -180,7 +180,7 @@ def compare_ut_s_2(material, func, degree, input_type, var_optim=0, n_try=0):
         type_tests_mat = tests_mat[type_test]
         if type_test == "UT":
             for ori in type_tests_mat.keys():
-                sim_res_path = results_sim_dir + sep + f"UT_{ori}_{input_type}_{var_optim}_{n_try}.csv"
+                sim_res_path = results_sim_dir + sep + f"UT_{ori}_{input_type}_{p}_{m}.csv"
                 df_sim = pd.read_csv(sim_res_path)
                 df_sim["S21"] = df_sim["S12"]
                 df_sim["S31"] = df_sim["S13"]
@@ -190,8 +190,8 @@ def compare_ut_s_2(material, func, degree, input_type, var_optim=0, n_try=0):
 
                 
 
-                for m in range(min(type_tests_mat[ori], 1)):
-                    exp_res_path = results_exp_dir + sep + "UT_" + ori + f"_{m+1}.csv"
+                for k in range(min(type_tests_mat[ori], 1)):
+                    exp_res_path = results_exp_dir + sep + "UT_" + ori + f"_{k+1}.csv"
                     df_exp = pd.read_csv(exp_res_path)
                     if ori == "EBT":
                         df_exp = df_exp.rename(columns={df_exp.columns[0]:"PlasticStrain", df_exp.columns[1]:"PlasticStress[MPa]"})
@@ -215,13 +215,12 @@ def compare_ut_s_2(material, func, degree, input_type, var_optim=0, n_try=0):
     ax.set_title("-- : abaqus")
     plt.legend()
 
-    figdir = file_dir + sep + material + sep + "var_" + str(var_optim)
+    figdir = file_dir + sep + material + sep + "var_" + str(p)
     if not(os.path.exists(figdir)):
         os.makedirs(figdir)
     
-    filename = f"{material}_ut_{func}_{var_optim}_{n_try}.png"
+    filename = f"{material}_ut_{func}_{p}_{m}.png"
     filepath = figdir + sep + filename
-    print(filepath)
     plt.savefig(filepath)
 
 def compare_all(material, degree, input_type):
@@ -257,19 +256,19 @@ def compare_all(material, degree, input_type):
 
                 ax[j,k].plot(df_sim["SDV_EPBAR"], df_sim["S"],label = "abaqus")
 
-                for m in range(type_tests_mat[ori]):
-                    exp_res_path = results_exp_dir + sep + "UT_" + ori + f"_{m+1}.csv"
+                for k in range(type_tests_mat[ori]):
+                    exp_res_path = results_exp_dir + sep + "UT_" + ori + f"_{k+1}.csv"
                     df_exp = pd.read_csv(exp_res_path)
                     if ori == "EBT":
                         df_exp = df_exp.rename(columns={df_exp.columns[0]:"TrueStrain", df_exp.columns[1]:"TrueStress[MPa]"})
                         e = df_exp["TrueStrain"]
                         s = df_exp["TrueStress[MPa]"] * np.sqrt(2) #In the EBT file, True stress corresponds to the stress applied in one direction which is 1/sqrt(2) * S
-                        ax[j,k].plot(e, s, label = f"exp. {m+1}")
+                        ax[j,k].plot(e, s, label = f"exp. {k+1}")
                     else:
                         imax = df_exp["EngStress[MPa]"].idxmax()
                         e = df_exp["TrueStrain"].values[:imax]
                         s = df_exp["TrueStress[MPa]"].values[:imax]
-                        ax[j,k].plot(e, s, label = f"exp. {m+1}") 
+                        ax[j,k].plot(e, s, label = f"exp. {k+1}") 
 
                 ax[j,k].set_title(f"UT_{ori}")
                 ax[j,k].set_xlabel(r"$\epsilon$")
@@ -287,8 +286,8 @@ def compare_all(material, degree, input_type):
                     df_sim = pd.read_csv(sim_res_path)
                     ax[j,k].plot(df_sim["U2"], df_sim["RF2"],label = "abaqus")
 
-                for m in range(type_tests_mat[ori]):
-                    exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
+                for k in range(type_tests_mat[ori]):
+                    exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{k+1}.csv"
                     if os.path.exists(exp_res_path):
                         df_exp = pd.read_csv(exp_res_path)
                         if type_test=="SH":
@@ -296,7 +295,7 @@ def compare_all(material, degree, input_type):
                         else : 
                             e = df_exp["Displacement[mm]"].values
                         s = df_exp["Force[kN]"]
-                        ax[j,k].plot(e, s, label = f"exp. {m+1}") 
+                        ax[j,k].plot(e, s, label = f"exp. {k+1}") 
 
                 ax[j,k].set_title(f"{type_test}_{ori}")
                 ax[j,k].set_xlabel("Displacement[mm]")
@@ -316,7 +315,7 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def compare_large_strain(material, func, degree, input_type, var_optim=0, n_try=0):
+def compare_large_strain(material, func, degree, input_type, p=0, m=0):
     """
         Plot Force Displacement for large strain test
     """
@@ -343,13 +342,13 @@ def compare_large_strain(material, func, degree, input_type, var_optim=0, n_try=
         if type_test != "UT":
 
             for ori in type_tests_mat.keys():
-                sim_res_path = results_sim_dir + sep + f"{type_test}_{ori}_{input_type}_{var_optim}_{n_try}.csv"
+                sim_res_path = results_sim_dir + sep + f"{type_test}_{ori}_{input_type}_{p}_{m}.csv"
                 plot = 1
 
                 if not os.path.exists(sim_res_path):
                     plot = 0
-                for m in range(type_tests_mat[ori]):
-                    exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
+                for k in range(type_tests_mat[ori]):
+                    exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{k+1}.csv"
                     if not os.path.exists(exp_res_path):
                         plot = 0
                 
@@ -360,15 +359,15 @@ def compare_large_strain(material, func, degree, input_type, var_optim=0, n_try=
                         ax2 = ax[i].twinx()
                         ax2.plot(df_sim["U2"], df_sim["Strain_ext"], label="abaqus", c="red")
                     colors = plt.cm.viridis(np.linspace(0, 0.2, type_tests_mat[ori]))
-                    for m in range(type_tests_mat[ori]):
-                        exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{m+1}.csv"
+                    for k in range(type_tests_mat[ori]):
+                        exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{k+1}.csv"
                         df_exp = pd.read_csv(exp_res_path)
                         e = df_exp["Displacement longi[mm]"] if type_test == "SH" else df_exp["Displacement[mm]"]
                         s = df_exp["Force[kN]"]
-                        ax[i].plot(e, s, color=colors[m])
+                        ax[i].plot(e, s, color=colors[k])
                         if "Strain_ext" in df_sim.columns:
                             s = df_exp["AxStrain_1"]
-                            ax2.plot(e,s, color=colors[m])
+                            ax2.plot(e,s, color=colors[k])
                             ax2.set_ylim(top= 1.5 * np.max([np.max(s), np.max(df_sim["Strain_ext"])]))
 
                     ax[i].set_title(f"{type_test}_{ori}")
@@ -381,15 +380,15 @@ def compare_large_strain(material, func, degree, input_type, var_optim=0, n_try=
     for j in range(i, nrows * ncols):
         fig.delaxes(ax[j])
 
-    fig.suptitle(f"{material} with poly{degree} : Check Experiments vs Abaqus results\n variable {var_optim}", fontsize=12)
+    fig.suptitle(f"{material} with poly{degree} : Check Experiments vs Abaqus results\n variable {p}", fontsize=12)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])  
     plt.subplots_adjust(hspace=0.5)
 
-    figdir = file_dir + sep + material + sep + "var_" + str(var_optim)
+    figdir = file_dir + sep + material + sep + "var_" + str(p)
     if not(os.path.exists(figdir)):
         os.makedirs(figdir)
     
-    filename = f"{material}_largestrain_{func}_{var_optim}_{n_try}.png"
+    filename = f"{material}_largestrain_{func}_{p}_{m}.png"
     filepath = figdir + sep + filename
     print(filepath)
     plt.savefig(filepath)
@@ -400,4 +399,4 @@ if __name__ == "__main__":
     degree = int(p["degree"])
     input_type = p["input_type"]
     func = p["func"]
-    compare_ut_s_2(material, func, degree, input_type, var_optim=10, n_try=10)
+    compare_ut_s_2(material, func, degree, input_type, p=10, m=10)

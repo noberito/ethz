@@ -10,7 +10,8 @@ sep = os.sep
 sys.path.append(polyN_dir)
 
 from optimize_polyN import get_param_polyN, polyN, jac_polyN_param, grad_polyN, readData, read_param, mises
-from optimize_polyN_mini import get_param_polyN_mini, f_min_squared, jac_polyN_2d_param, grad_polyN_2d, polyN_2d, get_dir_pst, get_yield_stress_SH, get_yield_stress_NT6, add_sh, add_nt6
+from optimize_polyN_mini import get_param_polyN_mini, f_min_squared, jac_polyN_2d_param, check_convexity
+from optimize_polyN_mini import grad_polyN_2d, polyN_2d, get_dir_pst, get_yield_stress_SH, get_yield_stress_NT6, add_sh, add_nt6
 
 def plot_check(df, coeff_polyN, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel):
     """
@@ -189,65 +190,6 @@ def plot_planestress(material, coeff, powers, weight_ut, weight_e2, weight_vir, 
     filepath = foldername_out + sep + filename
     plt.savefig(filepath)
 
-def plot_implicit_coeff(material, coeff, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel, bbox=(-1.5,1.5)):
-    ''' create a plot of an implicit function
-    fn  ...implicit function (plot where fn==0)
-    bbox ..the x,y,and z limits of plotted interval'''
-
-    xmin, xmax, ymin, ymax, zmin, zmax = bbox*3
-    fig, ax = plt.subplots(nrows = 1, ncols = 1, subplot_kw={"projection":"3d"})
-    A = np.linspace(xmin, xmax, 100) # resolution of the contour
-    B = np.linspace(xmin, xmax, 50) # number of slices
-    A1,A2 = np.meshgrid(A,A) # grid on which the contour is plotted
-
-    def f(S):
-        return polyN(S, coeff, powers)
-
-    for i in range(1):
-
-        if i == 0:
-            f_plane = lambda x, y, z : f(np.array([x, y, 0, z, 0, 0]))
-        elif i == 1:
-            f_plane = lambda x, y, z : f(np.array([x, y, 0, 0, z, 0]))
-        else :
-            f_plane = lambda x, y, z : f(np.array([x, y, 0, 0, 0, z]))
-        
-        f_plane = np.vectorize(f_plane)
-
-        print("Début du plot sur XY")
-        for z in B: # plot contours in the XY plane
-            X,Y = A1,A2
-            Z = f_plane(X,Y,z) - 1
-            ax.contour(X, Y, Z+z, [z], zdir='z')
-            # [z] defines the only level to plot for this contour for this value of z
-        print("Fin du plot sur XY")
-        print("Début du plot sur XZ")
-        for y in B: # plot contours in the XZ plane
-            X,Z = A1,A2
-            Y = f_plane(X,y,Z) - 1
-            ax.contour(X, Y+y, Z, [y], zdir='y')
-
-        print("Fin du plot sur XZ")
-        print("Début du plot sur YZ")
-        for x in B: # plot contours in the YZ plane
-            Y,Z = A1,A2
-            X = f_plane(x,Y,Z) - 1
-            ax.contour(X+x, Y, Z, [x], zdir='x')
-        print("Fin du plot sur YZ")
-        # must set plot limits because the contour will likely extend
-        # way beyond the displayed level.  Otherwise matplotlib extends the plot limits
-        # to encompass all values in the contour.
-        ax.set_zlim3d(zmin,zmax)
-        ax.set_xlim3d(xmin,xmax)
-        ax.set_ylim3d(ymin,ymax)
-
-    foldername_out = polyN_dir + sep + "plots" + sep + material
-    if not os.path.exists(foldername_out):
-        os.makedirs(foldername_out)
-    filename = f"3dcuts_{material}_poly{degree}_{weight_ut}_{weight_e2}_{weight_vir}_{nb_virtual_pt}_{protomodel}.png"
-    filepath = foldername_out + sep + filename
-    plt.savefig(filepath)
-    plt.show()
 
 def ys_ut_mini(thetas, coeff, powers):
     """
@@ -610,6 +552,69 @@ def check_sh_points(df, material, coeff, powers):
     plt.yticks(fontsize=12)
     plt.show()
 
+def check_all_pt(df, material, coeff, powers, bbox=(-1.5,1.5)):
+
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox*3
+    fig, ax = plt.subplots(nrows = 1, ncols = 1, subplot_kw={"projection":"3d"})
+    A = np.linspace(xmin, xmax, 20) # resolution of the contour
+    B = np.linspace(xmin, xmax, 20) # number of slices
+    A1,A2 = np.meshgrid(A,A) # grid on which the contour is plotted
+
+    sigma0 = df["YieldStress"].iloc[0]
+    print("Getting NT6 points and SH points")
+    ys_ratio_nt6 = get_yield_stress_NT6(sigma0, material)
+    dir_pst = get_dir_pst(coeff, powers)
+    new_df = add_nt6(df, ys_ratio_nt6, dir_pst)
+    ys_ratio_sh = get_yield_stress_SH(sigma0, material)
+    new_df = add_sh(new_df, ys_ratio_sh)
+
+    pts = new_df[new_df["Type"]!= "v"][["s11", "s22", "s12"]].values
+
+    X = pts[:,0]
+    Y = pts[:,1]
+    Z = pts[:,2]
+
+    ax.scatter(X,Y,Z, marker="x", color="red", s=100)
+
+    def f(S):
+        return f_min_squared(S, coeff, powers)
+
+    f_plane = lambda x, y, z : f(np.array([x, y, 0, z, 0, 0]))
+        
+    f_plane = np.vectorize(f_plane)
+
+    print("Début du plot sur XY")
+    for z in B: # plot contours in the XY plane
+        X,Y = A1,A2
+        Z = f_plane(X,Y,z) - 1
+        ax.contour(X, Y, Z+z, [z], zdir='z', alpha=0.5)
+        # [z] defines the only level to plot for this contour for this value of z
+    print("Fin du plot sur XY")
+    print("Début du plot sur XZ")
+    for y in B: # plot contours in the XZ plane
+        X,Z = A1,A2
+        Y = f_plane(X,y,Z) - 1
+        ax.contour(X, Y+y, Z, [y], zdir='y', alpha=0.5)
+
+    print("Fin du plot sur XZ")
+    print("Début du plot sur YZ")
+    for x in B: # plot contours in the YZ plane
+        Y,Z = A1,A2
+        X = f_plane(x,Y,Z) - 1
+        ax.contour(X+x, Y, Z, [x], zdir='x', alpha=0.5)
+    print("Fin du plot sur YZ")
+    # must set plot limits because the contour will likely extend
+    # way beyond the displayed level.  Otherwise matplotlib extends the plot limits
+    # to encompass all values in the contour.
+    ax.set_zlim3d(zmin,zmax)
+    ax.set_xlim3d(xmin,xmax)
+    ax.set_ylim3d(ymin,ymax)
+    
+    
+    plt.show()
+
+
+
 def main():
     p = read_param()
     func = p["func"]
@@ -620,26 +625,43 @@ def main():
     weight_e2 = float(p["weight_e2"])
     weight_vir = float(p["weight_vir"])
     nb_virtual_pt = int(p["nb_virtual_pt"])
+    var_optim = p["var_optim"]
 
     df = readData(material, protomodel)
-
-    
-    
 
     if func == "polyN":
         coeff_polyN = np.load(polyN_dir + sep + "poly_coeff.npy")
         powers = get_param_polyN(degree)
         plot_check(df, coeff_polyN, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
         plot_planestress(material, coeff_polyN, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
-        plot_implicit_coeff(material, coeff_polyN, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
+        
 
     if func == "polyN_mini":
-        coeff_polyN_mini = np.load(polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy")
-        powers = get_param_polyN_mini(degree)
-        check_sh_points(df, material, coeff_polyN_mini, powers)
-        check_pst_points(df, material, coeff_polyN_mini, powers)
-        plot_check_mini(df, coeff_polyN_mini, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
-        plot_planestress_mini(material, coeff_polyN_mini, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
+
+        if 1:
+            coeff_file_initial = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy"
+            coeff_polyN_mini = np.load(coeff_file_initial)
+
+            if 1:
+                coeff_file_final = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_scipy_" + "[8]" + ".npy"
+                coeff_polyN_mini = np.load(coeff_file_final)
+
+            powers = get_param_polyN_mini(degree)
+            #check_all_pt(df, material, coeff_polyN_mini, powers)
+            check_sh_points(df, material, coeff_polyN_mini, powers)
+            check_pst_points(df, material, coeff_polyN_mini, powers)
+            plot_check_mini(df, coeff_polyN_mini, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
+            #plot_planestress_mini(material, coeff_polyN_mini, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
+
+        else :
+            coeff_file_initial = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy"
+            coeff_polyN_mini = np.load(coeff_file_initial)
+
+            if 1:
+                coeff_file_final = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_scipy_" + str(var_optim) + ".npy"
+                coeff_polyN_mini = np.load(coeff_file_final)
+
+            powers = get_param_polyN_mini(degree)
 
 
 main()

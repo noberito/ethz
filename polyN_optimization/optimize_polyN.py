@@ -24,9 +24,6 @@ from read_param import read_param
 from get_calibration_data import export_exp_data, export_virtual_data
 import shutil
 from get_hardening_law import get_hardening_law
-from convexity_domain.generating_convexity_data import check_convexity_lpm
-import random
-
 
 # In[201]:
 

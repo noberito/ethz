@@ -36,12 +36,14 @@
 **-----------------------------------------------------
 ** Material Data
 **-----------------------------------------------------
-*SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=ENHANCED, ELEMENT DELETION=YES
+*SECTION CONTROLS, NAME=SOLID_CONTROLS, HOURGLASS=STIFFNESS, ELEMENT DELETION=YES
 1.0, 1.0, 1.0, 1.0, 1.0, , , 
 *SOLID SECTION, elset=ELALL, CONTROLS=SOLID_CONTROLS, orientation=Ori-45, material=mat
+*HOURGLASS STIFFNESS
+1.,1.,1.,1.
 **
 *MATERIAL,NAME=mat
-*INCLUDE, INPUT=AA6014-T4_abq_deg4_swift_mises_0_0.inp
+*INCLUDE, INPUT=DP600_abq_deg6mini_swift_mises_[1, 2]_1000.inp
 **
 **
 *DEPVAR

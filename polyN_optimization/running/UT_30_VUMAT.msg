@@ -1,3 +1,0 @@
-
- STEP 1  ORIGIN 0.0000
-

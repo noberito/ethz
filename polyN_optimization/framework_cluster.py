@@ -10,19 +10,20 @@ import time
 import scipy.optimize
 from scipy.integrate import simps
 from scipy.interpolate import interp1d
-from optimize_polyN_cluster import first_opti, write_coeff_abq, get_param_polyN
-from optimize_polyN_mini import firstopti_mini, write_coeff_abq_mini, get_param_polyN_mini, write_coeff_abq_mini2
+
+
+from optimize_polyN import first_opti, get_param_polyN, write_coeff_abq
+from optimize_polyN_mini import firstopti_mini, write_coeff_abq_mini, get_param_polyN_mini, write_coeff_abq_mini
 from get_calibration_data import analyze_exp_data
 from tests_parameters import ut_tests_ext
+from check.compare_sim_exp import compare_large_strain, compare_ut_s_2, compare_ut_fd
+from read_param import read_param
+from run_large_sim_cluster import launch_run, create_csv
 
 sep = os.sep
 polyN_cali_dir = os.path.dirname(os.path.abspath(__file__))
 exec_dir = polyN_cali_dir + sep + "running"
 
-
-from check.compare_sim_exp import compare_large_strain, compare_ut_s_2
-from read_param import read_param
-from running.run_large_sim_cluster import launch_run, create_csv
 
 p = read_param()
 func = p["func"]
@@ -33,7 +34,6 @@ protomodel = p["protomodel"]
 input_type = p["input_type"]
 n_opti = int(p["n_opti"])
 density = p["density"]
-optiscipy = int(p["optiscipy"])
 var_optim = p["var_optim"].split(",")
 var_optim = np.array([int(var_optim[i]) for i in range(len(var_optim))])
 enu = p["enu"]
@@ -47,18 +47,18 @@ for type_test in mat_exp.keys():
             test = type_test + "_" + ori
             tests.append(test)
 
-def numerical_gradient(f, x, n_try):
+def numerical_gradient(f, x, m):
     h = 0.05
     grad = np.zeros_like(x)
     for i in range(x.size):
 
-        print(n_try)
+        print(m)
         temp_val = x[i]
         x[i] = temp_val + h
-        fxh1 = f(x, 100 + 2 * n_try)
+        fxh1 = f(x, 100 + 2 * m)
         
         x[i] = temp_val - h 
-        fxh2 = f(x, 100 + 2 * n_try + 1)  
+        fxh2 = f(x, 100 + 2 * m + 1)  
         
         grad[i] = (fxh1 - fxh2) / (2 * h)
         x[i] = temp_val  
@@ -71,12 +71,12 @@ def gradient_descent(f, x0, learning_rate=0.1, n_opti=n_opti):
         grad = numerical_gradient(f, x, i)
         print("grad, lr", grad, learning_rate)
         x = x - learning_rate * grad
-        f(x, n_try=i)
+        f(x, m=i)
     return x
 
-def mean_square_error_fd(test, var_optim=0, n_try=0):
+def mean_square_error_fd(test, p=0, m=0):
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
-    sim_res_path = results_sim_dir + sep + test + "_" + input_type + "_" + str(var_optim) + "_" + str(n_try) + ".csv"
+    sim_res_path = results_sim_dir + sep + test + "_" + input_type + "_" + str(var_optim) + "_" + str(m) + ".csv"
     df_sim = pd.read_csv(sim_res_path)
     x_sim = df_sim["U2"]
     y_sim = df_sim["RF2"]
@@ -111,9 +111,9 @@ def mean_square_error_fd(test, var_optim=0, n_try=0):
 
     return(area_between_curves)
 
-def mean_square_error_str(test, var_optim=0, n_try=0):
+def mean_square_error_str(test, p=0, m=0):
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
-    sim_res_path = results_sim_dir + sep + test + "_" + input_type + "_" + str(var_optim) + "_" + str(n_try) + ".csv"
+    sim_res_path = results_sim_dir + sep + test + "_" + input_type + "_" + str(var_optim) + "_" + str(m) + ".csv"
     df_sim = pd.read_csv(sim_res_path)
 
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
@@ -150,72 +150,42 @@ def mean_square_error_str(test, var_optim=0, n_try=0):
         
     return(area_between_curves)
 
-def framework_param_study(lb, ub, step):
-    """
-        Generate large tests plots (force according to displacement) for different 
-        coeffs of polyN. We are testing for values centered around the one first
-        found by the optimization algorithm. Basically the var_optim variable moves
-        in [initial_guess + lb, initial_guess + ub] with a step.
-        Input :
-            - lb : integer (negative)
-            - ub : integer (positive)
-            - step : integer
-            - var_optim : integer (refer to constraint.txt to choose)
-    """
-    t0 = time.time()
-    coeff_polyN = first_opti()
-    powers = get_param_polyN(degree)
-    nmon = len(powers)
-    coeff_law = np.load(polyN_cali_dir + sep + f"{law}_coeff.npy")
-    
-    a = coeff_law[0]
-    b = coeff_law[1]
-    c = coeff_law[2]
-    ymod = coeff_law[3]
-
-    for i_var in range(14, nmon):
-        dcoeffs = np.zeros((n_opti, nmon))
-        dcoeffs[:,i_var] = np.arange(lb, ub, step)
-        n_dcoeff = len(dcoeffs)
-        for i in range(n_dcoeff) :
-            new_coeff = coeff_polyN + dcoeffs[i]
-            print(new_coeff)
-            write_coeff_abq(new_coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, i_var + 1, i)
-            launch_run(tests, material, degree, law, protomodel, input_type, i_var + 1, i)
-
-            create_csv(tests, material, input_type, i_var + 1, i)
-            compare_large_strain(material, degree, input_type, i_var + 1, i)
-
 def framework(var_optim):
     """
-        TODO, CHANGE RUN AND CREATE CSV
+        Framework to calibrate the  yield function and
+        large strain optimization on variables in var_optim using using gradient 
+        descent coded above
+
+        Input :
+            - var_optim : int or list
+
     """
     t0 = time.time()
-    coeff_polyN = first_opti()
-    
+    if(1):
+        coeff_polyN = np.load(polyN_cali_dir + sep + "polyN_coeff.npy")
+    else:
+        coeff_polyN = first_opti()
     coeff_law = np.load(polyN_cali_dir + sep + f"{law}_coeff.npy")
     a = coeff_law[0]
     b = coeff_law[1]
     c = coeff_law[2]
     ymod = coeff_law[3]
 
-    def f_cost(x, n_try):
+    def f_cost(x, m):
         powers = get_param_polyN(degree)
         nmon = len(powers)
-
         new_coeff = np.copy(coeff_polyN)
         new_coeff[var_optim - 1] = new_coeff[var_optim - 1] + x
-
-        write_coeff_abq(new_coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, n_try=n_try)
-        launch_run(tests, material, degree, law, protomodel, input_type, n_try=n_try)
-
-        create_csv(tests, material, input_type, n_try=n_try)
-        compare_large_strain(material, degree, input_type, n_try=n_try)
+        write_coeff_abq(new_coeff, a, b, c, ymod, enu, protomodel, degree, material, law, density, powers, m=m)
+        time.sleep(5)
+        launch_run(tests, func, material, degree, law, protomodel, input_type, m=m)
+        create_csv(tests, material, input_type, m=m)
+        compare_ut_fd(material, degree, input_type, m=m)
 
         err = 0
 
         for test in tests:
-            err = err + mean_square_error_fd(test, n_try=n_try)
+            err = err + mean_square_error_fd(test, m=m)
             print("err:", err)
         
         return(err)
@@ -229,9 +199,16 @@ def framework(var_optim):
     np.save(coeff_polyN, coeff_file)
     print(coeff_polyN)
 
-def framework_mini(var_optim):
+
+def framework_mini_old(var_optim):
     """
-        TODO, CHANGE RUN AND CREATE CSV
+        Framework to calibrate the polyN minimalistic yield function and
+        large strain optimization on variables in var_optim using gradient 
+        descent coded above
+
+        Input :
+            - var_optim : int or list
+
     """
     t0 = time.time()
 
@@ -246,7 +223,12 @@ def framework_mini(var_optim):
     ymod = coeff_law[-1]
     coeff_law = coeff_law[:-1]
 
-    def f_cost(x, n_try):
+    p = str(var_optim[0])
+
+    for var in var_optim[1:]:
+        p = "0" + str(var)
+
+    def f_cost(x, m):
 
         powers = get_param_polyN_mini(degree)
         nmon = len(powers)
@@ -254,18 +236,18 @@ def framework_mini(var_optim):
         new_coeff = np.copy(coeff_polyN_mini)
         new_coeff[var_optim] = new_coeff[var_optim] + x
 
-        write_coeff_abq_mini2(new_coeff, coeff_law, ymod, enu, nmon, protomodel, degree, material, law, density, powers, var_optim=var_optim, n_try=n_try)
-        launch_run(tests, func, material, degree, law, protomodel, input_type, var_optim=var_optim, n_try=n_try)
-        launch_run(ut_tests_ext, func, material, degree, law, protomodel, input_type, var_optim=var_optim, n_try=n_try)
-        create_csv(tests, material, input_type,var_optim=var_optim, n_try=n_try)
-        create_csv(ut_tests_ext, material, input_type,var_optim=var_optim, n_try=n_try)
-        compare_large_strain(material, func, degree, input_type,var_optim=var_optim, n_try=n_try)
-        compare_ut_s_2(material, func, degree, input_type, var_optim=var_optim, n_try=n_try)
+        write_coeff_abq_mini(new_coeff, coeff_law, ymod, enu, protomodel, degree, material, law, density, powers, p=p, m=m)
+        launch_run(tests, func, material, degree, law, protomodel, input_type, p=p, m=m)
+        launch_run(ut_tests_ext, func, material, degree, law, protomodel, input_type, p=p, m=m)
+        create_csv(tests, material, input_type,p=p, m=m)
+        create_csv(ut_tests_ext, material, input_type,p=p, m=m)
+        compare_large_strain(material, func, degree, input_type,p=p, m=m)
+        compare_ut_s_2(material, func, degree, input_type, p=p, m=m)
 
         err = 0
 
         for test in tests:
-            err = err + mean_square_error_fd(test,var_optim=var_optim, n_try=n_try) + mean_square_error_str(test,var_optim=var_optim, n_try=n_try)
+            err = err + mean_square_error_fd(test,p=var_optim, m=m) + mean_square_error_str(test,p=var_optim, m=m)
             print("err:", err)
         
         return(err)
@@ -274,13 +256,18 @@ def framework_mini(var_optim):
     result = gradient_descent(f_cost, x0)
 
     coeff_polyN_mini[var_optim] = coeff_polyN_mini[var_optim] + result
-    coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_ " + var_optim + ".npy"
+    coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_ " + str(var_optim) + ".npy"
     np.save(coeff_file, coeff_polyN_mini)
     print(coeff_polyN_mini)
 
-def framework_mini2(var_optim):
+def framework_mini(var_optim):
     """
-        TODO, CHANGE RUN AND CREATE CSV
+        Framework to calibrate the polyN minimalistic yield function and
+        large strain optimization on variables in var_optim using scipy
+
+        Input :
+            - var_optim : int or list
+
     """
     t0 = time.time()
 
@@ -291,14 +278,18 @@ def framework_mini2(var_optim):
     else :
         coeff_polyN_mini = firstopti_mini()
 
-    b = 0.2 * np.abs(coeff_polyN_mini)
+    b = 0.1 * np.abs(coeff_polyN_mini)
     b = b[var_optim]
 
     coeff_law = np.load(polyN_cali_dir + sep + f"{material}_{law}_mini_coeff.npy")
     ymod = coeff_law[-1]
     coeff_law = coeff_law[:-1]
+    p = str(var_optim[0])
 
-    def f_cost(x, n_try=1000):
+    for var in var_optim[1:]:
+        p = p + "0" + str(var)
+
+    def f_cost(x, m=1000):
 
         powers = get_param_polyN_mini(degree)
         nmon = len(powers)
@@ -306,28 +297,28 @@ def framework_mini2(var_optim):
         new_coeff = np.copy(coeff_polyN_mini)
         new_coeff[var_optim] = new_coeff[var_optim] + x
 
-        write_coeff_abq_mini2(new_coeff, coeff_law, ymod, enu, nmon, protomodel, degree, material, law, density, powers, var_optim=var_optim, n_try=n_try)
-        launch_run(tests, func, material, degree, law, protomodel, input_type, var_optim=var_optim, n_try=n_try)
-        launch_run(ut_tests_ext, func, material, degree, law, protomodel, input_type, var_optim=var_optim, n_try=n_try)
-        create_csv(tests, material, input_type,var_optim=var_optim, n_try=n_try)
-        create_csv(ut_tests_ext, material, input_type,var_optim=var_optim, n_try=n_try)
-        compare_large_strain(material, func, degree, input_type,var_optim=var_optim, n_try=n_try)
-        compare_ut_s_2(material, func, degree, input_type, var_optim=var_optim, n_try=n_try)
+        write_coeff_abq_mini(new_coeff, coeff_law, ymod, enu, protomodel, degree, material, law, density, powers, p=p, m=m)
+        launch_run(tests, func, material, degree, law, protomodel, input_type, p=p, m=m)
+        launch_run(ut_tests_ext, func, material, degree, law, protomodel, input_type, p=p, m=m)
+        create_csv(tests, material, input_type,p=p, m=m)
+        create_csv(ut_tests_ext, material, input_type,p=p, m=m)
+        compare_large_strain(material, func, degree, input_type,p=p, m=m)
+        compare_ut_s_2(material, func, degree, input_type, p=p, m=m)
 
         err = 0
 
         for test in tests:
-            err = err + mean_square_error_fd(test,var_optim=var_optim, n_try=n_try) + mean_square_error_str(test,var_optim=var_optim, n_try=n_try)
+            err = err + mean_square_error_fd(test,p=p, m=m) + mean_square_error_str(test,p=p, m=m)
             print("err:", err)
         
         return(err)
     
     x0 = np.zeros(len(var_optim))
     bounds = scipy.optimize.Bounds(lb = -b, ub = b, keep_feasible=True)
-    result = scipy.optimize.minimize(f_cost, x0, method="SLSQP", jac="3-point", bounds=bounds)
+    result = scipy.optimize.minimize(f_cost, x0, method="SLSQP", jac="3-point", tol=10e-12, bounds=bounds)
 
     coeff_polyN_mini[var_optim] = coeff_polyN_mini[var_optim] + result.x
-    coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_scipy_ " + var_optim + ".npy"
+    coeff_file = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_scipy_" + str(var_optim) + ".npy"
     np.save(coeff_file, coeff_polyN_mini)
     print(coeff_polyN_mini)
 
@@ -336,7 +327,4 @@ if __name__ == "__main__":
     if func == "polyN":
         framework(var_optim)
     elif func == "polyN_mini":
-        if optiscipy:
-            framework_mini2(var_optim)
-        else:
-            framework_mini(var_optim)
+        framework_mini(var_optim)

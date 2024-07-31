@@ -25,9 +25,9 @@ import random
 # In[201]:
 
 
-file_dir = os.path.dirname(os.path.abspath(__file__))  
+polyN_dir = os.path.dirname(os.path.abspath(__file__))  
 sep = os.sep
-exec_dir = file_dir + sep + "running"
+exec_dir = polyN_dir + sep + "running"
 
 
 
@@ -61,9 +61,15 @@ def mises(sigma):
 """ --------------------------------------------------------COPY LAB DATA----------------------------------------------"""
 
 def copy_lab_data(material):
-    copy_dir = f"{file_dir}{sep}results_exp{sep}{material}"
+    """
+        Adds the experimental data to the results_exp folder concerning the given material
+
+        Input :
+            - material : string
+    """
+    copy_dir = f"{polyN_dir}{sep}results_exp{sep}{material}"
     if not os.path.exists(copy_dir):
-        parent_dir = os.path.dirname(file_dir)
+        parent_dir = os.path.dirname(polyN_dir)
         lab_data_dir = f"{parent_dir}{sep}lab_data"
         mat_lab_data_dir = f"{lab_data_dir}{sep}{material}_results{sep}DATA"
         shutil.copytree(mat_lab_data_dir, copy_dir)
@@ -71,12 +77,19 @@ def copy_lab_data(material):
 """ ----------------------------------------------------------- READ DATA ----------------------------------------------------------------------------------------------"""
 def readData_2d(material, protomodel):
     """
+        Returns a dataframe containing the experimental points from UT from the given material 
+        and virtual points using the given protomodel.
+        df.columns = [#TODO]
+    
         Input :
             - material : string
             - protomodel : string
+
+        Output :
+            - df : dataFrame
     """
 
-    folderpath = f"{file_dir}{sep}calibration_data{sep}{material}"
+    folderpath = f"{polyN_dir}{sep}calibration_data{sep}{material}"
     filename_e = "data_exp_" + material + ".csv"
     filename_v = "data_virtual_" + material + "_" + protomodel + ".csv"
 
@@ -104,16 +117,15 @@ def readData_2d(material, protomodel):
 
     return(df)
 
-
-
-
 """------------------------------------POLYN PARAMETERS---------------------------------------------------------"""
 
 def get_param_polyN_mini(degree):
     """
-        Returns the parameters of polyN according to the degree
+        Returns polyN minimalistic powers for the given degree
+
         Input :
             - degree : integer, degree of the polyN function
+
         Output :
             - powers : ndarray of shape (nmon, 5), powers[i, j] is the power of the variable j in the monomial i
     """
@@ -148,8 +160,10 @@ def get_param_polyN_mini(degree):
 def t_linear(S):
     """
         Returns the deviatoric stress.
+
         Input :
             - S : ndarray of shape (n,6) or (6,), stress components in 3D
+
         Output :
             - D : ndarray of shape (n,6), linear combination stress components in 3D
     
@@ -167,9 +181,11 @@ def t_linear(S):
 def polyN_2d(S, coeff_mini, powers):
     """
         Compute the polyN o t_linear function.
+
         Input :
             - S : ndarray of shape (n,6) or (6,), stress components in 3D
             - coeff_mini : ndarray of shape (nmon,), coefficients of the polyN_mini function
+
         Output :
             - res : float, result of polyN_min(t_linear(S))
     """
@@ -192,7 +208,7 @@ def polyN_2d_opti(X, coeff_mini, powers):
             - coeff_mini : ndarray of shape (nmon,), coefficients of the polyN_mini function
             - powers : ndarray of shape (nmon, 3), exponents
         Output :
-            - res : float, result of polyN_mini
+            - res : ndarray of shape (n,), result of polyN_mini
     """
     if X.ndim==1:
         X = np.expand_dims(X, axis=0)
@@ -209,7 +225,8 @@ def polyN_2d_opti(X, coeff_mini, powers):
 
 def jac_t_linear():
     """
-        Returns the jacobian of the linear transformation operator
+        Returns the jacobian of the linear transformation operator (Ref : Article Soare 2007)
+
         Output :
             - jac : ndarray of shape (3,6)
     """
@@ -222,12 +239,13 @@ def jac_t_linear():
 
 def jac_polyN_2d_param(coeff_mini, powers):
     """
-        Compute the different parameters and coefficients to compute the Jacobian of polyN
+        Compute coeffcients and powers of polyN 2D Jacobian.
+
         Input :
-            - coeff (float ndarray of shape (nmon)) : Coefficients of the polyN function
-            ordered by power[1] asc, power[2] asc, power[3] asc, power[4] asc
+            - coeff_mini (float ndarray of shape (nmon)) : Coefficients of the polyN 2D function
+            ordered by power[1] asc, power[2] asc
             - powers (float ndarray of shape (nmon, 3)) : Powers for each monomial of the 
-            PolyN function
+            PolyN 2D function
         
         Output :
             - coeff_grad (float ndarray of shape (3, nmon)) : coeff_grad[i,j] contains the 
@@ -248,6 +266,8 @@ def jac_polyN_2d_param(coeff_mini, powers):
 
 def grad_polyN_2d(S, coeff_grad, powers_grad):
     """
+        Returns the Jacobian of polyN2D o t_linear.
+
         Input :
             - S : float ndarray of shape (n, 6) or (6,), stress components in 3d
             - coeff_grad : float ndarray of shape (3, nmon),coeff_grad[i] contains the 
@@ -278,6 +298,8 @@ def grad_polyN_2d(S, coeff_grad, powers_grad):
 
 def grad_polyN_2d_opti(X, coeff_grad, powers_grad):
     """
+        Returns the Jacobian of polyN2D.
+
         Input :
             - X : float ndarray of shape (n, 3) or (3,), stress components in 3d
             - coeff_grad : float ndarray of shape (3, nmon),coeff_grad[i] contains the 
@@ -303,7 +325,8 @@ def grad_polyN_2d_opti(X, coeff_grad, powers_grad):
 
 def hessian_polyN_2d_param(coeff_grad, powers_grad):
     """
-    Compute the different parameters and coefficients to compute the Hessian of polyN
+        Returns coefficients and parameters of polyN2D hessian.
+
         Input :
             - coeff_grad : float ndarray of shape (5, nmon), coeff_grad[i] contains the 
             coefficients of dpolyN/ddev[i]
@@ -331,17 +354,19 @@ def hessian_polyN_2d_param(coeff_grad, powers_grad):
 
 def hessian_polyN_2d(S, coeff_hess, powers_hess):
     """
-        Compute the hessian of polyN.
+        Returns polyN2D o t_linear hessian.
+
         Input :
             - S : float ndarray of shape (n, 6) or (6,), stress components in 3d
             - coeff_hess : float ndarray of shape (3, 3, nmon)), coeff_hess[i,j,k] contains
             the coefficients of d2mon[k]/ddev[j]ddev[i] 
             - powers_hess : float ndarray of shape (3, 3, nmon, 3), powers_hess[i,j,k]contains
-            the powers of d2mon[k]/ddev[j]ddev[i] 
+            the powers of d2mon[k]/ddev[j]ddev[i]
+
         Output :
             - hessian : float ndarray of shape (n, 6, 6), hessian[i,j,k] = dpolyN/ds[k]ds[j] of the ith data pt
-
     """
+
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
     X = t_linear(S)[:,[0,1,2]]
@@ -362,7 +387,8 @@ def hessian_polyN_2d(S, coeff_hess, powers_hess):
 
 def hessian_polyN_2d_opti(X, coeff_hess, powers_hess):
     """
-        Compute the hessian of polyN.
+        Returns polyN2D hessian.
+
         Input :
             - X : float ndarray of shape (n, 3) or (3,), stress components in 3d
             - coeff_hess : float ndarray of shape (3, 3, nmon)), coeff_hess[i,j,k] contains
@@ -387,13 +413,15 @@ def hessian_polyN_2d_opti(X, coeff_hess, powers_hess):
 
 def f1(S, coeff_mini, powers):
     """
-        Compute the first part of the yield function squared (polyN)
+        Returns f1 (polyN o t_linear ** (2/n)).
+
         Input :
             - S : ndarray of shape (n,6) or (6,), stress components in 3D
             - coeff_mini : ndarray of shape (nmon,), coefficients of the polyN_mini function
             - powers : ndarray of shape (nmon, 3), exponents
+
         Output :
-            - res : float, result of polyN_min(t_linear(S)) **(2/degree)       
+            - res : ndarray of shape (n,), result of polyN_min(t_linear(S)) **(2/degree)       
     """
     degree = np.sum(powers[0])
     p = polyN_2d(S, coeff_mini, powers)
@@ -401,6 +429,17 @@ def f1(S, coeff_mini, powers):
     return(res)
 
 def gradf1(S, coeff_mini, powers):
+    """
+        Returns f1 gradient (grad(polyN o t_linear ** (2/n))).
+
+        Input :
+            - S : ndarray of shape (n,6) or (6,), stress components in 3D
+            - coeff_mini : ndarray of shape (nmon,), coefficients of the polyN_mini function
+            - powers : ndarray of shape (nmon, 3), exponents
+            
+        Output :
+            - gradf1 : ndarray of shape (n,6), grad of polyN_min(t_linear(S)) **(2/degree)       
+    """
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
     coeff_grad, powers_grad = jac_polyN_2d_param(coeff_mini, powers)
@@ -414,14 +453,20 @@ def gradf1(S, coeff_mini, powers):
 
     return(gradf1)
 
-def test_gradf1(degree):
-    powers = get_param_polyN_mini(degree)
-    ncoeff = len(powers)
-    coeff = np.ones(ncoeff)
-    S = np.array([[1,0,0,0,0,0], [1,0,0,0,0,0]])
-    print(gradf1(S, coeff, powers))
+
 
 def hessf1(S, coeff_mini, powers):
+    """
+        Returns f1 hessian (grad(polyN o t_linear ** (2/n))).
+
+        Input :
+            - S : ndarray of shape (n,6) or (6,), stress components in 3D
+            - coeff_mini : ndarray of shape (nmon,), coefficients of the polyN_mini function
+            - powers : ndarray of shape (nmon, 3), exponents
+            
+        Output :
+            - hessf1 : ndarray of shape (n,6,6), hessian of polyN_min(t_linear(S)) **(2/degree)       
+    """
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
 
@@ -439,34 +484,40 @@ def hessf1(S, coeff_mini, powers):
 
     return(hessf1)
 
-def test_gradf1(degree):
-    powers = get_param_polyN_mini(degree)
-    ncoeff = len(powers)
-    coeff = np.ones(ncoeff)
-    S = np.array([[1,0,0,0,0,0], [1,0,0,0,0,0]])
-    print(hessf2(S, coeff, powers))
 
-def f2(S, coeff):
+def f2(S, coeff_oop):
     """
-        Compute the second part of the yield function squared (out of plane terms)
+        Returns f2 (out of plane shear terms).
+
         Input :
             - S : ndarray of shape (n,6) or (6,), stress components in 3D
-            - coeff_mini : ndarray of shape (nmon,), coefficients of the polyN_mini function
+            - coeff_oop : ndarray of shape (nmon,), coefficients in front of out of plane shear components
+
         Output :
-            - res : float, result of 2*k1*sxz**2 + 2*k2*syz**2      
+            - res : ndarray of shape (n,), k1 * sxz**2 + k2 * syz**2      
     """
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
     X = t_linear(S)
-    res = coeff[-2] * np.square(X[:,3]) + coeff[-1] * np.square(X[:,4])
+    res = coeff_oop[0] * np.square(X[:,3]) + coeff_oop[1] * np.square(X[:,4])
     return(res)
 
-def gradf2(S, coeff):
+def gradf2(S, coeff_oop):
+    """
+        Returns f2 gradient (out of plane shear terms).
+
+        Input :
+            - S : ndarray of shape (n,6) or (6,), stress components in 3D
+            - coeff_oop : ndarray of shape (nmon,), coefficients in front of out of plane shear components
+
+        Output :
+            - gradf2 : ndarray of shape (n,6), 2 * k1 * sxz + 2 * k2 * syz    
+    """
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
 
-    k1 = coeff[-2]
-    k2 = coeff[-1]
+    k1 = coeff_oop[0]
+    k2 = coeff_oop[1]
 
     ndata = len(S)
     gradf2 = np.zeros((ndata, 6))
@@ -476,19 +527,24 @@ def gradf2(S, coeff):
 
     return(gradf2)
 
-def test_gradf2(degree):
-    powers = get_param_polyN_mini(degree)
-    ncoeff = len(powers)
-    coeff = 7 * np.ones(ncoeff + 2)
-    S = np.array([[1,0,0,0,1,1],[1,0,0,0,1,1]] )
-    print(gradf2(S, coeff))
 
-def hessf2(S, coeff):
+
+def hessf2(S, coeff_oop):
+    """
+        Returns f2 hessian (out of plane shear terms).
+
+        Input :
+            - S : ndarray of shape (n,6) or (6,), stress components in 3D
+            - coeff_oop : ndarray of shape (nmon,), coefficients in front of out of plane shear components
+
+        Output :
+            - hessf2 : ndarray of shape (n,6,6), 2 * sxz + 2 * syz    
+    """
     if S.ndim==1:
         S = np.expand_dims(S, axis=0)
 
-    k1 = coeff[-2]
-    k2 = coeff[-1]
+    k1 = coeff_oop[0]
+    k2 = coeff_oop[1]
 
     ndata = len(S)
     hessf2 = np.zeros((ndata, 6, 6))
@@ -498,32 +554,50 @@ def hessf2(S, coeff):
 
     return(hessf2)
 
-def test_hessf2(degree):
-    powers = get_param_polyN_mini(degree)
-    ncoeff = len(powers)
-    coeff = 7 * np.ones(ncoeff + 2)
-    S = np.array([[1,0,0,0,1,1],[1,0,0,0,1,1]] )
-    print(hessf2(S, coeff))
+
 # In[208]:
 
 def f_min_squared(S, coeff, powers):
     """
-        Compute the yield function squared
-        Compute the first part of the yield function squared (polyN)
+        Compute the yield function squared.
+
         Input :
             - S : ndarray of shape (n,6) or (6,), stress components in 3D
-            - coeff : ndarray of shape (nmon + 2,), coefficients of the polyN function
-            - powers : ndarray of shape (nmon, 3), exponents
+            - coeff : ndarray of shape (nmon + 2,), coefficients of the yield function
+            - powers : ndarray of shape (nmon, 3), exponents of polyN2D
+
         Output :
-            - res : float, result of polyN_min(t_linear(S)) **(2/degree)       
+            - res : ndarray of shape (n,), result of polyN_min(t_linear(S)) **(2/degree) + kxz * sxz**2 + kyz * syz**2
     """
     return(f1(S, coeff[:-2], powers) + f2(S, coeff[-2:]))
 
 def grad_f_min_squared(S, coeff, powers):
-    return(gradf1(S, coeff[:-2], powers) + gradf2(S, coeff))
+    """
+        Compute the yield function squared gradient
+
+        Input :
+            - S : ndarray of shape (n,6) or (6,), stress components in 3D
+            - coeff : ndarray of shape (nmon + 2,), coefficients of the yield function
+            - powers : ndarray of shape (nmon, 3), exponents of polyN2D
+
+        Output :
+            - grad : ndarray of shape(n,6), gradient of polyN_min(t_linear(S)) **(2/degree) + kxz * sxz**2 + kyz * syz**2
+    """
+    return(gradf1(S, coeff[:-2], powers) + gradf2(S, coeff[-2:]))
 
 def hess_f_min_squared(S, coeff, powers):
-    return(hessf1(S, coeff[:-2], powers) + hessf2(S, coeff))
+    """
+        Compute the yield function squared hessian
+
+        Input :
+            - S : ndarray of shape (n,6) or (6,), stress components in 3D
+            - coeff : ndarray of shape (nmon + 2,), coefficients of the yield function
+            - powers : ndarray of shape (nmon, 3), exponents of polyN2D
+
+        Output :
+            - hess : ndarray of shape (n,6,6), hessian of polyN_min(t_linear(S)) **(2/degree) + kxz * sxz**2 + kyz * syz**2
+    """
+    return(hessf1(S, coeff[:-2], powers) + hessf2(S, coeff[-2:]))
 
 
 """ ---------------------------------------------PARAMETERS OPTIMIZATION-----------------------------------------------------------------------------"""
@@ -531,11 +605,15 @@ def hess_f_min_squared(S, coeff, powers):
     
 def ys_ut(thetas, coeff, powers):
     """
-        For given loading angles, returns the stress value for a uniaxial tensile test in the direction theta
+        Returns the stress value for a uniaxial tensile test in the direction theta
+        for theta in the given thetas. Here the yield function is the polyN minimalistic
+        function.
+
         Input :
             - thetas : ndarray of shape (n_theta,), angles to check
             - coeff : ndarray of shape (nmon + 2,), coefficients of the yield function
-            - powers : ndarray of shape (nmon, 3), powers of the polyN function
+            - powers : ndarray of shape (nmon, 3), powers of the polyN2D function
+
         Output :
             - ms : ndarray of shape (n_theta,)
     """
@@ -569,15 +647,20 @@ def ys_ut(thetas, coeff, powers):
             m = (s + e) / 2
             res = f(u * m) - 1
         ms.append(m)
+
     return(np.array(ms))
 
 def rval_ut(thetas, coeff_mini, powers):
     """
-        For given loading angles, returns the rvalue for a uniaxial tensile test in the direction theta
+        Returns the rvalues for a uniaxial tensile test in the direction theta
+        for theta in the given thetas. The yield function here is the polyN minimalistic 
+        function.
+
         Input :
             - thetas : ndarray of shape (n_theta,), angles to check
             - coeff_mini : ndarray of shape (nmon + 2,), coefficients of the polyN function
             - powers : ndarray of shape (nmon, 3), powers of the polyN function
+
         Output :
             - rval : ndarray of shape (n_theta,)
     """
@@ -601,110 +684,31 @@ def rval_ut(thetas, coeff_mini, powers):
 
     for i in range(n_theta):
         r_val[i] = - np.dot(grad_f_plane[i], v2[i]) / (grad_f_plane[i,0] + grad_f_plane[i,1])
+
     return(r_val)
 
-def plot_rval_ut(df, coeff, powers):
-    
-    n_thetas = 100
-    thetas_theo = np.linspace(0, np.pi/2, n_thetas)
-    r_vals_theo = rval_ut(thetas_theo, coeff[:-2], powers)
-    index_rval = np.where(df["Rval"]< 0.00001, False, True)
-    r_vals_exp = df["Rval"].iloc[index_rval].values
-    thetas_exp = df["LoadAngle"].iloc[index_rval].values
-    plt.plot(thetas_theo, r_vals_theo, c="red", label="R_val model")
-    plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
-    plt.show()
 
-def plot_yield_stresses_ut(df, coeff, powers):
+def eq_rval_ut(thetas, r_val_exp, coeff_mini, powers):
+    """
+        Returns the values concerning the r-values that need to be equal to 0 in 
+        optimization procedure.
 
-    def f(S):
-        return(f_min_squared(S, coeff, powers))
-    
-    def ys_theta(theta):
-        """
-            For a given loading angle, returns the norm of the yield stress in a ut_theta test
-            Input :
-                - theta : float (radians)
-            Output :
-                - m : float, norm of yield stress
-        """
-        u = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
-        ys = 0.1
-        lamb = 1.1
-        eps = 1e-7
-
-        while f(u * ys) < 1:
-            ys = ys * lamb
-        s = 0.1
-        e = ys
-        m = (s + e) / 2
-        res = f(u * m) - 1
-
-        while (np.abs(res) > eps):
-            if res > 0:
-                e = m
-            else:
-                s = m
-            m = (s + e) / 2
-            res = f(u * m) - 1
-
-        return(m)
-    
-    ntheta=100
-    thetas=np.linspace(0, np.pi / 2, ntheta)
-    ys_theta = np.vectorize(ys_theta)
-    ys_model = ys_theta(thetas)
-
-    df_exp = df[df["Rval"] > 0.001]
-    sigma0 = df_exp["YieldStress"].iloc[0]
-    fig, ax1 = plt.subplots()
-
-    ys_exp = df_exp["YieldStress"]
-    theta_exp = df_exp["LoadAngle"].values
-
-    plt.scatter(theta_exp, ys_exp/sigma0, color="blue", label="YS exp", marker="x")
-    plt.xlabel(r"$\theta$[rad]", size=12)
-    plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
-    plt.plot(thetas, ys_model, color="blue", label="YS model")
-    plt.show()
-
-def plot_check_exp(df, coeff, powers):
-    n_thetas = 100
-    thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
-
-    ys_model = ys_ut(thetas_theo, coeff, powers)
-    r_vals_model = rval_ut(thetas_theo, coeff[:-2], powers)
-
-    df_exp = df[df["Rval"] > 0.001]
-    sigma0 = df_exp["YieldStress"].iloc[0]
-    ys_exp = df_exp["YieldStress"]
-
-    index_rval = np.where(df["Rval"]< 0.00001, False, True)
-    thetas_exp = df["LoadAngle"].iloc[index_rval].values
-    r_vals_exp = df["Rval"].iloc[index_rval].values
-
-    plt.plot(thetas_theo, r_vals_model, c="red", label="R_val model")
-    plt.plot(thetas_theo, ys_model, color="blue", label="YS model")
-    plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
-    plt.scatter(thetas_exp, ys_exp/sigma0, color="blue", label="YS exp", marker="x")
-    plt.title("Check poly")
-    plt.xlabel(r"$\theta$[rad]", size=12)
-    plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
-    plt.legend()
-    plt.grid(1)
-
-    plt.show()
-
-def eq_rval_ut(thetas, r_val_theo, coeff_mini, powers):
+        Input :
+            - thetas : ndarray of shape (n_theta,), thetas where r_val available
+            - r_val_theo : ndarray of shape (n_theta,), r-values available
+            - coeff_mini : ndarray of shape (nmon,), coefficients of the poly2D function
+            - powers : ndarray of shape (nmon, 3), powers of polyN2D
+        
+        Output :
+            - eq : ndarray of shape (n_theta,), floats that need to be equal to 0
+    """
     n_theta = len(thetas)
     S = np.zeros((n_theta, 6))
     v2 = np.zeros((n_theta, 3))
 
     for i in range(n_theta):
         theta = thetas[i]
-        r_val = r_val_theo[i]
+        r_val = r_val_exp[i]
         S[i] = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
         v2[i] = np.array([r_val + np.square(np.sin(theta)), r_val + np.square(np.cos(theta)), - np.cos(theta) * np.sin(theta)])
 
@@ -725,41 +729,63 @@ def eq_rval_ut(thetas, r_val_theo, coeff_mini, powers):
 
     return(eq)
 
-
-
 def compute_d2f_s_a(S, coeff_mini, powers):
+    """
+        Returns the yield function derived twice with respect to s and a
+        when k1, k2 null. 
+
+        Input :
+            - S : ndarray of shape (n,6) or (6,), stress components in 3D
+            - coeff_mini : ndarray of shape (nmon,), coefficients of the polyN_mini function
+            - powers : ndarray of shape (nmon, 3), exponents
+        
+        Output :
+            - d2f_s_a : ndarray of shape (n, 3, nmon)
+    """
     X_mini = t_linear(S)[:,:3]
-    n_data = X_mini.shape[0]
-    n_coeff = len(powers)
+    n = X_mini.shape[0]
+    nmon = len(powers)
     degree = np.sum(powers[0])
     coeff_grad, powers_grad = jac_polyN_2d_param(coeff_mini, powers)
-    dP_a = np.zeros((n_data, n_coeff))
+    dP_a = np.zeros((n, nmon))
 
-    for i in range(n_coeff):
+    for i in range(nmon):
         dP_a[:,i] = np.prod(X_mini ** powers[i], axis=1)
     #dP_a checked
 
     dP_s = grad_polyN_2d(S, coeff_grad, powers_grad)[:,[0,1,3]]
     #dP_s checked
 
-    d2P_s_a = np.zeros((n_data, 3, n_coeff))
-    coeff_grad, powers_grad = jac_polyN_2d_param(np.ones(n_coeff), powers)
+    d2P_s_a = np.zeros((n, 3, nmon))
+    coeff_grad, powers_grad = jac_polyN_2d_param(np.ones(nmon), powers)
     for i in range(3):
-        for j in range(n_coeff):
+        for j in range(nmon):
             d2P_s_a[:,i,j] = coeff_grad[i, j] * np.prod(X_mini ** powers_grad[i, j], axis = 1)
 
     #d2P_s_a checked
 
-    d2f_s_a = np.zeros((n_data, 3, n_coeff))
+    d2f_s_a = np.zeros((n, 3, nmon))
     p = polyN_2d(S, coeff_mini, powers)
     k = 2/degree
     for i in range(3):
-        for j in range(n_coeff):
+        for j in range(nmon):
             d2f_s_a[:,i,j] = k * np.float_power(p, k - 2) * (d2P_s_a[:,i,j] * p + (k - 1) * dP_a[:,j] * dP_s[:, i])
 
     return(d2f_s_a)
 
 def grad_rval_ut(thetas, r_vals_exp, coeff_mini, powers):
+    """
+        Returns the gradient of r-val equations
+
+        Input :
+            - thetas : ndarray of shape (n_theta,), thetas where r_val available
+            - r_val_exp : ndarray of shape (n_theta,), r-values available
+            - coeff_mini : ndarray of shape (nmon,), coefficients of the poly2D function
+            - powers : ndarray of shape (nmon, 3), powers of polyN2D
+        
+        Output :
+            - eq : ndarray of shape (n_theta,), floats that need to be equal to 0
+    """
     n_theta = len(thetas)
     n_coeff = len(powers)
 
@@ -783,6 +809,21 @@ def grad_rval_ut(thetas, r_vals_exp, coeff_mini, powers):
 
 
 def points(Nh, Mh, Nv, Mv):
+    """
+        Returns a set of points on the unity sphere and its derivative according to omega and its second derivative
+        with repect to omega (Ref : Article Soare 2007)
+
+        Input :
+            - Nh : int, Number of horizontal circles
+            - Mh : int, Number of points on one horizontal circle
+            - Nv : int, Number of vertical circles
+            - Mv : int, Number of points on one vertical circle
+
+        Output :
+            - X : ndarray of shape (Nv * Mv + Nh * Mh, 3), points
+            - V : ndarray of shape (Nv * Mv + Nh * Mh, 3), points derived with respect to omega
+            - A : ndarray of shape (Nv * Mv + Nh * Mh, 3), points derived twice with respect to omega
+    """
 
     X_v = np.zeros((Nv * Mv, 3))
     X_h = np.zeros((Nh * Mh, 3))
@@ -819,24 +860,21 @@ def points(Nh, Mh, Nv, Mv):
 
     return(X, V, A)
 
-def test_points(Nh, Mh, Nv, Mv):
-    X, V, A = points(Nh, Mh, Nv, Mv)
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    x, y, z = X[:,0], X[:,1], X[:,2]
-    # Plot the points
-    ax.scatter(x, y, z, c='b', marker='o')
-
-    # Set labels
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    plt.show()
 
 
 def constraint_pos(X, powers):
+    """
+        Returns the positivity constraint.
 
+        Input :
+            - X : ndarray of shape (m, 3), set of points where the yield function needs to
+            be positive
+            - powers, ndarray of shape (n, 3), powers of polyN2d
+
+        Output :
+            - cons : scipy.LinearConstraint
+
+    """
     n = len(powers)
     m = len(X)
 
@@ -855,14 +893,34 @@ def constraint_pos(X, powers):
     return(cons)
 
 def grad_P_a(x, powers):
-    n_coeff = len(powers)
-    grad = np.zeros(n_coeff)
+    """
+        Returns polyN2D derived with respect to a.
 
-    for i in range(n_coeff):
+        Input :
+            - x : ndarray of shape (3,), point where computed
+            - powers : ndarray of shape (nmon, 3), powers of polyN2D
+        
+        Output :
+            - grad : ndarray of shape (nmon,)
+    """
+    nmon = len(powers)
+    grad = np.zeros(nmon)
+
+    for i in range(nmon):
         grad[i] = np.prod(x ** powers[i])
     return(grad)
 
 def grad_dP_a(x, powers):
+    """
+        Returns grad(polyN2D) derived with respect to a.
+
+        Input :
+            - x : ndarray of shape (3,), point where computed
+            - powers : ndarray of shape (nmon, 3), powers of polyN2D
+        
+        Output :
+            - grad : ndarray of shape (3, nmon)
+    """
     n_coeff = len(powers)
     coeff_grad, powers_grad = jac_polyN_2d_param(np.ones(n_coeff), powers)
     grad = np.zeros((3, n_coeff))
@@ -872,6 +930,16 @@ def grad_dP_a(x, powers):
     return(grad)
 
 def grad_d2P_a(x, powers):
+    """
+        Returns hess(polyN2D) derived with respect to a.
+
+        Input :
+            - x : ndarray of shape (3,), point where computed
+            - powers : ndarray of shape (nmon, 3), powers of polyN2D
+        
+        Output :
+            - hess : ndarray of shape (3, 3, nmon)
+    """
     n_coeff = len(powers)
     coeff_grad, powers_grad = jac_polyN_2d_param(np.ones(n_coeff), powers)
     coeff_hess, powers_hess = hessian_polyN_2d_param(coeff_grad, powers_grad)
@@ -883,7 +951,20 @@ def grad_d2P_a(x, powers):
     return(grad)
 
 def constraint_convex(x, v, a, powers):
-    
+    """
+        Returns convexity constraint for a point x. (Ref : article Soare 2007)
+
+        Input :
+            - x : ndarray of shape (3,), point where computed
+            - v : ndarray of shape (3,), point derived once with respect to omega where computed
+            - a : ndarray of shape (3,), point derived twice with respect to omega where computed
+            - powers : ndarray of shape (nmon, 3), powers of polyN2D
+        
+        Output :
+            - cons : func (ndarray of shape (nmon - 1,) -> float)
+            - grad_cons : func (ndarray of shape (nmon - 1,) -> float)
+    """
+
     def cons(coeff):
         b = np.ones(len(coeff) + 1)
         b[1:] = coeff
@@ -930,40 +1011,29 @@ def constraint_convex(x, v, a, powers):
         grad[:n_coeff] = 2 * n * n * dPda * P - 2 * (n-1) * ddPda * dP + n * dPda * d2P + n * P * dd2Pda
         return(grad[1:])
 
-    def hess_cons(coeff, s):
-        b = np.ones(len(coeff) + 1)
-        b[1:] = coeff
-        n_coeff = len(powers)
-        n = np.sum(powers[0])       
-
-        dgrad_Pda = grad_dP_a(x, powers)
-        dhess_Pda = grad_d2P_a(x, powers)
-
-        dPda = grad_P_a(x, powers)
-        ddPda = np.matmul(dgrad_Pda.T, v)
-        dd2Pda = np.zeros(n_coeff)
-
-        for i in range(n_coeff):
-            dd2Pda[i] = np.dot(np.matmul(dhess_Pda[:,:,i], v), v) + np.dot(dgrad_Pda[:,i], a)
-        
-        hess = np.zeros((n_coeff + 2, n_coeff + 2))
-        hess[:n_coeff, :n_coeff] = 2 * n * n * np.outer(dPda, dPda) - 2 * (n-1) * np.outer(ddPda, ddPda) + 2 * n * np.outer(dPda, dd2Pda)
-        return(hess[1:, 1:])
-
-    return cons, grad_cons, hess_cons
+    return cons, grad_cons
 
 def test_cons():
     X, V, A = points(10, 10, 10, 10)
     powers = get_param_polyN_mini(4)
     coeff = np.zeros(10)
     for x, v, a in zip(X, V, A):
-        cons, grad_cons, hess_cons = constraint_convex(x, v, a, powers)
+        cons, grad_cons = constraint_convex(x, v, a, powers)
         print(cons(coeff))
         print(grad_cons(coeff))
-        print(hess_cons(coeff))
 
 def remove_linear_part(df, type_test):
+    """
+        Remove the elastic part from a experimental test (NT6 of SH only) to only have
+        elastic part.
 
+        Input :
+            - df : dataFrame, test csv
+            - type_test : string in ["NT6", "SH"]
+
+        Output :
+            - df_trimmed : dataFrame, test csv with elastic part removed
+    """
     if type_test == "NT6":
         col_x = "Displacement[mm]"
     elif type_test == "SH":
@@ -1051,7 +1121,7 @@ def get_yield_stress_NT6(sigma0, material):
             - ys_ratio_nt6 : dict, {"ori": ys_ratio}, yield stress ratio for the given orientation
     """
     mat_tests = analyze_exp_data(material)
-    results_exp_dir = file_dir + sep + "results_exp" + sep + material
+    results_exp_dir = polyN_dir + sep + "results_exp" + sep + material
     ys_ratio_nt6 = {}
 
     for type_test in mat_tests:
@@ -1096,7 +1166,7 @@ def get_yield_stress_SH(sigma0, material):
             - ys_ratio_sh : dict, {"ori": ys_ratio}, yield stress ratio for the given orientation
     """
     mat_tests = analyze_exp_data(material)
-    results_exp_dir = file_dir + sep + "results_exp" + sep + material
+    results_exp_dir = polyN_dir + sep + "results_exp" + sep + material
     ys_ratio_SH = {}
 
     for type_test in mat_tests:
@@ -1128,10 +1198,6 @@ def get_yield_stress_SH(sigma0, material):
                     ys_ratio_SH[ori] = ys_ratio
 
     return(ys_ratio_SH)
-
-
-
-
 
 def get_dir_pst(coeff, powers):
     """
@@ -1263,18 +1329,74 @@ def add_sh(old_df, ys_ratio_sh):
         new_df.loc[len(new_df)] = row
     return(new_df)
 
-def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_vir, old_coeff):
+
+
+def leading_principal_minors(lmatrix):
+    """
+        Returns the leading principal minors of a matrix or a list of matrixes
+        Input :
+            - lmatrix : ndarray of shape (k, n, n) or (n, n)
+        Output :
+            - lead_minors : ndarray of shape (k, n)
+    """
+    if lmatrix.ndim == 2 :
+        lmatrix = np.expand_dims(lmatrix, axis = 0)
+    k = lmatrix.shape[0]
+    n = lmatrix.shape[1]
+
+    lead_minors = np.zeros((k, n))
+    
+    for i in range(n):
+        lead_minors[:, i] = np.linalg.det(lmatrix[:, :i, :i])
+
+    return lead_minors
+
+def check_convexity(coeff, powers):
+    """
+        Returns True if a polyN minimalistic yield function is convex or not
+
+        Input :
+            - coeff : ndarray of shape (nmon + 2,), coefficients or the yield function
+            - powers : ndarray of shape (nmon, 3), powers of polyN2D
+    """
+    coeff_mini = coeff[:-2]
+    k1 = coeff[-2]
+    k2 = coeff[-1]
+
+    Nh = 100
+    Mh = 30
+    Nv = 100
+    Mv = 30
+    eps = 10e-7
+    X,_,_ = points(Nh, Mh, Nv, Mv)
+
+    coeff_grad, powers_grad = jac_polyN_2d_param(coeff_mini, powers)
+    coeff_hess, powers_hess = hessian_polyN_2d_param(coeff_grad, powers_grad)
+
+    hess = hessian_polyN_2d_opti(X, coeff_hess, powers_hess)
+    L = leading_principal_minors(hess)
+    m = min(L.flatten())
+
+    if m > - eps and k1 > 0 and k2 > 0:
+        return(True)
+    
+    return(False)
+
+
+def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_vir, init_guess):
     """
         Returns the optimized coefficients of the yield surface minimaslistic on experimental data (UTs) and virtual data from a protomodel.
 
         Input :
             - df : pd.Dataframe, must contain columns ["d11", "d22", "s12", "s13", "s23"] of yield stresses points. And if available ["Rval"] with ["LoadAngle"].
             - degree : integer, degree of polyN
-            - weight_exp : float, weight for the experimental data
-            - weight_rval : float, weight for the rvalue data
+            - weight_ut : float, weight for experimental stress data
+            - weight_e2 : float, proportion exp_e2 / exp_ut
+            - weight_vir : float, proportion exp_vir / exp_ut
+            - init_guess : ndarray of shape (nmon,), initial guess for optimization
 
         Output :
-            - coeff : ndarray of shape (nmon), coeff of yield surface model
+            - coeff : ndarray of shape (nmon,), coeff of yield surface model
     """
 
     data = df[["s11", "s22", "s33", "s12", "s13", "s23"]].values
@@ -1381,24 +1503,24 @@ def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_vir, old_coeff
     constraints.append(cons_pos)
 
     for x,v,a in zip(X, V, A):
-        cons, grad_cons, hess_cons = constraint_convex(x, v, a, powers)
+        cons, grad_cons = constraint_convex(x, v, a, powers)
         cons_convex = scipy.optimize.NonlinearConstraint(cons, lb=0, ub=np.inf, jac=grad_cons, keep_feasible=True)
         constraints.append(cons_convex)
 
     print(f"Number of coefficients for degree {degree}:", nmon + 2)
 
-    b = np.zeros(len(old_coeff))
+    b = np.zeros(len(init_guess))
     b[-2] = 3
     b[-1] = 3
 
     res = 0
     for i in range(degree // 2, -1, -1):
         n = 2 * i + 1
-        val = np.max(np.abs(old_coeff[res:res + n]))
+        val = np.max(np.abs(init_guess[res:res + n]))
         b[res:res + n] = 5 * val
         res = res + n
 
-    a0 = old_coeff[1:]
+    a0 = init_guess[1:]
     b = b[1:]
     I = np.eye(len(a0))
     cons_hypercube = scipy.optimize.LinearConstraint(I, lb = a0 - b, ub= a0 + b, keep_feasible=True)
@@ -1407,39 +1529,39 @@ def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_vir, old_coeff
     options = {"verbose" : 3, "maxiter" : 1000}
 
     opt = scipy.optimize.minimize(J, x0=a0, jac=grad_J, constraints=constraints, tol=10e-12, options=options)
+
     while (not opt.success and opt.nit == options['maxiter']):
         new_a0 = a0 + 0.1 * np.random.uniform(low= - np.ones(len(a0)), high=np.ones(len(a0)))
         try :
             opt = scipy.optimize.minimize(J, x0=new_a0, jac=grad_J, method="trust-constr", constraints=constraints, options=options)
         except ValueError:
             pass
+
     coeff_temp = opt.x
     coeff = np.ones(len(coeff_temp) + 1)
     coeff[1:] = coeff_temp
 
     return(coeff)
 
-def optiCoeff_pflow_mini(law, coeff_polyN_mini, material, powers):
+def optiCoeff_pflow_mini(law, coeff, material, powers):
     """
         Returns the a, b, c coefficients of the hardening law defined by the user and the young modulus of the material.
 
         Input :
             - law : string, law in ["swift", "voce"]
-            - coeff_polyN_mini : ndarray of shape (nmon + 2,), yield surface minimalistic coefficients
+            - coeff : ndarray of shape (nmon + 2,), yield surface minimalistic coefficients
             - material : string
             - powers : ndarray of shape (nmon, 3), powers[i,j] power of the variable j in the monomial j
 
         Output :
-            - a : float
-            - b : float
-            - c : float
+            - coeff_law : ndarray of shape (3,) or (7,), hardening law coefficients
             - ymod : float, Young modulus
     """
     
     def f(S):
-        return np.power(f_min_squared(S, coeff_polyN_mini, powers), 1/2)
+        return np.power(f_min_squared(S, coeff, powers), 1/2)
 
-    foldername = file_dir + sep + "calibration_data" + sep + material
+    foldername = polyN_dir + sep + "calibration_data" + sep + material
     filename_out = f"data_plasticlaw_{material}.csv"
     filepath = foldername + sep + filename_out
 
@@ -1455,51 +1577,30 @@ def optiCoeff_pflow_mini(law, coeff_polyN_mini, material, powers):
     sig0 = f(S[0])[0]
     if law == "swift" :
 
-        if(0):
+        #Function with a smooth gradient and enforcing a = sig0
+        a = sig0
 
-            def J(x):
-                a, b, c = x
-                return np.sum(np.square(a * np.float_power((b + ep),c) - f(S)))
-            
-            def Grad_J(x):
-                a, b, c = x
-                rho = a * np.power((ep + b), c) - f(S)
-                da = 2 * np.sum(np.float_power((ep + b), c) * rho)
-                db = 2 * np.sum(c * a * np.float_power((ep + b), (c - 1)) * rho)
-                dc = 2 * np.sum(a * np.log(ep + b) * np.float_power((ep + b), c) * rho)
-                return(np.array([da, db, dc]))
-
-            a0, b0, c0 = 1200, 0.4, 0.2
-            x0 = np.array([a0, b0, c0])
-            opt = scipy.optimize.minimize(J, x0, method="SLSQP", jac=Grad_J)
-
-            a, b, c = opt.x
-
-        if(1):
-            #Function with a smooth gradient and enforcing a = sig0
-            a = sig0
-
-            def J(x):
-                b, c = x
-                return np.sum(np.square(np.float_power((1 + b * ep),c) - f(S)/a))
-            
-            def Grad_J(x):
-                b, c = x
-                rho = np.float_power((1 + b * ep), c) - f(S)/a
-                db = 2 * np.sum(c * ep * np.float_power((1 + b * ep), c - 1) * rho)
-                dc = 2 * np.sum(np.log(1 + ep * b) * np.float_power((1 + ep * b), c) * rho)
-                return(np.array([db, dc]))
+        def J(x):
+            b, c = x
+            return np.sum(np.square(np.float_power((1 + b * ep),c) - f(S)/a))
         
-            b0, c0 = 1, 1
-            x0 = np.array([b0, c0])
-            print(a,b0,c0)
-            opt = scipy.optimize.minimize(J, x0, method="SLSQP", jac=Grad_J)
+        def Grad_J(x):
+            b, c = x
+            rho = np.float_power((1 + b * ep), c) - f(S)/a
+            db = 2 * np.sum(c * ep * np.float_power((1 + b * ep), c - 1) * rho)
+            dc = 2 * np.sum(np.log(1 + ep * b) * np.float_power((1 + ep * b), c) * rho)
+            return(np.array([db, dc]))
+    
+        b0, c0 = 1, 1
+        x0 = np.array([b0, c0])
+        print(a,b0,c0)
+        opt = scipy.optimize.minimize(J, x0, method="SLSQP", jac=Grad_J)
 
-            b, c = opt.x
-            a, b, c = a / np.float_power(1/b,c), 1/b, c
-            
-            print(a,b,c)
-            return(np.array([a, b, c]), ymod)
+        b, c = opt.x
+        a, b, c = a / np.float_power(1/b,c), 1/b, c
+        
+        print(a,b,c)
+        return(np.array([a, b, c]), ymod)
     
     if law == "voce":
 
@@ -1526,8 +1627,9 @@ def optiCoeff_pflow_mini(law, coeff_polyN_mini, material, powers):
         return(np.array([a, b, c]), ymod)
     
     if law == "swiftvoce":
+
         print("Looking for swiftvoce coeff in '_YLD2000_pre.csv'")
-        filepath = file_dir + sep + "results_exp" + sep + material + sep + "_YLD2000_pre.csv"
+        filepath = polyN_dir + sep + "results_exp" + sep + material + sep + "_YLD2000_pre.csv"
         try :
             df_law = pd.read_csv(filepath)
             coeff_law = df_law.loc[5].values[:7]
@@ -1535,54 +1637,34 @@ def optiCoeff_pflow_mini(law, coeff_polyN_mini, material, powers):
         except :
             print("No file named '_YLD2000_pre.csv' containing the coefficients of swiftvoce")
     
-    
 
-def write_coeff_abq_mini(coeff, a, b, c, ymod, enu, nmon, protomodel, degree, material, law, density, powers, var_optim=0, n_try=0):
+def write_coeff_abq_mini(coeff, coeff_law, ymod, enu, protomodel, degree, material, law, density, powers, p=0, m=0):
     """
-        TODODODODODODODO
+        Write the user material file in running directory.
+
+        Input :
+            - coeff : ndarray of shape (nmon + 2,), yield surface minimalistic coefficients
+            - coeff_law :
+            - ymod : float, Young modulus
+            - enu : float, Poisson ratio
+            - protomodel : string
+            - degree : int
+            - material : string
+            - law : string
+            - density : float
+            - powers : ndarray of shape (nmon, 3), powers[i,j] power of the variable j in the monomial j
+            - p : list
+            - m : int, to save file
     
     """
-    if var_optim==0 and n_try==0:
+    nmon = len(powers)
+
+    if str(p)=="0" and m==0:
         filename = "{}_abq_deg{}mini_{}_{}.inp".format(material, degree, law, protomodel)
     else:
-        filename = "{}_abq_deg{}mini_{}_{}_{}_{}.inp".format(material, degree, law, protomodel, var_optim, n_try)
-    foldername = file_dir + sep + "running"
-    filepath = foldername + sep + filename
-    with open(filepath, "w") as file:
-        file.write("*USER MATERIAL, constants={}\n".format(7 + 2 + nmon))
-        file.write("{}, {}, {}, {}, {}, {}, {}, ".format(ymod, enu, a, b, c, degree, nmon + 2))
-        n0 = 0
-        while n0 < nmon + 2:
-            for k in range(0, degree + 1):
-                for j in range(0, degree + 1 - k):
-                    i = degree - k - j
-                    if n0 < nmon:
-                        i0, j0, k0 = powers[n0]
-                        if (i==i0) and (j==j0) and (k==k0):
-                            file.write("{}, ".format(coeff[n0]))
-                            n0 = n0 + 1
-                            if (n0 + 7) % 8 == 0:
-                                file.write("\n")
-                    elif n0 < nmon + 2:
-                        file.write("{}, ".format(coeff[n0]))
-                        n0 = n0 + 1
-                        if (n0 + 7) % 8 == 0:
-                            file.write("\n")
-                            
-        file.write("\n")
-        file.write("*DENSITY\n")
-        file.write("{}".format(density))
+        filename = "{}_abq_deg{}mini_{}_{}_{}_{}.inp".format(material, degree, law, protomodel, p, m)
 
-def write_coeff_abq_mini2(coeff, coeff_law, ymod, enu, nmon, protomodel, degree, material, law, density, powers, var_optim=0, n_try=0):
-    """
-        TODODODODODODODO
-    
-    """
-    if var_optim==0 and n_try==0:
-        filename = "{}_abq_deg{}mini_{}_{}.inp".format(material, degree, law, protomodel)
-    else:
-        filename = "{}_abq_deg{}mini_{}_{}_{}_{}.inp".format(material, degree, law, protomodel, var_optim, n_try)
-    foldername = file_dir + sep + "running"
+    foldername = polyN_dir + sep + "running"
     filepath = foldername + sep + filename
 
     if law == "swiftvoce":
@@ -1602,11 +1684,13 @@ def write_coeff_abq_mini2(coeff, coeff_law, ymod, enu, nmon, protomodel, degree,
 
     with open(filepath, "w") as file:
         file.write("*USER MATERIAL, constants={}\n".format(a0 + 2 + nmon))
+
         if law == "swiftvoce":
             file.write("{}, {}, {}, {}, {}, {}, {}, {}, \n".format(ymod, enu, a, b, c, d, e, f))
             file.write("{}, {}, {}, ".format(alpha, degree, nmon + 2))
         else:
             file.write("{}, {}, {}, {}, {}, {}, {}, ".format(ymod, enu, a, b, c, degree, nmon + 2))
+
         n0 = 0
         while n0 < nmon + 2:
             for k in range(0, degree + 1):
@@ -1631,6 +1715,34 @@ def write_coeff_abq_mini2(coeff, coeff_law, ymod, enu, nmon, protomodel, degree,
 
 """-----------------------------------------------TESTS--------------------------------------------------------"""
 
+def test_gradf1(degree):
+    powers = get_param_polyN_mini(degree)
+    ncoeff = len(powers)
+    coeff = np.ones(ncoeff)
+    S = np.array([[1,0,0,0,0,0], [1,0,0,0,0,0]])
+    print(gradf1(S, coeff, powers))
+
+def test_hessf1(degree):
+    powers = get_param_polyN_mini(degree)
+    ncoeff = len(powers)
+    coeff = np.ones(ncoeff)
+    S = np.array([[1,0,0,0,0,0], [1,0,0,0,0,0]])
+    print(hessf1(S, coeff, powers))
+
+def test_gradf2(degree):
+    powers = get_param_polyN_mini(degree)
+    ncoeff = len(powers)
+    coeff = 7 * np.ones(2)
+    S = np.array([[1,0,0,0,1,1],[1,0,0,0,1,1]] )
+    print(gradf2(S, coeff))
+
+def test_hessf2(degree):
+    powers = get_param_polyN_mini(degree)
+    ncoeff = len(powers)
+    coeff = 7 * np.ones(2)
+    S = np.array([[1,0,0,0,1,1],[1,0,0,0,1,1]] )
+    print(hessf2(S, coeff))
+
 def test_sh():
     p = read_param()
     material = p["material"]
@@ -1647,7 +1759,7 @@ def test_remove():
     material = p["material"]
 
     mat_tests = analyze_exp_data(material)
-    results_exp_dir = file_dir + sep + "results_exp" + sep + material
+    results_exp_dir = polyN_dir + sep + "results_exp" + sep + material
 
     for type_test in mat_tests:
 
@@ -1687,7 +1799,7 @@ def test_slope_study():
     material = p["material"]
 
     mat_tests = analyze_exp_data(material)
-    results_exp_dir = file_dir + sep + "results_exp" + sep + material
+    results_exp_dir = polyN_dir + sep + "results_exp" + sep + material
 
     for type_test in mat_tests:
 
@@ -1716,8 +1828,25 @@ def test_slope_study():
                         df_NT6 = pd.read_csv(filepath)
                         slope_study(df_NT6, type_test, material)
 
+
+def test_points(Nh, Mh, Nv, Mv):
+    X, V, A = points(Nh, Mh, Nv, Mv)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    x, y, z = X[:,0], X[:,1], X[:,2]
+    # Plot the points
+    ax.scatter(x, y, z, c='b', marker='o')
+
+    # Set labels
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    plt.show() 
+
 def firstopti_mini():
     p = read_param()
+
     material = p["material"]
     gseed = int(p["gseed"])
     enu = float(p["enu"])
@@ -1737,10 +1866,8 @@ def firstopti_mini():
 
     opti = int(p["opti"])
     loadcoeff = int(p["loadcoeff"])
-    adapt = int(p["adapt"])
 
     export_coeff_abq = int(p["export_coeff_abq"])
-    export_coeff_user = int(p["export_coeff_user"])
     savecoeff = int(p["savecoeff"])
 
     print(material)
@@ -1789,21 +1916,20 @@ def firstopti_mini():
             coeff = optiCoeff_polyN_mini(new_df, degree,  weight_ut, weight_e2, weight_vir, C)
 
     elif loadcoeff:
-        coeff = np.load(file_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy")
+        coeff = np.load(polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy")
     else :
         coeff = C
 
     coeff_law, ymod = optiCoeff_pflow_mini(law, coeff, material, powers)
 
     if savecoeff:
-        np.save(file_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy", coeff)
-        np.save(file_dir + sep + material + f"_{law}_mini_coeff.npy", np.append(coeff_law, ymod))
+        np.save(polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy", coeff)
+        np.save(polyN_dir + sep + material + f"_{law}_mini_coeff.npy", np.append(coeff_law, ymod))
 
     if export_coeff_abq:
         print(nmon, coeff)
-        write_coeff_abq_mini2(coeff, coeff_law, ymod, enu, nmon, protomodel, degree, material, law, density, powers, var_optim=0, n_try=0)
+        write_coeff_abq_mini(coeff, coeff_law, ymod, enu, protomodel, degree, material, law, density, powers, p=0, m=0)
 
 if __name__ == "__main__":
-    #test_remove()
     firstopti_mini() 
     pass
