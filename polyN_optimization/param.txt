@@ -21,7 +21,7 @@ weight_vir = 0.001
 
 n_opti = 3
 input_type = UMAT
-var_optim = 1,2
+var_optim = 1
 
 opti = 0
 loadcoeff = 1

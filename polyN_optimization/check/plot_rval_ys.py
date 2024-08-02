@@ -1,6 +1,8 @@
+from email.utils import collapse_rfc2231_value
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import sys
 import os
 
@@ -10,8 +12,10 @@ sep = os.sep
 sys.path.append(polyN_dir)
 
 from optimize_polyN import get_param_polyN, polyN, jac_polyN_param, grad_polyN, readData, read_param, mises
-from optimize_polyN_mini import get_param_polyN_mini, f_min_squared, jac_polyN_2d_param, check_convexity
+from optimize_polyN_mini import get_param_polyN_mini, f_min_squared, jac_polyN_2d_param
 from optimize_polyN_mini import grad_polyN_2d, polyN_2d, get_dir_pst, get_yield_stress_SH, get_yield_stress_NT6, add_sh, add_nt6
+from optimize_Hill48 import hill48, grad_hill48, load_coeff_hill48
+from optimize_YLD2000 import yld2000, grad_yld2000, load_coeff_yld2000
 
 def plot_check(df, coeff_polyN, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel):
     """
@@ -247,6 +251,7 @@ def rval_ut_mini(thetas, coeff_mini, powers):
     S = np.zeros((n_theta, 6))
     v2 = np.zeros((n_theta, 3))
     r_val = np.zeros(n_theta)
+
     for i in range(n_theta):
         theta = thetas[i]
         S[i] = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), 0, np.cos(theta) * np.sin(theta), 0, 0])
@@ -445,7 +450,7 @@ def plot_planestress_mini(material, coeff, powers, weight_ut, weight_e2, weight_
     filepath = foldername_out + sep + filename
     plt.savefig(filepath)
 
-def check_pst_points(df, material, coeff, powers):
+def check_pst_points_mini(df, material, coeff, powers):
     sigma0 = df["YieldStress"].iloc[0]
     ys_ratio_nt6 = get_yield_stress_NT6(sigma0, material)
     dir_pst = get_dir_pst(coeff, powers)
@@ -508,7 +513,7 @@ def check_pst_points(df, material, coeff, powers):
     plt.yticks(fontsize=12)
     plt.show()
 
-def check_sh_points(df, material, coeff, powers):
+def check_sh_points_mini(df, material, coeff, powers):
     sigma0 = df["YieldStress"].iloc[0]
     ys_ratio_sh = get_yield_stress_SH(sigma0, material)
     new_df = add_sh(df, ys_ratio_sh)
@@ -552,7 +557,7 @@ def check_sh_points(df, material, coeff, powers):
     plt.yticks(fontsize=12)
     plt.show()
 
-def check_all_pt(df, material, coeff, powers, bbox=(-1.5,1.5)):
+def check_3D_mini(df, material, coeff, powers, bbox=(-1.5,1.5)):
 
     xmin, xmax, ymin, ymax, zmin, zmax = bbox*3
     fig, ax = plt.subplots(nrows = 1, ncols = 1, subplot_kw={"projection":"3d"})
@@ -613,7 +618,331 @@ def check_all_pt(df, material, coeff, powers, bbox=(-1.5,1.5)):
     
     plt.show()
 
+def ys_ut_hill48(thetas, coeff):
+    """
+        For given loading angles, returns the stress value for a uniaxial tensile test in the direction theta
+        Input :
+            - thetas : ndarray of shape (n_theta,), angles to check
+            - coeff : ndarray of shape (nmon + 2,), coefficients of YLD2000
+        Output :
+            - cs : ndarray of shape (n_theta,)
+    """
+    n_theta = len(thetas)
+    us = np.zeros((n_theta, 3))
+    cs = []
+    for i in range(n_theta):
+        theta = thetas[i]
+        us[i] = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), np.cos(theta) * np.sin(theta)])
+    
+    def f(S):
+        return(hill48(S, coeff))
 
+    for u in us:
+        ys = 0.1
+        lamb = 1.1
+        eps = 1e-7
+        
+        while f(u * ys) < 1:
+            ys = ys * lamb
+        s = 0.1
+        e = ys
+        c = (s + e) / 2
+        res = f(u * c) - 1
+
+        while (np.abs(res) > eps):
+            if res > 0:
+                e = c
+            else:
+                s = c
+            c = (s + e) / 2
+            res = f(u * c) - 1
+        cs.append(c)
+    return(np.array(cs))
+
+def rval_ut_hill48(thetas, coeff_hill):
+    """
+        For given loading angles, returns the rvalue for a uniaxial tensile test in the direction theta
+        Input :
+            - thetas : ndarray of shape (n_theta,), angles to check
+            - coeff_hill : ndarray of shape (nmon + 2,), coefficients of the Hill48 function
+        Output :
+            - rval : ndarray of shape (n_theta,)
+    """
+    n_theta = len(thetas)
+    S = np.zeros((n_theta, 3))
+    v2 = np.zeros((n_theta, 3))
+    r_val = np.zeros(n_theta)
+    
+    for i in range(n_theta):
+        theta = thetas[i]
+        S[i] = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), np.cos(theta) * np.sin(theta)])
+        v2[i] = np.array([np.square(np.sin(theta)), np.square(np.cos(theta)), - np.cos(theta) * np.sin(theta)])
+
+    grad_f_plane = grad_hill48(S, coeff_hill)
+
+    for i in range(n_theta):
+        r_val[i] = - np.dot(grad_f_plane[i], v2[i]) / (grad_f_plane[i,0] + grad_f_plane[i,1])
+
+    return(r_val)
+
+def plot_s_hill48(df, coeff, material):
+    """
+        Plot the rvalues and ys for UTs for polyN mini
+        Input :
+            - df : Dataframe, must contains ["YieldStress"], ["Rval"] and ["LoadAngle"] for UTs
+            - coeff : ndarray of shape (nmon + 2,), coeff of the yld2000
+            - material : string
+            - m : degree
+    """
+    n_thetas = 100
+    thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
+
+    ys_model = ys_ut_hill48(thetas_theo, coeff)
+    #r_vals_model = rval_ut_mini(thetas_theo, coeff[:-2], powers)
+
+    df_exp = df[df["Rval"] > 0.001]
+    sigma0 = df_exp["YieldStress"].iloc[0]
+    ys_exp = df_exp["YieldStress"]
+
+    index_rval = np.where(df["Rval"]< 0.00001, False, True)
+    thetas_exp = df["LoadAngle"].iloc[index_rval].values
+    #r_vals_exp = df["Rval"].iloc[index_rval].values
+
+    #plt.plot(thetas_theo, r_vals_model, c="red", label="R_val model")
+    plt.plot(thetas_theo, ys_model, color="blue", label="YS model")
+    #plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
+    plt.scatter(thetas_exp, ys_exp/sigma0, color="blue", label="YS exp", marker="x")
+    plt.title("Check poly")
+    plt.xlabel(r"$\theta$[rad]", size=12)
+    plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend()
+    plt.grid(1)
+    plt.title(f"YLD2000 model on {material} : Yield Stresses and R-values from UT tests", size=12)
+    plt.show()
+
+def ys_ut_yld2000(thetas, coeff, m):
+    """
+        For given loading angles, returns the stress value for a uniaxial tensile test in the direction theta
+        Input :
+            - thetas : ndarray of shape (n_theta,), angles to check
+            - coeff : ndarray of shape (nmon + 2,), coefficients of YLD2000
+            - m : degree
+        Output :
+            - cs : ndarray of shape (n_theta,)
+    """
+    n_theta = len(thetas)
+    us = np.zeros((n_theta, 3))
+    cs = []
+    for i in range(n_theta):
+        theta = thetas[i]
+        us[i] = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), np.cos(theta) * np.sin(theta)])
+    
+    def f(S):
+        return(yld2000(S, coeff, m))
+
+    for u in us:
+        ys = 0.1
+        lamb = 1.1
+        eps = 1e-7
+        
+        while f(u * ys) < 1:
+            ys = ys * lamb
+        s = 0.1
+        e = ys
+        c = (s + e) / 2
+        res = f(u * c) - 1
+
+        while (np.abs(res) > eps):
+            if res > 0:
+                e = c
+            else:
+                s = c
+            c = (s + e) / 2
+            res = f(u * c) - 1
+        cs.append(c)
+    return(np.array(cs))
+
+def rval_ut_yld2000(thetas, coeff_yld2000, m):
+    """
+        For given loading angles, returns the rvalue for a uniaxial tensile test in the direction theta
+        Input :
+            - thetas : ndarray of shape (n_theta,), angles to check
+            - coeff_yld2000 : ndarray of shape (nmon + 2,), coefficients of the yld2000 function
+        Output :
+            - rval : ndarray of shape (n_theta,)
+    """
+    n_theta = len(thetas)
+    S = np.zeros((n_theta, 3))
+    v2 = np.zeros((n_theta, 3))
+    r_val = np.zeros(n_theta)
+    
+    for i in range(n_theta):
+        theta = thetas[i]
+        S[i] = np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), np.cos(theta) * np.sin(theta)])
+        v2[i] = np.array([np.square(np.sin(theta)), np.square(np.cos(theta)), - np.cos(theta) * np.sin(theta)])
+
+    grad_f_plane = grad_yld2000(S, coeff_yld2000, m)
+
+    for i in range(n_theta):
+        r_val[i] = - np.dot(grad_f_plane[i], v2[i]) / (grad_f_plane[i,0] + grad_f_plane[i,1])
+
+    return(r_val)
+
+def plot_s_yld2000(df, coeff, material, m):
+    """
+        Plot the rvalues and ys for UTs for polyN mini
+        Input :
+            - df : Dataframe, must contains ["YieldStress"], ["Rval"] and ["LoadAngle"] for UTs
+            - coeff : ndarray of shape (nmon + 2,), coeff of the yld2000
+            - material : string
+            - m : degree
+    """
+    n_thetas = 100
+    thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
+
+    ys_model = ys_ut_yld2000(thetas_theo, coeff, m)
+    #r_vals_model = rval_ut_mini(thetas_theo, coeff[:-2], powers)
+
+    df_exp = df[df["Rval"] > 0.001]
+    sigma0 = df_exp["YieldStress"].iloc[0]
+    ys_exp = df_exp["YieldStress"]
+
+    index_rval = np.where(df["Rval"]< 0.00001, False, True)
+    thetas_exp = df["LoadAngle"].iloc[index_rval].values
+    #r_vals_exp = df["Rval"].iloc[index_rval].values
+
+    #plt.plot(thetas_theo, r_vals_model, c="red", label="R_val model")
+    plt.plot(thetas_theo, ys_model, color="blue", label="YS model")
+    #plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
+    plt.scatter(thetas_exp, ys_exp/sigma0, color="blue", label="YS exp", marker="x")
+    plt.title("Check poly")
+    plt.xlabel(r"$\theta$[rad]", size=12)
+    plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend()
+    plt.grid(1)
+    plt.title(f"YLD2000 model on {material} : Yield Stresses and R-values from UT tests", size=12)
+    plt.show()
+
+def plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_polyN, m, powers, plot_hill, plot_yld, plot_mini):
+    degree = np.sum(powers[0])
+    n_thetas = 100
+    thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
+
+    ys_hill = ys_ut_hill48(thetas_theo, coeff_hill)
+    ys_yld = ys_ut_yld2000(thetas_theo, coeff_yld, m)
+    ys_polyN = ys_ut_mini(thetas_theo, coeff_polyN, powers)
+
+    r_vals_hill = rval_ut_hill48(thetas_theo, coeff_hill)
+    r_vals_yld2000 = rval_ut_yld2000(thetas_theo, coeff_yld, m)
+    r_vals_polyN = rval_ut_mini(thetas_theo, coeff_polyN[:-2], powers)
+
+    df_exp = df[df["Rval"] > 0.001]
+    sigma0 = df_exp["YieldStress"].iloc[0]
+    ys_exp = df_exp["YieldStress"]
+
+    index_rval = np.where(df["Rval"]< 0.00001, False, True)
+    thetas_exp = df["LoadAngle"].iloc[index_rval].values
+    r_vals_exp = df["Rval"].iloc[index_rval].values
+
+    #plt.plot(thetas_theo, r_vals_model, c="red", label="R_val model")
+    if plot_hill:
+        plt.plot(thetas_theo, ys_hill, color="blue", linewidth=1, label="Hill'48")
+        plt.plot(thetas_theo, r_vals_hill, color="blue", linestyle="dashed", linewidth=1, label="Hill'48")
+    if plot_yld:
+        plt.plot(thetas_theo, ys_yld, color="red", linewidth=1, label="Yld2000")
+        plt.plot(thetas_theo, r_vals_yld2000, color="red", linestyle="dashed", linewidth=1, label="Yld2000")
+    if plot_mini:
+        plt.plot(thetas_theo, ys_polyN, color="black", linewidth=1, label=f"Poly{degree}")
+        plt.plot(thetas_theo, r_vals_polyN, color="black", linestyle="dashed", linewidth=1, label=f"Poly{degree}")
+
+    #plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
+    plt.scatter(thetas_exp, ys_exp/sigma0, color="Black", label="Exp.", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, r_vals_exp, color="Black", label="Exp.", linewidths=1, marker="x")
+    plt.title("Check poly")
+    plt.xlabel(r"$\theta$[rad]", size=12)
+    plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend()
+    plt.grid(1)
+    plt.title(f"{material} : Yield Stresses and R-values from UT tests", size=12)
+    plt.show()  
+
+def plot_planestress_all(material, coeff_hill, coeff_yld, coeff_polyN, m, powers, plot_mises, plot_hill, plot_yld, plot_mini):
+    """
+    Plot yield surfaces (Mises, Hill48, Yld2000, PolyN_mini) in the plane sx sy for sxy = 0
+    """
+
+    degree = np.sum(powers[0])
+    zs = [0.0]
+    fig, ax = plt.subplots()
+
+    sx = np.linspace(-1.5, 1.5, 100)
+    sy = np.linspace(-1.5, 1.5, 100)
+    sx, sy = np.meshgrid(sx, sy)
+
+    for z in zs:
+        def mises_plane(x, y):
+            return mises(np.array([x, y, 0, z, 0, 0]))
+
+        def hill48_plane(x, y):
+            return hill48(np.array([x, y, z]), coeff_hill)
+
+        def yld2000_plane(x, y):
+            return yld2000(np.array([x, y, z]), coeff_yld, m)
+
+        def polyN_mini_plane(x, y):
+            return f_min_squared(np.array([x, y, 0, z, 0, 0]), coeff_polyN, powers)
+
+        mises_plane = np.vectorize(mises_plane)
+        hill48_plane = np.vectorize(hill48_plane)
+        yld2000_plane = np.vectorize(yld2000_plane)
+        polyN_mini_plane = np.vectorize(polyN_mini_plane)
+
+        ys_mises = mises_plane(sx, sy)
+        ys_hill = hill48_plane(sx, sy)
+        ys_yld2000 = yld2000_plane(sx, sy)
+        ys_polyN_mini = polyN_mini_plane(sx, sy)
+
+        handles = []
+        labels = []
+
+        if plot_mises:
+            cs1 = ax.contour(sx, sy, ys_mises, levels=[1], linewidths=1, colors="green")
+            handles.append(Line2D([0], [0], color="green", lw=1))
+            labels.append("Mises")
+
+        if plot_hill:
+            cs2 = ax.contour(sx, sy, ys_hill, levels=[1], linewidths=1, colors="red")
+            handles.append(Line2D([0], [0], color="red", lw=1))
+            labels.append("Hill48")
+
+        if plot_yld:
+            cs3 = ax.contour(sx, sy, ys_yld2000, levels=[1], linewidths=1, colors="blue")
+            handles.append(Line2D([0], [0], color="blue", lw=1))
+            labels.append("Yld2000")
+
+        if plot_mini:
+            cs4 = ax.contour(sx, sy, ys_polyN_mini, levels=[1], linewidths=1, colors="black")
+            handles.append(Line2D([0], [0], color="black", lw=1))
+            labels.append(f"Poly{degree}")
+
+    ax.legend(handles, labels)
+
+    # Set labels
+    ax.set_xlabel(r"$\sigma_{xx}/\sigma_0$ [-]", size=12)
+    ax.set_ylabel(r"$\sigma_{yy}/\sigma_0$ [-]", size=12)
+    ax.set_aspect('equal', adjustable='box')
+    ax.grid(True)
+    ax.set_title(rf'{material} Yield surface in the $\sigma_{{xx}},\sigma_{{yy}}$ plane', size=12)
+
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.show()
 
 def main():
     p = read_param()
@@ -626,7 +955,6 @@ def main():
     weight_vir = float(p["weight_vir"])
     nb_virtual_pt = int(p["nb_virtual_pt"])
     var_optim = p["var_optim"]
-
     df = readData(material, protomodel)
 
     if func == "polyN":
@@ -635,33 +963,37 @@ def main():
         plot_check(df, coeff_polyN, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
         plot_planestress(material, coeff_polyN, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
         
-
     if func == "polyN_mini":
-
-        if 1:
+        if 0:
             coeff_file_initial = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy"
             coeff_polyN_mini = np.load(coeff_file_initial)
 
             if 1:
-                coeff_file_final = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_scipy_" + "[8]" + ".npy"
+                coeff_file_final = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_scipy_" +  + ".npy"
                 coeff_polyN_mini = np.load(coeff_file_final)
 
             powers = get_param_polyN_mini(degree)
             #check_all_pt(df, material, coeff_polyN_mini, powers)
-            check_sh_points(df, material, coeff_polyN_mini, powers)
-            check_pst_points(df, material, coeff_polyN_mini, powers)
+            check_sh_points_mini(df, material, coeff_polyN_mini, powers)
+            check_pst_points_mini(df, material, coeff_polyN_mini, powers)
             plot_check_mini(df, coeff_polyN_mini, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
             #plot_planestress_mini(material, coeff_polyN_mini, powers, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel)
 
         else :
+            
+            powers = get_param_polyN_mini(degree)
             coeff_file_initial = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy"
             coeff_polyN_mini = np.load(coeff_file_initial)
 
-            if 1:
-                coeff_file_final = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_scipy_" + str(var_optim) + ".npy"
+            if 0:
+                coeff_file_final = polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff_final_scipy_" + "[5]" + ".npy"
                 coeff_polyN_mini = np.load(coeff_file_final)
 
-            powers = get_param_polyN_mini(degree)
+            coeff_hill = load_coeff_hill48(material)
+            coeff_yld = load_coeff_yld2000(material)
+
+            plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_polyN_mini, 8, powers, 1, 1, 1)
+            #plot_planestress_all(material, coeff_hill, coeff_yld, coeff_polyN_mini, 8, powers, 1, 1, 1, 1)
 
 
 main()
