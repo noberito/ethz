@@ -221,5 +221,3 @@ def test():
     S = np.zeros(3)
     S[2] = 2
     print(grad_yld2000(S, coeff, 8))
-
-test()

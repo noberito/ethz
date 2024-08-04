@@ -247,6 +247,7 @@ def rval_ut_mini(thetas, coeff_mini, powers):
         Output :
             - rval : ndarray of shape (n_theta,)
     """
+    coeff = coeff_mini[:-2]
     n_theta = len(thetas)
     S = np.zeros((n_theta, 6))
     v2 = np.zeros((n_theta, 3))
@@ -258,7 +259,7 @@ def rval_ut_mini(thetas, coeff_mini, powers):
         v2[i] = np.array([np.square(np.sin(theta)), np.square(np.cos(theta)), - np.cos(theta) * np.sin(theta)])
 
     degree = np.sum(powers[0])
-    coeff_grad, powers_grad = jac_polyN_2d_param(coeff_mini, powers)
+    coeff_grad, powers_grad = jac_polyN_2d_param(coeff, powers)
     grad_P = grad_polyN_2d(S, coeff_grad, powers_grad)[:,[0,1,3]]
     grad_f_plane = np.zeros((n_theta,3))
 
@@ -270,18 +271,18 @@ def rval_ut_mini(thetas, coeff_mini, powers):
         r_val[i] = - np.dot(grad_f_plane[i], v2[i]) / (grad_f_plane[i,0] + grad_f_plane[i,1])
     return(r_val)
 
-def plot_rval_ut_mini(df, coeff, powers):
+def plot_rval_ut_mini(df, coeff_mini, powers):
     """
         Plot the rvalues for UTs for polyN mini
         Input :
             - df : Dataframe, must contains ["Rval"] and ["LoadAngle"] for UTs
-            - coeff : ndarray of shape (nmon + 2,), coeff of the polyN mini function
+            - coeff_mini : ndarray of shape (nmon + 2,), coeff of the polyN mini function
             - powers : ndarray of shape (nmon, 3), powers of the polyN mini function
     """
     
     n_thetas = 100
     thetas_theo = np.linspace(0, np.pi/2, n_thetas)
-    r_vals_theo = rval_ut_mini(thetas_theo, coeff[:-2], powers)
+    r_vals_theo = rval_ut_mini(thetas_theo, coeff_mini, powers)
     index_rval = np.where(df["Rval"]< 0.00001, False, True)
     r_vals_exp = df["Rval"].iloc[index_rval].values
     thetas_exp = df["LoadAngle"].iloc[index_rval].values
@@ -349,7 +350,7 @@ def plot_yield_stresses_ut_mini(df, coeff, powers):
     plt.plot(thetas, ys_model, color="blue", label="YS model")
     plt.show()
 
-def plot_check_mini(df, coeff, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel):
+def plot_check_mini(df, coeff_mini, powers, material, weight_ut, weight_e2, weight_vir, nb_virtual_pt, degree, protomodel):
     """
         Plot the rvalues and ys for UTs for polyN mini
         Input :
@@ -361,8 +362,8 @@ def plot_check_mini(df, coeff, powers, material, weight_ut, weight_e2, weight_vi
     n_thetas = 100
     thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
 
-    ys_model = ys_ut_mini(thetas_theo, coeff, powers)
-    r_vals_model = rval_ut_mini(thetas_theo, coeff[:-2], powers)
+    ys_model = ys_ut_mini(thetas_theo, coeff_mini, powers)
+    r_vals_model = rval_ut_mini(thetas_theo, coeff_mini, powers)
 
     df_exp = df[df["Rval"] > 0.001]
     sigma0 = df_exp["YieldStress"].iloc[0]
@@ -464,7 +465,7 @@ def check_pst_points_mini(df, material, coeff, powers):
         ebt = df[df["q"] == 1][["s11","s22"]].values[0]
         plt.scatter(ebt[0], ebt[1], marker="x", label = "UT_EBT")
     except IndexError:
-        print("EBT non disponible")
+        print("EBT non available")
         
     ut0 = df[df["LoadAngle"] == 0.0][["s11","s22"]].values[0]
     plt.scatter(ut0[0], ut0[1], marker="x", label = "UT_00")
@@ -588,26 +589,26 @@ def check_3D_mini(df, material, coeff, powers, bbox=(-1.5,1.5)):
         
     f_plane = np.vectorize(f_plane)
 
-    print("Début du plot sur XY")
+    print("Start plotting XY")
     for z in B: # plot contours in the XY plane
         X,Y = A1,A2
         Z = f_plane(X,Y,z) - 1
         ax.contour(X, Y, Z+z, [z], zdir='z', alpha=0.5)
         # [z] defines the only level to plot for this contour for this value of z
-    print("Fin du plot sur XY")
-    print("Début du plot sur XZ")
+    print("End plotting XY")
+    print("Start plotting XZ")
     for y in B: # plot contours in the XZ plane
         X,Z = A1,A2
         Y = f_plane(X,y,Z) - 1
         ax.contour(X, Y+y, Z, [y], zdir='y', alpha=0.5)
 
-    print("Fin du plot sur XZ")
-    print("Début du plot sur YZ")
+    print("End plotting XZ")
+    print("Start plotting YZ")
     for x in B: # plot contours in the YZ plane
         Y,Z = A1,A2
         X = f_plane(x,Y,Z) - 1
         ax.contour(X+x, Y, Z, [x], zdir='x', alpha=0.5)
-    print("Fin du plot sur YZ")
+    print("End plotting YZ")
     # must set plot limits because the contour will likely extend
     # way beyond the displayed level.  Otherwise matplotlib extends the plot limits
     # to encompass all values in the contour.
@@ -698,7 +699,6 @@ def plot_s_hill48(df, coeff, material):
     thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
 
     ys_model = ys_ut_hill48(thetas_theo, coeff)
-    #r_vals_model = rval_ut_mini(thetas_theo, coeff[:-2], powers)
 
     df_exp = df[df["Rval"] > 0.001]
     sigma0 = df_exp["YieldStress"].iloc[0]
@@ -803,7 +803,6 @@ def plot_s_yld2000(df, coeff, material, m):
     thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
 
     ys_model = ys_ut_yld2000(thetas_theo, coeff, m)
-    #r_vals_model = rval_ut_mini(thetas_theo, coeff[:-2], powers)
 
     df_exp = df[df["Rval"] > 0.001]
     sigma0 = df_exp["YieldStress"].iloc[0]
@@ -827,18 +826,53 @@ def plot_s_yld2000(df, coeff, material, m):
     plt.title(f"YLD2000 model on {material} : Yield Stresses and R-values from UT tests", size=12)
     plt.show()
 
-def plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_polyN, m, powers, plot_hill, plot_yld, plot_mini):
+def get_data_prefile(material):
+    """
+        Load the ys ratios and r-values from the yld2000 prefile if available
+    """
+    results_exp_dir = polyN_dir + sep + "results_exp" + sep + material 
+    filename = "_YLD2000_pre.csv"
+    filepath = results_exp_dir + sep + filename
+
+    try:
+        df = pd.read_csv(filepath)
+        ys = df.loc[1].values[:-1]
+        r_val = df.loc[2].values[:-1]
+        return(ys, r_val)
+
+    except:
+        print(f"No prefile for {material}")
+        return([], [])
+
+
+def plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, powers, plot_hill, plot_yld, plot_mini):
+    """
+        Plot the ys ratios and r-values from the hill'48 and/or yld2000 and/or polyN_mini model.
+
+        Input :
+
+            - df : dataFrame, data extracted from the experimental file with readData2D
+            - material : string
+            - coeff_hill : ndarray of shape(6,), hill'48 model
+            - coeff_yld2000 : ndarray of shape(8,), yld2000 model
+            - coeff_mini : ndarray of shape(nmon + 2,), polyN minimalistic model
+            - m : int, degree of yld2000 (usually 8)
+            - powers : ndarray of shape(nmon,), powers of the polyN2D used in polyN minimalistic
+            - plot_hill : 1 to plot hill if not 0
+            - plot_yld2000 : 1 to plot yld2000 if not 0
+            - plot_mini : 1 to plot polyN if not 0
+    """
     degree = np.sum(powers[0])
     n_thetas = 100
     thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
 
     ys_hill = ys_ut_hill48(thetas_theo, coeff_hill)
     ys_yld = ys_ut_yld2000(thetas_theo, coeff_yld, m)
-    ys_polyN = ys_ut_mini(thetas_theo, coeff_polyN, powers)
+    ys_polyN = ys_ut_mini(thetas_theo, coeff_mini, powers)
 
     r_vals_hill = rval_ut_hill48(thetas_theo, coeff_hill)
     r_vals_yld2000 = rval_ut_yld2000(thetas_theo, coeff_yld, m)
-    r_vals_polyN = rval_ut_mini(thetas_theo, coeff_polyN[:-2], powers)
+    r_vals_polyN = rval_ut_mini(thetas_theo, coeff_mini, powers)
 
     df_exp = df[df["Rval"] > 0.001]
     sigma0 = df_exp["YieldStress"].iloc[0]
@@ -848,20 +882,24 @@ def plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_polyN, m, powers, plo
     thetas_exp = df["LoadAngle"].iloc[index_rval].values
     r_vals_exp = df["Rval"].iloc[index_rval].values
 
+    ys_ratio_exp2, r_vals_exp2 = get_data_prefile(material)
+
     #plt.plot(thetas_theo, r_vals_model, c="red", label="R_val model")
     if plot_hill:
         plt.plot(thetas_theo, ys_hill, color="blue", linewidth=1, label="Hill'48")
-        plt.plot(thetas_theo, r_vals_hill, color="blue", linestyle="dashed", linewidth=1, label="Hill'48")
+        plt.plot(thetas_theo, r_vals_hill, color="blue", linestyle="dashed", linewidth=1)
     if plot_yld:
         plt.plot(thetas_theo, ys_yld, color="red", linewidth=1, label="Yld2000")
-        plt.plot(thetas_theo, r_vals_yld2000, color="red", linestyle="dashed", linewidth=1, label="Yld2000")
+        plt.plot(thetas_theo, r_vals_yld2000, color="red", linestyle="dashed", linewidth=1)
     if plot_mini:
         plt.plot(thetas_theo, ys_polyN, color="black", linewidth=1, label=f"Poly{degree}")
-        plt.plot(thetas_theo, r_vals_polyN, color="black", linestyle="dashed", linewidth=1, label=f"Poly{degree}")
+        plt.plot(thetas_theo, r_vals_polyN, color="black", linestyle="dashed", linewidth=1)
 
     #plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
-    plt.scatter(thetas_exp, ys_exp/sigma0, color="Black", label="Exp.", linewidths=1, marker="x")
-    plt.scatter(thetas_exp, r_vals_exp, color="Black", label="Exp.", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, ys_exp/sigma0, color="black", label="Exp.", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, r_vals_exp, color="black", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, ys_ratio_exp2, color="red", label="Exp. 2", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, r_vals_exp2, color="red", linewidths=1, marker="x")
     plt.title("Check poly")
     plt.xlabel(r"$\theta$[rad]", size=12)
     plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
@@ -874,7 +912,19 @@ def plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_polyN, m, powers, plo
 
 def plot_planestress_all(material, coeff_hill, coeff_yld, coeff_polyN, m, powers, plot_mises, plot_hill, plot_yld, plot_mini):
     """
-    Plot yield surfaces (Mises, Hill48, Yld2000, PolyN_mini) in the plane sx sy for sxy = 0
+        Plot yield surfaces (Mises, Hill48, Yld2000, PolyN_mini) in the plane sx sy for sxy = 0
+
+        Input :
+            - material : string
+            - coeff_hill : ndarray of shape(6,), hill'48 model
+            - coeff_yld2000 : ndarray of shape(8,), yld2000 model
+            - coeff_mini : ndarray of shape(nmon + 2,), polyN minimalistic model
+            - m : int, degree of yld2000 (usually 8)
+            - powers : ndarray of shape(nmon,), powers of the polyN2D used in polyN minimalistic
+            - plot_mises : 1 to plot mises if not 0
+            - plot_hill : 1 to plot hill if not 0
+            - plot_yld2000 : 1 to plot yld2000 if not 0
+            - plot_mini : 1 to plot polyN if not 0
     """
 
     degree = np.sum(powers[0])
@@ -993,7 +1043,7 @@ def main():
             coeff_yld = load_coeff_yld2000(material)
 
             plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_polyN_mini, 8, powers, 1, 1, 1)
-            #plot_planestress_all(material, coeff_hill, coeff_yld, coeff_polyN_mini, 8, powers, 1, 1, 1, 1)
+            plot_planestress_all(material, coeff_hill, coeff_yld, coeff_polyN_mini, 8, powers, 1, 1, 1, 1)
 
 
 main()

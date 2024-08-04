@@ -91,13 +91,16 @@ def readData_2d(material, protomodel):
 
     folderpath = f"{polyN_dir}{sep}calibration_data{sep}{material}"
     filename_e = "data_exp_" + material + ".csv"
-    filename_v = "data_virtual_" + material + "_" + protomodel + ".csv"
-
     filepath_e = folderpath + sep + filename_e
-    filepath_v = folderpath + sep + filename_v
-
     df_e = pd.read_csv(filepath_e)
-    df_v = pd.read_csv(filepath_v)
+
+    try:
+        filename_v = "data_virtual_" + material + "_" + protomodel + ".csv"
+        filepath_v = folderpath + sep + filename_v
+        df_v = pd.read_csv(filepath_v)
+    except:
+        print(f"protomodel {protomodel} not available for the moment")
+        df_v = pd.DataFrame()
 
     df_e["LoadAngle"] = 2 * np.pi / 360 * df_e["LoadAngle"]
 

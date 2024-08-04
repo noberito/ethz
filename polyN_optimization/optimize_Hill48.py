@@ -72,5 +72,3 @@ def test():
     S = np.zeros(3)
     S[2] = 2
     print(grad_hill48(S, coeff))
-
-test()
