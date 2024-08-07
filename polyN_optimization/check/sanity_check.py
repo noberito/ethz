@@ -13,7 +13,7 @@ sep = os.sep
 polyN_cali_dir = os.path.dirname(file_dir)
 sys.path.append(polyN_cali_dir)
 
-from read_param import read_param
+from read import read_param
 from get_calibration_data import analyze_exp_data
 from optimize_polyN import get_param_polyN, polyN
 from optimize_polyN_mini import get_param_polyN_mini, f_min_squared

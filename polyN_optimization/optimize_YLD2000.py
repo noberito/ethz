@@ -9,7 +9,7 @@ import os
 import sklearn
 import sklearn.preprocessing
 from sklearn.linear_model import LinearRegression
-from read_param import read_param
+from read import read_param
 from get_calibration_data import export_exp_data, export_virtual_data, analyze_exp_data
 from get_hardening_law import get_hardening_law
 from optimize_polyN_mini import readData_2d

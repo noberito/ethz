@@ -10,12 +10,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.optimize
-from scipy.signal import savgol_filter
 import os
 import sklearn
 import sklearn.preprocessing
 from sklearn.linear_model import LinearRegression
-from read_param import read_param
+from read import read_param, readData_2d
 from get_calibration_data import export_exp_data, export_virtual_data, analyze_exp_data
 from get_hardening_law import get_hardening_law
 import shutil
@@ -32,7 +31,6 @@ exec_dir = polyN_dir + sep + "running"
 
 
 # In[203]:
-
 
 """----------------------------------------------------------------- GENERATING DATA ----------------------------------------------------------------------------------"""
 thetas = ["00", "15", "30", "45", "60", "75", "90"]
@@ -74,51 +72,6 @@ def copy_lab_data(material):
         mat_lab_data_dir = f"{lab_data_dir}{sep}{material}_results{sep}DATA"
         shutil.copytree(mat_lab_data_dir, copy_dir)
 
-""" ----------------------------------------------------------- READ DATA ----------------------------------------------------------------------------------------------"""
-def readData_2d(material, protomodel):
-    """
-        Returns a dataframe containing the experimental points from UT from the given material 
-        and virtual points using the given protomodel.
-        df.columns = [#TODO]
-    
-        Input :
-            - material : string
-            - protomodel : string
-
-        Output :
-            - df : dataFrame
-    """
-
-    folderpath = f"{polyN_dir}{sep}calibration_data{sep}{material}"
-    filename_e = "data_exp_" + material + ".csv"
-    filepath_e = folderpath + sep + filename_e
-    df_e = pd.read_csv(filepath_e)
-
-    try:
-        filename_v = "data_virtual_" + material + "_" + protomodel + ".csv"
-        filepath_v = folderpath + sep + filename_v
-        df_v = pd.read_csv(filepath_v)
-    except:
-        print(f"protomodel {protomodel} not available for the moment")
-        df_v = pd.DataFrame()
-
-    df_e["LoadAngle"] = 2 * np.pi / 360 * df_e["LoadAngle"]
-
-    sigma0 = df_e["YieldStress"].iloc[0]
-    
-    df_e["s11"] = df_e["YieldStress"] / sigma0 * (np.square(np.cos(df_e["LoadAngle"])) + df_e["q"] * np.square(np.sin(df_e["LoadAngle"])))
-    df_e["s22"] = df_e["YieldStress"] / sigma0 * (np.square(np.sin(df_e["LoadAngle"])) + df_e["q"] * np.square(np.cos(df_e["LoadAngle"])))
-    df_e["s33"] = df_e["YieldStress"] * 0
-    df_e["s12"] = df_e["YieldStress"] / sigma0 * (1 - df_e["q"]) * np.sin(df_e["LoadAngle"]) * np.cos(df_e["LoadAngle"])
-    df_e["s13"] = df_e["YieldStress"] * 0
-    df_e["s23"] = df_e["YieldStress"] * 0
-    
-    df = pd.concat([df_e, df_v])
-    
-    df["Norm"] = np.linalg.norm(df[["s11", "s22", "s33", "s12", "s13", "s23"]].values, axis=1)
-
-
-    return(df)
 
 """------------------------------------POLYN PARAMETERS---------------------------------------------------------"""
 
@@ -1531,7 +1484,7 @@ def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_vir, init_gues
 
     options = {"verbose" : 3, "maxiter" : 1000}
 
-    opt = scipy.optimize.minimize(J, x0=a0, jac=grad_J, constraints=constraints, tol=10e-12, options=options)
+    opt = scipy.optimize.minimize(J, x0=a0, jac=grad_J, constraints=constraints, tol=10e-25, options=options)
 
     while (not opt.success and opt.nit == options['maxiter']):
         new_a0 = a0 + 0.1 * np.random.uniform(low= - np.ones(len(a0)), high=np.ones(len(a0)))

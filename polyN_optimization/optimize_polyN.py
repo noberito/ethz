@@ -20,7 +20,7 @@ import multiprocessing
 from pickle import load
 import sklearn
 import sklearn.preprocessing 
-from read_param import read_param
+from read import read_param
 from get_calibration_data import export_exp_data, export_virtual_data
 import shutil
 from get_hardening_law import get_hardening_law

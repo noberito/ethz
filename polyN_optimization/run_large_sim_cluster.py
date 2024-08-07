@@ -16,7 +16,7 @@ run_dir = polyN_cali_dir + sep + "running"
 
 sys.path.append(polyN_cali_dir)
 
-from read_param import read_param
+from read import read_param
 from get_calibration_data import analyze_exp_data
 from tests_parameters import load_points, ext_points, ut_tests_ext
 from check.compare_sim_exp import compare_large_strain, compare_ut_s_2

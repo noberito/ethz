@@ -10,7 +10,7 @@ sep = os.sep
 polyN_cali_dir = os.path.dirname(file_dir)
 sys.path.append(polyN_cali_dir)
 
-from read_param import read_param
+from read import read_param
 from get_calibration_data import analyze_exp_data
 
 facs_displ = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 2., "SH": 1.}

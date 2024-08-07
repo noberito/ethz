@@ -1,17 +1,26 @@
 
 
-from ctypes.wintypes import WPARAM
-import pstats
+import os
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.special import binom
 
-from optimize_polyN_mini import readData_2d
-from read_param import read_param
+from read import readdata_exp
+
+polyN_dir = os.path.dirname(os.path.abspath(__file__))
+sep = os.sep
 
 
+n_pt_seg_dir = 3
+"""
+    For any question regarding the creation of the Bezier surface, please refer to the shyQP article written by
+    Soare in 2023.
+"""
+
+#Functions and coefficients to calculate Bezier segment of order 5
 c50 = binom(5,0)
 c51 = binom(5,1)
 c52 = binom(5,2)
@@ -19,7 +28,6 @@ c53 = binom(5,3)
 c54 = binom(5,4)
 c55 = binom(5,5)
 
-print(c51)
 def phi0(t):
     return c50 * np.power(1 - t,5)
 
@@ -39,6 +47,22 @@ def phi5(t):
     return c55 * np.power(t, 5)
     
 def bezier_seg(bs, be, us, ue, ls, le, n):
+    """
+        Returns a Bezier segment of order 5 between bs and be. us (resp. ue) being the tangent
+        at bs (resp. be) and ls (resp. le) a parameter on bs (resp. be)
+
+        Input :
+            - bs : ndarray of shape(m,), start segment
+            - be : ndarray of shape(m,), end segment
+            - us : ndarray of shape(m,), tangent at bs
+            - ue : ndarray of shape(m,), tangent at be
+            - ls : float, parameter at bs
+            - le : float, parameter at be
+            - n : int, number of points from the segment
+        
+        Output :
+            - Y : ndarray of shape (n, m), segment
+    """
     b0 = bs
     b1 = bs + ls * us
     b2 = bs + 2 * ls * us
@@ -56,12 +80,34 @@ def bezier_seg(bs, be, us, ue, ls, le, n):
     return(Y)
 
 def param_data_dir(material):
+    """
+        Returns all the parameters needed to create the segment containing
+        the directionnal data.
 
-    df = readData_2d(material, "bezier")
+        WARNING : To adapt if tension compression asymetry. I would suggest 
+        to adapt readData_2D too.
+
+        Input :
+            - material : string
+        
+        Output :
+            - YS : ndarray of shape((n_data, 2)), directionnal points in the space (theta, ys_ratio)
+            - mus_ys : ndarray of shape((n_seg, 2)), starting tangents of every part of the yield stress segment
+            - mue_ys : ndarray of shape((n_seg, 2)), ending tangents of every part of the yield stress segment
+            - lmax_ys : int, lambda to have convex parts of the yield stress segment (hypothesis : lambda = cst for all the parts)
+            - R : ndarray of shape((n_data, 2)), directionnal points in the space (theta, r)
+            - mus_r : ndarray of shape((n_seg, 2)), starting tangents of every part of the r-value segment
+            - mue_ys : ndarray of shape((n_seg, 2)), ending tangents of every part of the r-value segment
+            - lmax_r : int, lambda to have convex parts of the r-value segment (hypothesis : lambda = cst for all the parts)
+            - thetas : ndarray of shape (n_data), experimental thetas
+            - ys_ratio : ndarray of shape (n_data), experimental yield stresses
+            - r_val : ndarray of shape (n_data), experimental r-values
+    """
+
+    df = readdata_exp(material)
     data_dir = df[df["Type"] == "e"][df["q"] == 0]
     
     thetas = data_dir["LoadAngle"].values
-
     ys = data_dir["YieldStress"].values
     ys_ratio = ys / ys[0]
 
@@ -116,26 +162,205 @@ def param_data_dir(material):
 
     return(YS, mus_ys, mue_ys, lmax_ys, R, mus_r, mue_r, lmax_r, thetas, ys_ratio, r_val)
 
-
 def seg_data_dir(material, alpha):
-    YS, mus_ys, mue_ys, lmax_ys, R, mus_r, mue_r, lmax_r, thetas, ys_ratio, r_val = param_data_dir(material)
+    """
+        Returns the directionnal segments (yield stress ratios, r-values)
+
+        Input :
+            - material : string
+            - alpha : float between 0 and 1, 0 : Lowest curvature, 1: Highest curvature
+
+        Output :
+            - B_ys : ndarray of shape ((n * n_seg, 2)), yield stress directionnal segment in space (theta, ys_ratio)
+            - B_r : ndarray of shape ((n * n_seg, 2)), r-values directionnal segment in space (theta, r-values)
+    """
+
+    YS, mus_ys, mue_ys, lmax_ys, R, mus_r, mue_r, lmax_r, _, _, _ = param_data_dir(material)
     l_ys = alpha * lmax_ys
     l_r = alpha * lmax_r
     n_seg = len(mus_ys)
-    n = 10
 
-    B_ys = np.zeros((n * n_seg, 2))
-    B_r = np.zeros((n * n_seg, 2))
+    B_ys = np.zeros((n_pt_seg_dir * n_seg, 2))
+    B_r = np.zeros((n_pt_seg_dir * n_seg, 2))
 
     for i in range(n_seg):
 
-        B_ys[(i * n):((i + 1) * n)] = bezier_seg(YS[i], YS[i + 1], mus_ys[i], mue_ys[i], l_ys, l_ys, n)
-        B_r[(i * n):((i + 1) * n)] = bezier_seg(R[i], R[i + 1], mus_r[i], mue_r[i], l_r, l_r, n)
+        B_ys[(i * n_pt_seg_dir):((i + 1) * n_pt_seg_dir)] = bezier_seg(YS[i], YS[i + 1], mus_ys[i], mue_ys[i], l_ys, l_ys, n_pt_seg_dir)
+        B_r[(i * n_pt_seg_dir):((i + 1) * n_pt_seg_dir)] = bezier_seg(R[i], R[i + 1], mus_r[i], mue_r[i], l_r, l_r, n_pt_seg_dir)
 
     return(B_ys, B_r)
 
+
+
+def bound_lambda(bs, be, us, ue):
+    """
+        Returns the maximum value for the starting (t/2) and ending lambda (tau/2) to have
+        a convex curve in a plane PI(theta)
+
+        Input :
+            - bs : ndarray of shape(3,), start segment
+            - be : ndarray of shape(3,), end segment
+            - us : ndarray of shape(3,), tangent at bs
+            - ue : ndarray of shape(3,), tangent at be
+
+        Output :
+            - halft : float, max value for ls
+            - halftau : float, max value for le
+    """
+    v = np.dot(us, ue)
+    u = (be - bs) /(1 - v * v) 
+
+    t = np.dot(u, us - v * ue)
+    tau = np.dot(u, ue - v * us)
+
+    halft = t/2
+    halftau = tau/2
+
+    return(halft, halftau)
+
+
+def param_bezier_section_plane(material, theta, ys, ys_s, r, r_s, r_tb=1, r_cb=1, tc_sym=1):
+    df = readdata_exp(material)
+
+    #Intersection of surface Pi(theta) and the yield surface
+    theta_s = np.pi/2 - theta
+    v = np.array([- np.sin(2 * theta), np.sin(2 * theta), 2 * np.cos(2 * theta)])
+
+    p_t = ys * np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), np.sin(theta) * np.cos(theta)])
+    p_ts = ys_s * np.array([np.square(np.sin(theta)), np.square(np.cos(theta)), - np.sin(theta) * np.cos(theta)])
+
+    p_c = ys * np.array([- np.square(np.cos(theta)), - np.square(np.sin(theta)), - np.sin(theta) * np.cos(theta)])
+    p_cs = ys_s * np.array([- np.square(np.sin(theta)), - np.square(np.cos(theta)), np.sin(theta) * np.cos(theta)])
+
+    try:
+        b_t = df[df["q"] == 1][["s11", "s22", "s12"]].values[0]
+    except :
+        #print("EBT non available, we use the approximation : sEBT = (s0 + 2s45 + s90) / 4")
+        s0 = df[np.abs(df["LoadAngle"] - 0) < 10e-2].iloc[0]["YieldStress"]
+        s45 = df[np.abs(df["LoadAngle"] - 45 * 2 * np.pi / 360) < 10e-2].iloc[0]["YieldStress"]
+        s90 = df[np.abs(df["LoadAngle"] - 90 * 2 * np.pi / 360) < 10e-2].iloc[0]["YieldStress"]
+        sEBT = (s0 + 2 * s45 + s90) / 4
+        b_t = sEBT * np.array([1/np.sqrt(2), 1/np.sqrt(2), 0]) / s0
+
+    b_c = - b_t
+
+    P = [b_t, p_ts, p_c, b_c, p_cs, p_t]
+    P_name = ["b_t", "p_ts", "p_c", "b_c", "p_cs", "p_t"] 
+
+    mus = np.zeros((6, 3))
+    mue = np.zeros((6, 3))
+
+    wm = np.array([r + np.square(np.sin(theta)), r + np.square(np.cos(theta)), - np.sin(theta) * np.cos(theta)])
+    wp = np.array([r_s + np.square(np.sin(theta_s)), r_s + np.square(np.cos(theta_s)), np.sin(theta_s) * np.cos(theta_s)])
+
+    #Tangent calculation
+    for i in range(len(P)):
+        p = P_name[i]
+        if str(p) == "b_t":
+            n = 1/np.sqrt(1 + np.square(r_tb)) * np.array([1, r_tb, 0])
+        elif str(p) == "b_c":
+            n = 1/np.sqrt(1 + np.square(r_cb)) * np.array([-1, -r_cb, 0])
+        else :
+            if str(p) == "p_t":
+                dg = np.array([- np.sin(2 * theta), np.sin(2 * theta), np.cos(2 * theta)])
+                w = wm
+            elif str(p) == "p_ts":
+                dg = np.array([np.sin(2 * theta), - np.sin(2 * theta), - np.cos(2 * theta)])
+                w = wp
+            elif str(p) == "p_c":
+                dg = np.array([np.sin(2 * theta), - np.sin(2 * theta), - np.cos(2 * theta)])
+                w = wm
+            elif str(p) == "p_cs":
+                dg = np.array([- np.sin(2 * theta), np.sin(2 * theta), np.cos(2 * theta)])
+                w = wp
+            
+            u = np.cross(w, dg)
+            n = u/np.linalg.norm(u)
+
+        u = np.cross(v, n)
+        mus[i] = u/np.linalg.norm(u)
+    
+    mue = np.roll(mus, -1, axis=0)
+
+    #Maximum lambdas calculations
+    l_max_s = np.zeros(6)
+    l_max_e = np.zeros(6)
+    l_max = np.zeros(6)
+
+    for i in range(6):
+        halft, halftau = bound_lambda(P[i - 1], P[i], mus[i - 1], mue[i - 1])
+        l_max_s[i - 1] = halft
+        l_max_e[i - 1] = halftau
+    
+    for i in range(6):
+        l_max[i] = min(l_max_s[i], l_max_e[i-1])
+    
+    l_max = np.expand_dims(l_max, axis=0)
+    return(P, mus, mue, l_max)
+
+def bezier(material, n_pt_curve):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    B_ys, B_r = seg_data_dir(material, 0.6)
+
+    thetas = B_ys[:,0]
+    ys = B_ys[:,1]
+    rval = B_r[:,1]
+
+    n_curves = len(B_ys)
+
+    P = np.zeros((n_curves, 6, 3))
+    mus = np.zeros((n_curves, 6, 3))
+    mue = np.zeros((n_curves, 6, 3))
+    l_max = np.zeros((n_curves, 6))
+
+    for i in range(n_curves):
+        P_new, mus_new, mue_new, l_max_new = param_bezier_section_plane(material, thetas[i], ys[i], ys[n_curves - i - 1], rval[i], rval[n_curves - i - 1])
+
+        P[i] = P_new
+        mus[i] = mus_new
+        mue[i] = mue_new
+        l_max[i] = l_max_new
+    
+    s = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+    l = np.min(l_max, axis=0) * s
+    B = np.zeros((n_curves * n_pt_curve * 6, 3))
+
+    for i in range(n_curves):
+        for j in range(6):
+
+            bs = P[i, j - 1]
+            be = P[i, j]
+            us = mus[i, j - 1]
+            ue = mue[i, j - 1]
+            ls = l[j - 1]
+            le = l[j]
+            B_new = bezier_seg(bs, be, us, ue, ls, le, n_pt_curve)
+            B[i * 6 * n_pt_curve + j * n_pt_curve : i * 6 * n_pt_curve + (j + 1) * n_pt_curve] = B_new
+
+    return(B)
+
+def bezier_3D(material, n_pt_total):
+    n_pt_curve = n_pt_total // (6 * 6 * n_pt_seg_dir)
+    print(n_pt_curve)
+    B = bezier(material, n_pt_curve)
+    B_3D = np.zeros((len(B), 6))
+    B_3D[:,0] = B[:,0]
+    B_3D[:,1] = B[:,1]
+    B_3D[:,3] = B[:,2]
+
+    return(B_3D)
+
+"""---------------------------------------------PLOT FUNCTIONS--------------------------------------------------------------------"""
 def plot_seg_data_dir(material):
-    YS, mus_ys, mue_ys, lmax_ys, R, mus_r, mue_r, lmax_r, thetas, ys_ratio, r_val = param_data_dir(material)
+    """
+        Plot the directionnal segments.
+
+        Input :
+            - material : string
+    """
+    _, _, _, _, _, _, _, _, thetas, ys_ratio, r_val = param_data_dir(material)
     alphas = [0,0.6,1]
     linestyles = ["solid", "dotted", "dashed"]
     fig, ax = plt.subplots(2)
@@ -157,28 +382,77 @@ def plot_seg_data_dir(material):
         legend_lines.append(Line2D([0], [0], color='black', linestyle=linestyles[i], label=alphas[i])) 
 
     ax[0].legend(handles=legend_lines)
-
     ax[0].scatter(thetas, ys_ratio, marker="x", linewidths=1, color="blue")
     ax[1].scatter(thetas, r_val, marker="x", linewidths=1, color="red")
     ax[0].grid(1)
     ax[1].grid(1)
+
     plt.suptitle(f"Bezier model {material} : Yield stresses and Lankford ratios")
     plt.show()
 
-def bound_lambda(bs, be, us, ue):
-    v = np.dot(us, ue)
-    u =(be - bs) /(1 - v) 
+def plot_bezier(material):
 
-    t = np.dot(u, us - v * ue)
-    tau = np.dot(u, ue - v * us)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
-    return(t/2, tau/2)
+    B_ys, B_r = seg_data_dir(material, 0.6)
 
+    thetas = B_ys[:,0]
+    ys = B_ys[:,1]
+    rval = B_r[:,1]
 
-def bezier_section_plane(material, theta, ys, ys_s, n_pt, r, r_s, r_tb=1, r_cb=1, tc_sym=1):
+    n_curves = len(B_ys)
+    n_pt_curve = 50
+
+    P = np.zeros((n_curves, 6, 3))
+    mus = np.zeros((n_curves, 6, 3))
+    mue = np.zeros((n_curves, 6, 3))
+    l_max = np.zeros((n_curves, 6))
+
+    for i in range(n_curves):
+        P_new, mus_new, mue_new, l_max_new = param_bezier_section_plane(material, thetas[i], ys[i], ys[n_curves - i - 1], rval[i], rval[n_curves - i - 1])
+
+        P[i] = P_new
+        mus[i] = mus_new
+        mue[i] = mue_new
+        l_max[i] = l_max_new
+
+    s = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+    l = np.min(l_max, axis=0) * s
+    B = np.zeros((n_curves * n_pt_curve * 6, 3))
+
+    for i in range(n_curves):
+        for j in range(6):
+
+            bs = P[i, j - 1]
+            be = P[i, j]
+            us = mus[i, j - 1]
+            ue = mue[i, j - 1]
+            ls = l[j - 1]
+            le = l[j]
+            B_new = bezier_seg(bs, be, us, ue, ls, le, n_pt_curve)
+            B[i * 6 * n_pt_curve + j * n_pt_curve : i * 6 * n_pt_curve + (j + 1) * n_pt_curve] = B_new
+
+    X = B[:,0]
+    Y = B[:,1]
+    Z = B[:,2]
+
+    ax.scatter(X, Y, Z, linewidth=0.1, s=1)
+
+    plt.show()
+
+def bezier_section_plane_alloutput(material, theta, ys, ys_s, n_pt_curve, r, r_s, r_tb=1, r_cb=1, tc_sym=1):
+    df = readdata_exp(material)
+
+    #Intersection of surface Pi(theta) and the yield surface
     theta_s = np.pi/2 - theta
-    df = readData_2d(material, "bezier")
-    v = np.array([- np.sin(2 * theta), np.sin(2 * theta), np.cos(2 * theta)])
+    v = np.array([- np.sin(2 * theta), np.sin(2 * theta), 2 * np.cos(2 * theta)])
+
+    p_t = ys * np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), np.sin(theta) * np.cos(theta)])
+    p_ts = ys_s * np.array([np.square(np.sin(theta)), np.square(np.cos(theta)), - np.sin(theta) * np.cos(theta)])
+
+    p_c = ys * np.array([- np.square(np.cos(theta)), - np.square(np.sin(theta)), - np.sin(theta) * np.cos(theta)])
+    p_cs = ys_s * np.array([- np.square(np.sin(theta)), - np.square(np.cos(theta)), np.sin(theta) * np.cos(theta)])
 
     try:
         b_t = df[df["q"] == 1][["s11", "s22", "s12"]].values[0]
@@ -192,16 +466,9 @@ def bezier_section_plane(material, theta, ys, ys_s, n_pt, r, r_s, r_tb=1, r_cb=1
 
     b_c = - b_t
 
-    p_t = ys * np.array([np.square(np.cos(theta)), np.square(np.sin(theta)), np.sin(theta) * np.cos(theta)])
-    print(np.dot(p_t, v))
-    p_ts = ys_s * np.array([np.square(np.sin(theta)), np.square(np.cos(theta)), - np.sin(theta) * np.cos(theta)])
-
-    p_c = ys * np.array([- np.square(np.cos(theta)), - np.square(np.sin(theta)), - np.sin(theta) * np.cos(theta)])
-    p_cs = ys_s * np.array([- np.square(np.sin(theta)), - np.square(np.cos(theta)), np.sin(theta) * np.cos(theta)])
-
     P = [b_t, p_ts, p_c, b_c, p_cs, p_t]
     P_name = ["b_t", "p_ts", "p_c", "b_c", "p_cs", "p_t"]   
-    B = np.zeros((n_pt * 6, 3))
+    B = np.zeros((n_pt_curve * 6, 3))
 
     mus = np.zeros((6, 3))
     mue = np.zeros((6, 3))
@@ -212,6 +479,7 @@ def bezier_section_plane(material, theta, ys, ys_s, n_pt, r, r_s, r_tb=1, r_cb=1
     wm = np.array([r + np.square(np.sin(theta)), r + np.square(np.cos(theta)), - np.sin(theta) * np.cos(theta)])
     wp = np.array([r_s + np.square(np.sin(theta_s)), r_s + np.square(np.cos(theta_s)), np.sin(theta_s) * np.cos(theta_s)])
 
+    #Tangent calculation
     for i in range(len(P)):
         p = P_name[i]
         if str(p) == "b_t":
@@ -245,14 +513,16 @@ def bezier_section_plane(material, theta, ys, ys_s, n_pt, r, r_s, r_tb=1, r_cb=1
         u = np.cross(v, n)
         mus[i] = u/np.linalg.norm(u)
     
-    print(np.dot(mus, v))
     mue = np.roll(mus, -1, axis=0)
 
+    #Maximum lambdas calculations
     l_max = np.zeros(6)
     for i in range(6):
         halft, halftau = bound_lambda(P[i - 1], P[i], mus[i - 1], mue[i - 1])
         l_max[i - 1] = min(halft, halftau)
     
+    print(l_max)
+    #Orthotrophy hypothesis
     L1 = l_max[0]
     L2 = min(l_max[1], l_max[5])
     L3 = min(l_max[2], l_max[4])
@@ -262,42 +532,14 @@ def bezier_section_plane(material, theta, ys, ys_s, n_pt, r, r_s, r_tb=1, r_cb=1
         L2 = min(L2, L3)
         L3 = L2
 
-    ls = np.array([L1, L2, L3, L4, L3, L2]) * 0.5
+    ls = np.array([L1, L2, L3, L4, L3, L2])
 
     for i in range(6):
-        B[i * n_pt:(i+1) * n_pt] = bezier_seg(P[i - 1], P[i], mus[i - 1], mue[i - 1], ls[i - 1], ls[i], n_pt)
+        B[i * n_pt_curve:(i+1) * n_pt_curve] = bezier_seg(P[i - 1], P[i], mus[i - 1], mue[i - 1], ls[i - 1], ls[i], n_pt_curve)
     
     return(B, P, mus, mue, ns, dgs, ws, v)
 
-
-def plot_bezier(material):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    B_ys, B_r = seg_data_dir(material, 0.6)
-
-    thetas = B_ys[:,0]
-    ys = B_ys[:,1]
-    rval = B_r[:,1]
-
-    n_data = len(B_ys)
-    n_pt = 100
-
-    B = np.empty((0,3))
-
-    for i in range(n_data):
-        B_new, P_new, mus_new, mue_new, ns_new, dgs_new, ws_new = bezier_section_plane(material, thetas[i], ys[i], ys[n_data - i - 1], n_pt, rval[i], rval[n_data - i - 1])
-        B = np.concatenate((B, B_new))
-
-    X = B[:,0]
-    Y = B[:,1]
-    Z = B[:,2]
-
-    ax.scatter(X, Y, Z, linewidth=0.01, s=1)
-
-    plt.show()
-
-def plot_bezier_tangent(material):
+def plot_bezier_alloutput(material):
     
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -309,7 +551,7 @@ def plot_bezier_tangent(material):
     rval = B_r[:,1]
 
     n_data = len(B_ys)
-    n_pt = 100
+    n_pt_curve = 100
 
     B = np.empty((0,3))
     P = np.empty((0,3))
@@ -322,7 +564,7 @@ def plot_bezier_tangent(material):
 
     for i in range(n_data):
 
-        B_new, P_new, mus_new, mue_new, ns_new, dgs_new, ws_new, v_new = bezier_section_plane(material, thetas[i], ys[i], ys[n_data - i - 1], n_pt, rval[i], rval[n_data - i - 1])
+        B_new, P_new, mus_new, mue_new, ns_new, dgs_new, ws_new, v_new = bezier_section_plane_alloutput(material, thetas[i], ys[i], ys[n_data - i - 1], n_pt_curve, rval[i], rval[n_data - i - 1])
         B = np.concatenate((B, B_new))
         P = np.concatenate((P, P_new))
         mus = np.concatenate((mus, mus_new))
@@ -396,5 +638,5 @@ def plot_bezier_tangent(material):
 
     plt.show()
 
-material = "DP780"
-plot_bezier_tangent(material)
+if __name__ == "__main__":
+    pass

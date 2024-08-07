@@ -15,7 +15,7 @@ polyN_cali_dir = os.path.dirname(run_dir)
 
 sys.path.append(polyN_cali_dir)
 from tests_parameters import load_points
-from read_param import read_param
+from read import read_param
 
 ut_tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT"]
 

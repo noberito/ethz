@@ -14,7 +14,7 @@ polyN_dir = os.path.dirname(file_dir)
 sep = os.sep
 sys.path.append(polyN_dir)
 
-from read_param import read_param
+from read import read_param
 
 p = read_param()
 

@@ -12,7 +12,7 @@ file_dir = os.path.dirname(os.path.abspath(__file__))
 polyN_dir = os.path.dirname(file_dir)
 sys.path.append(polyN_dir)
 
-from read_param import read_param
+from read import read_param
 
 p = read_param()
 

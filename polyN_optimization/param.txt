@@ -1,32 +1,32 @@
 * To use new params, write "{variable} = {value}", explanation of the different parameters in param.md
 
 func = polyN_mini
-material = DP780
+material = AA7020-T6
 enu = 0.3
 density = 7.85e-9
-degree = 6
+degree = 8
 law = swift
-protomodel = mises
+protomodel = bezier
 
-nb_virtual_pt = 5
+nb_virtual_pt = 1000
 gen_v_data = 1
 
-gen_e_data = 0
-nt6 = 1
+gen_e_data = 1
+nt6 = 0
 sh = 0
 
 weight_ut = 0.8
 weight_e2 = 0.01
-weight_vir = 0.001
+weight_vir = 0.1
 
 n_opti = 3
 input_type = UMAT
 var_optim = 1
 
-opti = 0
-loadcoeff = 1
+opti = 1
+loadcoeff = 0
 
-savecoeff = 0
+savecoeff = 1
 export_coeff_abq = 0
 
 gseed = 6

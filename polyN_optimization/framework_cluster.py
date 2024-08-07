@@ -17,7 +17,7 @@ from optimize_polyN_mini import firstopti_mini, write_coeff_abq_mini, get_param_
 from get_calibration_data import analyze_exp_data
 from tests_parameters import ut_tests_ext
 from check.compare_sim_exp import compare_large_strain, compare_ut_s_2, compare_ut_fd
-from read_param import read_param
+from read import read_param
 from run_large_sim_cluster import launch_run, create_csv
 
 sep = os.sep

@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import os
-import matplotlib.pyplot as plt
+from bezier import bezier_3D
 
-file_dir = os.path.dirname(os.path.abspath(__file__)) 
+polyN_dir = os.path.dirname(os.path.abspath(__file__)) 
 sep = os.sep
 
 tol_yf = 0.01
@@ -21,7 +21,7 @@ def analyze_exp_data(material):
 
     """
     d = {}
-    folder = file_dir + sep + "results_exp" + sep + material
+    folder = polyN_dir + sep + "results_exp" + sep + material
     files = os.listdir(folder)
     for f in files:
         if not(f[0] == "_"):
@@ -44,7 +44,7 @@ def export_exp_data(material):
     """
     mat_dic = analyze_exp_data(material)
     ut_data = pd.DataFrame(columns=["q", "LoadAngle", "YieldStress", "Rval", "Type", "YoungMod", "Width", "Thickness"])
-    dirname_in = f"{file_dir}{sep}results_exp{sep}{material}"
+    dirname_in = f"{polyN_dir}{sep}results_exp{sep}{material}"
 
     for test in mat_dic.keys():
         test_dic = mat_dic[test]
@@ -61,7 +61,7 @@ def export_exp_data(material):
                         filepath = dirname_in + sep + filename
                         df = pd.read_csv(filepath)
                         df = df.rename(columns={df.columns[0]:"PlasticStrain", df.columns[1]:"PlasticStress[MPa]"})
-                        yield_stress = df[df["PlasticStrain"] > 0.002]["PlasticStress[MPa]"].iloc[0]
+                        yield_stress = df[df["PlasticStrain"] > 0.06]["PlasticStress[MPa]"].iloc[0]
                         ys_exp = np.append(ys_exp,yield_stress)
                         rval_exp = np.append(rval_exp,0)
                     q = 1
@@ -71,7 +71,7 @@ def export_exp_data(material):
                         filename = f"{test}_{ori}_{i+1}.csv"
                         filepath = dirname_in + sep + filename
                         df = pd.read_csv(filepath)
-                        yield_stress = df[df["PlasticStrain_longi"] > 0.002]["PlasticStress[MPa]"].iloc[0]
+                        yield_stress = df[df["PlasticStrain_longi"] > 0.06]["PlasticStress[MPa]"].iloc[0]
                         rval = df["R-Value"].iloc[0]
                         ys_exp = np.append(ys_exp,yield_stress)
                         rval_exp = np.append(rval_exp,rval)
@@ -83,8 +83,8 @@ def export_exp_data(material):
                 row = pd.DataFrame({"q": [q], "LoadAngle" : [theta], "YieldStress" : [ys], "Rval" : [rval], "Type" : [pttype]})
                 ut_data = pd.concat([ut_data, row])
 
-
-    foldername_out = f"{file_dir}{sep}calibration_data{sep}{material}"
+    ut_data = ut_data.sort_values(by=['q', 'LoadAngle'], ascending=[True, True])
+    foldername_out = f"{polyN_dir}{sep}calibration_data{sep}{material}"
     if not os.path.exists(foldername_out):
         os.makedirs(foldername_out)
     print(foldername_out)
@@ -185,12 +185,15 @@ def export_virtual_data(protomodel, material, nb_virtual_pt):
     if protomodel == "mises":
         data = data_yf_sphere(mises, itermax, nb_virtual_pt)
 
+    if protomodel == "bezier":
+        data = bezier_3D(material, nb_virtual_pt)
+
     df = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23"])
     df["Rval"] = np.zeros(len(data))
     df["Type"] = ["v"] * len(data)
 
     filename = f"data_virtual_{material}_{protomodel}.csv"
-    folderpath = f"{file_dir}{sep}calibration_data{sep}{material}"
+    folderpath = f"{polyN_dir}{sep}calibration_data{sep}{material}"
     filepath = folderpath + sep + filename
 
     if not os.path.exists(folderpath):

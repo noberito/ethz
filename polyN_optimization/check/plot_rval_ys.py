@@ -11,7 +11,8 @@ polyN_dir = os.path.dirname(file_dir)
 sep = os.sep
 sys.path.append(polyN_dir)
 
-from optimize_polyN import get_param_polyN, polyN, jac_polyN_param, grad_polyN, readData, read_param, mises
+from read import read_param, readData_2d
+from optimize_polyN import get_param_polyN, polyN, jac_polyN_param, grad_polyN, mises
 from optimize_polyN_mini import get_param_polyN_mini, f_min_squared, jac_polyN_2d_param
 from optimize_polyN_mini import grad_polyN_2d, polyN_2d, get_dir_pst, get_yield_stress_SH, get_yield_stress_NT6, add_sh, add_nt6
 from optimize_Hill48 import hill48, grad_hill48, load_coeff_hill48
@@ -866,17 +867,18 @@ def plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, powers, plot
     n_thetas = 100
     thetas_theo = np.linspace(0, np.pi / 2, n_thetas)
 
-    ys_hill = ys_ut_hill48(thetas_theo, coeff_hill)
-    ys_yld = ys_ut_yld2000(thetas_theo, coeff_yld, m)
-    ys_polyN = ys_ut_mini(thetas_theo, coeff_mini, powers)
+    
+    
+    
 
-    r_vals_hill = rval_ut_hill48(thetas_theo, coeff_hill)
-    r_vals_yld2000 = rval_ut_yld2000(thetas_theo, coeff_yld, m)
-    r_vals_polyN = rval_ut_mini(thetas_theo, coeff_mini, powers)
+    
+    
+    
 
     df_exp = df[df["Rval"] > 0.001]
-    sigma0 = df_exp["YieldStress"].iloc[0]
-    ys_exp = df_exp["YieldStress"]
+    sigma0 = df_exp[df_exp["q"] == 0.0][df_exp["LoadAngle"] == 0.0]["YieldStress"].values
+    ys_exp = df_exp["YieldStress"].values
+    print(ys_exp)
 
     index_rval = np.where(df["Rval"]< 0.00001, False, True)
     thetas_exp = df["LoadAngle"].iloc[index_rval].values
@@ -886,12 +888,18 @@ def plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, powers, plot
 
     #plt.plot(thetas_theo, r_vals_model, c="red", label="R_val model")
     if plot_hill:
+        ys_hill = ys_ut_hill48(thetas_theo, coeff_hill)
+        r_vals_hill = rval_ut_hill48(thetas_theo, coeff_hill)
         plt.plot(thetas_theo, ys_hill, color="blue", linewidth=1, label="Hill'48")
         plt.plot(thetas_theo, r_vals_hill, color="blue", linestyle="dashed", linewidth=1)
     if plot_yld:
+        ys_yld = ys_ut_yld2000(thetas_theo, coeff_yld, m)
+        r_vals_yld2000 = rval_ut_yld2000(thetas_theo, coeff_yld, m)
         plt.plot(thetas_theo, ys_yld, color="red", linewidth=1, label="Yld2000")
         plt.plot(thetas_theo, r_vals_yld2000, color="red", linestyle="dashed", linewidth=1)
     if plot_mini:
+        ys_polyN = ys_ut_mini(thetas_theo, coeff_mini, powers)
+        r_vals_polyN = rval_ut_mini(thetas_theo, coeff_mini, powers)
         plt.plot(thetas_theo, ys_polyN, color="black", linewidth=1, label=f"Poly{degree}")
         plt.plot(thetas_theo, r_vals_polyN, color="black", linestyle="dashed", linewidth=1)
 
@@ -953,30 +961,34 @@ def plot_planestress_all(material, coeff_hill, coeff_yld, coeff_polyN, m, powers
         yld2000_plane = np.vectorize(yld2000_plane)
         polyN_mini_plane = np.vectorize(polyN_mini_plane)
 
-        ys_mises = mises_plane(sx, sy)
-        ys_hill = hill48_plane(sx, sy)
-        ys_yld2000 = yld2000_plane(sx, sy)
-        ys_polyN_mini = polyN_mini_plane(sx, sy)
+        
+        
+        
+        
 
         handles = []
         labels = []
 
         if plot_mises:
+            ys_mises = mises_plane(sx, sy)
             cs1 = ax.contour(sx, sy, ys_mises, levels=[1], linewidths=1, colors="green")
             handles.append(Line2D([0], [0], color="green", lw=1))
             labels.append("Mises")
 
         if plot_hill:
+            ys_hill = hill48_plane(sx, sy)
             cs2 = ax.contour(sx, sy, ys_hill, levels=[1], linewidths=1, colors="red")
             handles.append(Line2D([0], [0], color="red", lw=1))
             labels.append("Hill48")
 
         if plot_yld:
+            ys_yld2000 = yld2000_plane(sx, sy)
             cs3 = ax.contour(sx, sy, ys_yld2000, levels=[1], linewidths=1, colors="blue")
             handles.append(Line2D([0], [0], color="blue", lw=1))
             labels.append("Yld2000")
 
         if plot_mini:
+            ys_polyN_mini = polyN_mini_plane(sx, sy)
             cs4 = ax.contour(sx, sy, ys_polyN_mini, levels=[1], linewidths=1, colors="black")
             handles.append(Line2D([0], [0], color="black", lw=1))
             labels.append(f"Poly{degree}")
@@ -1005,7 +1017,8 @@ def main():
     weight_vir = float(p["weight_vir"])
     nb_virtual_pt = int(p["nb_virtual_pt"])
     var_optim = p["var_optim"]
-    df = readData(material, protomodel)
+    
+    df = readData_2d(material, protomodel)
 
     if func == "polyN":
         coeff_polyN = np.load(polyN_dir + sep + "poly_coeff.npy")
@@ -1042,8 +1055,8 @@ def main():
             coeff_hill = load_coeff_hill48(material)
             coeff_yld = load_coeff_yld2000(material)
 
-            plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_polyN_mini, 8, powers, 1, 1, 1)
-            plot_planestress_all(material, coeff_hill, coeff_yld, coeff_polyN_mini, 8, powers, 1, 1, 1, 1)
+            plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_polyN_mini, 8, powers,0, 0, 1)
+            plot_planestress_all(material, coeff_hill, coeff_yld, coeff_polyN_mini, 8, powers, 1, 0, 0, 1)
 
 
 main()
