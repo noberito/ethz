@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.special import binom
+import random
 
 from read import readdata_exp
 
@@ -14,7 +15,7 @@ polyN_dir = os.path.dirname(os.path.abspath(__file__))
 sep = os.sep
 
 
-n_pt_seg_dir = 3
+n_pt_seg_dir = 10
 """
     For any question regarding the creation of the Bezier surface, please refer to the shyQP article written by
     Soare in 2023.
@@ -342,14 +343,20 @@ def bezier(material, n_pt_curve):
     return(B)
 
 def bezier_3D(material, n_pt_total):
-    n_pt_curve = n_pt_total // (6 * 6 * n_pt_seg_dir)
-    print(n_pt_curve)
+    n_pt_curve = 200
     B = bezier(material, n_pt_curve)
+    
+    m = len(B)
+
+    indexes = random.sample(range(m), n_pt_total)
     B_3D = np.zeros((len(B), 6))
     B_3D[:,0] = B[:,0]
     B_3D[:,1] = B[:,1]
     B_3D[:,3] = B[:,2]
 
+    B_3D = B_3D[indexes]
+
+    print(len(B_3D))
     return(B_3D)
 
 """---------------------------------------------PLOT FUNCTIONS--------------------------------------------------------------------"""
@@ -367,13 +374,13 @@ def plot_seg_data_dir(material):
 
     for j in range(len(alphas)):
         alpha = alphas[j]
-        _, B_ys, B_r = seg_data_dir(material, alpha)
+        B_ys, B_r = seg_data_dir(material, alpha)
         
-        X = B_ys[:, 0]
+        X = B_ys[:, 0] / (2 * np.pi) * 360
         Y = B_ys[:, 1]
         ax[0].plot(X, Y, color="blue", linewidth=1,linestyle=linestyles[j], label=str(alpha))
 
-        X = B_r[:, 0]
+        X = B_r[:, 0] / (2 * np.pi) * 360
         Y = B_r[:, 1]
         ax[1].plot(X, Y, color="red", linewidth=1, linestyle=linestyles[j], label=str(alpha))
 
@@ -382,11 +389,21 @@ def plot_seg_data_dir(material):
         legend_lines.append(Line2D([0], [0], color='black', linestyle=linestyles[i], label=alphas[i])) 
 
     ax[0].legend(handles=legend_lines)
+    thetas = thetas / (2 * np.pi) * 360
     ax[0].scatter(thetas, ys_ratio, marker="x", linewidths=1, color="blue")
     ax[1].scatter(thetas, r_val, marker="x", linewidths=1, color="red")
+
+    ax[0].set_ylabel(r"$\sigma/\sigma_0[-]$")
+    ax[1].set_ylabel(r"$\text{r-value}[-]$")
+    ax[1].set_xlabel(r"$\theta[\text{°}]$")
+
     ax[0].grid(1)
     ax[1].grid(1)
 
+    specific_xtick_labels = ['Zero', 'Two', 'Four']  # Labels for these ticks
+
+    ax[0].set_xticks(thetas, thetas)
+    ax[1].set_xticks(thetas, thetas)
     plt.suptitle(f"Bezier model {material} : Yield stresses and Lankford ratios")
     plt.show()
 
@@ -417,7 +434,7 @@ def plot_bezier(material):
         mue[i] = mue_new
         l_max[i] = l_max_new
 
-    s = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+    s = 0
     l = np.min(l_max, axis=0) * s
     B = np.zeros((n_curves * n_pt_curve * 6, 3))
 
@@ -438,6 +455,10 @@ def plot_bezier(material):
     Z = B[:,2]
 
     ax.scatter(X, Y, Z, linewidth=0.1, s=1)
+    ax.set_xlabel(r"$\sigma_{xx}/\sigma_0[-]$")
+    ax.set_ylabel(r"$\sigma_{yy}/\sigma_0[-]$")
+    ax.set_zlabel(r"$\sigma_{xy}/\sigma_0[-]$")
+    plt.suptitle(f"Bezier model {material}, s = {s}")
 
     plt.show()
 
@@ -639,4 +660,4 @@ def plot_bezier_alloutput(material):
     plt.show()
 
 if __name__ == "__main__":
-    pass
+    plot_seg_data_dir("DP600")

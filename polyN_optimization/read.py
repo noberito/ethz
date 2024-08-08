@@ -84,7 +84,7 @@ def readData_2d(material, protomodel):
         print(f"protomodel {protomodel} not available for the moment")
         df_v = pd.DataFrame()
     
-    if 1:
+    if 0:
         if protomodel == "bezier":
             data = df_v[["s11", "s22", "s12"]].values
 

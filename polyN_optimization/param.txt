@@ -1,14 +1,14 @@
 * To use new params, write "{variable} = {value}", explanation of the different parameters in param.md
 
 func = polyN_mini
-material = AA7020-T6
+material = DP780
 enu = 0.3
 density = 7.85e-9
 degree = 8
 law = swift
 protomodel = bezier
 
-nb_virtual_pt = 1000
+nb_virtual_pt = 200
 gen_v_data = 1
 
 gen_e_data = 1
@@ -21,12 +21,12 @@ weight_vir = 0.1
 
 n_opti = 3
 input_type = UMAT
-var_optim = 1
+var_optim = 1,2,3,4,5,6
 
 opti = 1
 loadcoeff = 0
 
 savecoeff = 1
-export_coeff_abq = 0
+export_coeff_abq = 1
 
 gseed = 6

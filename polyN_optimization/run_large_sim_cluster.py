@@ -155,7 +155,7 @@ def post_process(test, material, input_type, p=0, m=0):
         field = "S,LE,SDV_EPBAR"
         command = f"abaqus odbreport job={job} odb={odb} field={field} components"
         result = subprocess.run(command, shell=True, cwd=run_dir)
-        time.sleep(10)
+        time.sleep(30)
         print("Report {} ended".format(job))
 
         #POST PROCESSING
@@ -274,7 +274,7 @@ def post_process(test, material, input_type, p=0, m=0):
         history = "U2,RF2"
         command = f"abaqus odbreport job={job} odb={odb} histregion={histregion} history={history} components"
         result = subprocess.run(command, shell=True, cwd=run_dir)
-        time.sleep(10)
+        time.sleep(30)
         print("Report {} ended".format(job))
 
         #POST PROCESSING
@@ -360,6 +360,7 @@ def post_process(test, material, input_type, p=0, m=0):
             history = "U2"
             command = f"abaqus odbreport job={job} odb={odb} histregion={histregion} history={history} components"
             result = subprocess.run(command, shell=True, cwd=run_dir)
+            time.sleep(30)
             print("Report {} ended".format(job))
 
             #POST PROCESSING
@@ -509,7 +510,7 @@ def del_lck_file(test, input_type, p=0, m=0):
 def launch_run(tests, func, material, degree, law, protomodel, input_type, p=0, m=0):
     #Run les tests disponibles experimentalement
 
-    time_limit = 360
+    time_limit = 600
     n = len(tests)
     
     for test in tests:
@@ -603,9 +604,10 @@ if __name__ == "__main__":
     nmon = len(coeff_polyN_mini) - 2
     powers = get_param_polyN_mini(degree)
 
-    write_coeff_abq_mini(coeff_polyN_mini, a, b, c, ymod, enu, protomodel, degree, material, law, density, powers, 10, 10)
-    launch_run(["NT6_45"], func, material, degree, law, protomodel, input_type, 10, 10)
+    #write_coeff_abq_mini(coeff_polyN_mini, a, b, c, ymod, enu, protomodel, degree, material, law, density, powers, 10, 10)
+    #launch_run(["NT6_45"], func, material, degree, law, protomodel, input_type, 10, 10)
 
-    #launch_run(tests, func, material, degree, law, protomodel, input_type, 10, 10)
-    #create_csv(tests, material, input_type, 10, 10)
-    #compare_large_strain(material, func, degree, input_type, 10, 10)
+    write_coeff_abq_mini(coeff_polyN_mini, coeff_law[:3], ymod, enu, protomodel, degree, material, law, density, powers, 10, 10)
+    launch_run(tests, func, material, degree, law, protomodel, input_type, 10, 10)
+    create_csv(tests, material, input_type, 10, 10)
+    compare_large_strain(material, func, degree, input_type, 10, 10)
