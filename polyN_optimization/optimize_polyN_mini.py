@@ -14,9 +14,8 @@ import os
 import sklearn
 import sklearn.preprocessing
 from sklearn.linear_model import LinearRegression
-from read import read_param, readData_2d
-from get_calibration_data import export_exp_data, export_virtual_data, analyze_exp_data
-from get_hardening_law import get_hardening_law
+from read import read_param, readData_2d, get_coeff_mises
+from get_calibration_data import export_exp_data, export_virtual_data, analyze_exp_data, export_hardening_data
 import shutil
 import random
 
@@ -1101,7 +1100,7 @@ def get_yield_stress_NT6(sigma0, material):
                         df_NT6 = remove_linear_part(df_NT6, type_test)
                         df_NT6["PlasticStrain"] = df_NT6["AxStrain_1"] - df_NT6["AxStrain_1"].iloc[0]
                         df_NT6["PlasticStress"] = df_NT6["Force[kN]"] * 1000 / (thick * innerwidth)
-                        yield_stress = df_NT6[df_NT6["PlasticStrain"] > 0.002]["PlasticStress"].iloc[0]
+                        yield_stress = df_NT6[df_NT6["PlasticStrain"] > 0.06]["PlasticStress"].iloc[0]
                         ys_exp = np.append(ys_exp,yield_stress)
 
                     ys = np.mean(ys_exp)
@@ -1146,7 +1145,7 @@ def get_yield_stress_SH(sigma0, material):
 
                         df_SH["PlasticStress"] = df_SH["Force[kN]"] * 1000 / (thick  * width)
                         df_SH["PlasticStrain"] = (df_SH["Displacement longi[mm]"] - df_SH["Displacement longi[mm]"].iloc[0]) / l0
-                        yield_stress = df_SH[df_SH["PlasticStrain"] > 0.002]["PlasticStress"].iloc[0]
+                        yield_stress = df_SH[df_SH["PlasticStrain"] > 0.06]["PlasticStress"].iloc[0]
                         ys_exp = np.append(ys_exp,yield_stress)
 
                     ys = np.mean(ys_exp)
@@ -1339,7 +1338,7 @@ def check_convexity(coeff, powers):
     return(False)
 
 
-def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_vir, init_guess):
+def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_exp, init_guess):
     """
         Returns the optimized coefficients of the yield surface minimaslistic on experimental data (UTs) and virtual data from a protomodel.
 
@@ -1354,7 +1353,7 @@ def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_vir, init_gues
         Output :
             - coeff : ndarray of shape (nmon,), coeff of yield surface model
     """
-
+    
     data = df[["s11", "s22", "s33", "s12", "s13", "s23"]].values
 
     polyN = sklearn.preprocessing.PolynomialFeatures(degree, include_bias=False)
@@ -1392,11 +1391,17 @@ def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_vir, init_gues
     n_data_v = n_data - n_data_ut - n_data_ns
     weight_s = np.zeros(n_data)
 
-    w = weight_ut / (n_data_ut + weight_e2 * n_data_ns + weight_vir * n_data_v)
+    weight_vir = 1 - weight_exp - weight_e2
 
-    w_ut = w
-    w_e2 = w * weight_e2
-    w_v = w * weight_vir
+    w_ut = weight_ut * weight_exp / n_data_ut
+    if n_data_ns > 0:
+        w_e2 = weight_ut * weight_e2 / n_data_ns
+    else:
+        w_e2 = 0
+    if n_data_v > 0:
+        w_v = weight_ut * weight_vir / n_data_v
+    else:
+        w_v = 0
 
     weight_s[index_s] = w_ut
     weight_s[index_ns] = w_e2
@@ -1594,7 +1599,7 @@ def optiCoeff_pflow_mini(law, coeff, material, powers):
             print("No file named '_YLD2000_pre.csv' containing the coefficients of swiftvoce")
     
 
-def write_coeff_abq_mini(coeff, coeff_law, ymod, enu, protomodel, degree, material, law, density, powers, p=0, m=0):
+def write_coeff_abq_mini(coeff, coeff_law, ymod, enu, protomodel, degree, material, law, density, p=0, m=0):
     """
         Write the user material file in running directory.
 
@@ -1613,13 +1618,9 @@ def write_coeff_abq_mini(coeff, coeff_law, ymod, enu, protomodel, degree, materi
             - m : int, to save file
     
     """
+    powers = get_param_polyN_mini(degree)
     nmon = len(powers)
-
-    if str(p)=="0" and m==0:
-        filename = "{}_abq_deg{}mini_{}_{}.inp".format(material, degree, law, protomodel)
-    else:
-        filename = "{}_abq_deg{}mini_{}_{}_{}_{}.inp".format(material, degree, law, protomodel, p, m)
-
+    filename = "{}_abq_deg{}mini_{}_{}_{}_{}.inp".format(material, degree, law, protomodel, p, m)
     foldername = polyN_dir + sep + "running"
     filepath = foldername + sep + filename
 
@@ -1704,7 +1705,7 @@ def test_sh():
     material = p["material"]
     protomodel = p["protomodel"]
     
-    get_hardening_law(material)
+    export_hardening_data(material)
     df = readData_2d(material, protomodel)
     sigma0 = df["YieldStress"].iloc[0]
     
@@ -1801,63 +1802,43 @@ def test_points(Nh, Mh, Nv, Mv):
     plt.show() 
 
 def firstopti_mini():
+
     p = read_param()
 
     material = p["material"]
-    gseed = int(p["gseed"])
     enu = float(p["enu"])
     density = float(p["density"])
     nb_virtual_pt = int(p["nb_virtual_pt"])
     degree = int(p["degree"])
-    sh = int(p["sh"])
-    nt6 = int(p["nt6"])
-    weight_ut = float(p["weight_ut"])
-    weight_vir = float(p["weight_vir"])
-    weight_e2 = float(p["weight_e2"])
     protomodel = p["protomodel"]
     law = p["law"]
 
-    gen_v_data = int(p["gen_v_data"])
-    gen_e_data = int(p["gen_e_data"])
+    sh = int(p["sh"])
+    nt6 = int(p["nt6"])
+
+    weight_ut = float(p["weight_ut"])
+    weight_exp = float(p["weight_exp"])
+    weight_e2 = float(p["weight_e2"])
 
     opti = int(p["opti"])
     loadcoeff = int(p["loadcoeff"])
 
-    export_coeff_abq = int(p["export_coeff_abq"])
-    savecoeff = int(p["savecoeff"])
-
     print(material)
 
-    if gen_v_data :
-        print("Generation of virtual data")
-        export_virtual_data(protomodel, material, nb_virtual_pt)
-        print("Generation ended")
+    export_exp_data(material)
+    export_virtual_data(protomodel, material, nb_virtual_pt)
+    export_hardening_data(material)
 
-    if gen_e_data:
-        print("Processing experimental data")
-        export_exp_data(material)
-        print("Processing ended")
-
-    get_hardening_law(material)
     df = readData_2d(material, protomodel)
     sigma0 = df["YieldStress"].iloc[0]
+
+    powers = get_param_polyN_mini(degree)
+    C = get_coeff_mises(degree)
+    print(C)
 
     if sh:
         ys_ratio_sh = get_yield_stress_SH(sigma0, material)
         df = add_sh(df, ys_ratio_sh)
-
-    powers = get_param_polyN_mini(degree)
-    nmon = len(powers)
-
-
-    if degree==2:
-        C = np.array([1, -1, 1, 3, 3, 3])
-    if degree==4:
-        C = np.array([1, -2, 3, -2, 1, 6, -6, 6, 9, 3, 3])
-    if degree==6:
-        C = np.array([1, -3, 6, -7, 6, -3, 1, 12, -24, 30, -24, 12, 14, -2, 14, 30, 3, 3])
-    if degree==8:
-        C = np.array([1, -4, 14, -30, 40, -30, 14, -4, 1, 11, -21, 17, -1, 17, -21, 11, 40, -4, 18, -4, 40, 42, -6, 42, 120, 3, 3])
 
     if opti:
         new_df = df.copy(deep=True)
@@ -1865,11 +1846,11 @@ def firstopti_mini():
         if nt6:
             ys_ratio_nt6 = get_yield_stress_NT6(sigma0, material)
             for i in range(3):
-                coeff = optiCoeff_polyN_mini(new_df, degree,  weight_ut, weight_e2, weight_vir, C)
+                coeff = optiCoeff_polyN_mini(new_df, degree,  weight_ut, weight_e2, weight_exp, C)
                 dir_pst = get_dir_pst(coeff, powers)
                 new_df = add_nt6(df, ys_ratio_nt6, dir_pst)
         else : 
-            coeff = optiCoeff_polyN_mini(new_df, degree,  weight_ut, weight_e2, weight_vir, C)
+            coeff = optiCoeff_polyN_mini(new_df, degree,  weight_ut, weight_e2, weight_exp, C)
 
     elif loadcoeff:
         coeff = np.load(polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy")
@@ -1878,13 +1859,16 @@ def firstopti_mini():
 
     coeff_law, ymod = optiCoeff_pflow_mini(law, coeff, material, powers)
 
-    if savecoeff:
-        np.save(polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy", coeff)
-        np.save(polyN_dir + sep + material + f"_{law}_mini_coeff.npy", np.append(coeff_law, ymod))
+    filedir = polyN_dir + sep + "coeff" + sep
+    filename_coeff_mini = material + "_poly" + str(degree) + "_mini.npy"
+    filename_coeff_law = material + f"_{law}.npy"
 
-    if export_coeff_abq:
-        print(nmon, coeff)
-        write_coeff_abq_mini(coeff, coeff_law, ymod, enu, protomodel, degree, material, law, density, powers, p=0, m=0)
+    np.save(filedir + filename_coeff_mini, coeff)
+    np.save(filedir + filename_coeff_law, np.append(coeff_law, ymod))
+
+    write_coeff_abq_mini(coeff, coeff_law, ymod, enu, protomodel, degree, material, law, density, p=0, m=0)
+
+    return(coeff)
 
 if __name__ == "__main__":
     firstopti_mini() 

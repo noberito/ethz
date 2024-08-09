@@ -469,7 +469,7 @@ def data_yf_sphere_spec(f, itermax, n_pt_angle):
     
     return(data)
 
-def check_convexity_lpm(func, coeff, powers, itermax, nb_pt):
+def check_convexity_lpm(coeff, powers, itermax, nb_pt):
     """
         Returns the minimum leading principal minor among nb_pt points of the polyN definded by the coefficients coeff
         Input :
@@ -493,7 +493,7 @@ def check_convexity_lpm(func, coeff, powers, itermax, nb_pt):
     m = min(L.flatten())
     return(m)
 
-def check_convexity_lpm_spec(func, coeff, powers, itermax, n_pt_angle):
+def check_convexity_lpm_spec(coeff, powers, itermax, n_pt_angle):
     """
         Returns the minimum leading principal minor among nb_pt points of the polyN definded by the coefficients coeff
         Input :

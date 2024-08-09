@@ -1,18 +1,6 @@
-from traceback import print_tb
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import scipy.optimize
-from scipy.signal import savgol_filter
 import os
-import sklearn
-import sklearn.preprocessing
-from sklearn.linear_model import LinearRegression
-from read import read_param
-from get_calibration_data import export_exp_data, export_virtual_data, analyze_exp_data
-from get_hardening_law import get_hardening_law
-from optimize_polyN_mini import readData_2d
 
 polyN_dir = os.path.dirname(os.path.abspath(__file__))
 sep = os.sep

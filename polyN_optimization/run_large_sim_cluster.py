@@ -16,7 +16,7 @@ run_dir = polyN_cali_dir + sep + "running"
 
 sys.path.append(polyN_cali_dir)
 
-from read import read_param
+from read import read_param, get_coeff_mini, get_coeff_law
 from get_calibration_data import analyze_exp_data
 from tests_parameters import load_points, ext_points, ut_tests_ext
 from check.compare_sim_exp import compare_large_strain, compare_ut_s_2
@@ -65,22 +65,13 @@ def change_paras(test, material):
         f.write("MAXDT = DTIME * 1e-2")
         f.close()
 
-def change_usermat(test, func, material, degree, law, protomodel, input_type, p=0, m=0):
+def change_usermat(test,material, degree, law, protomodel, input_type, p=0, m=0):
     """
         Change the input user material file in the all the abaqus files of test in tests
         Input :
             - usermatfile : string, filename of the user material file
     """
-    if func=="polyN":
-        if str(p)=="0" and m==0:
-            usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}.inp"
-        else:
-            usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}_{p}_{m}.inp"
-    if func=="polyN_mini":
-        if str(p)=="0" and m==0:
-            usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}.inp"
-        else:
-            usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}_{p}_{m}.inp"
+    usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}_{p}_{m}.inp"
             
     filename = run_dir + sep + test + f"_{input_type}.inp"
     with open(filename, "r") as f:
@@ -98,7 +89,7 @@ def change_usermat(test, func, material, degree, law, protomodel, input_type, p=
     with open(filename, "w") as f:
         f.writelines(content)
 
-def simulate(test, func, input_type, law,  p=0, m=0):
+def simulate(test, input_type, law,  p=0, m=0):
     """
         Run the abaqus simulation of the test_polyN.inp and generate a csv file in results_sim folder
         Input :
@@ -109,10 +100,7 @@ def simulate(test, func, input_type, law,  p=0, m=0):
     job = f'{test}_{input_type}'
     cpus = 24
 
-    if func == "polyN":
-        subroutine = f"{input_type}_PolyN_3D_{law}.for"
-    elif func == "polyN_mini":
-        subroutine = f"{input_type}_PolyNmini_3D_{law}.for"
+    subroutine = f"{input_type}_PolyNmini_3D_{law}.for"
 
     type_test = test.split("_")[0]
 
@@ -134,7 +122,7 @@ def simulate(test, func, input_type, law,  p=0, m=0):
     n_batch = res.stdout.decode('utf-8').strip("\n").split(" ")[-1]
     return(n_batch)
 
-def post_process(test, material, input_type, p=0, m=0):
+def create_csv(test, material, input_type, p=0, m=0):
     """
         Run the abaqus simulation of the test_polyN.inp and generate a csv file in results_sim folder
         Input :
@@ -465,18 +453,8 @@ def del_temp_file(test, input_type, p=0, m=0):
         else:
             subprocess.run(['rm', file])
 
-def del_usermatfile(material, func, degree, law, protomodel, p=0, m=0):
-    if func=="polyN":
-        if str(p)=="0" and m==0:
-            usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}.inp"
-        else:
-            usermatfile = f"{material}_abq_deg{degree}_{law}_{protomodel}_{p}_{m}.inp"
-    if func=="polyN_mini":
-        if str(p)=="0" and m==0:
-            usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}.inp"
-        else:
-            usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}_{p}_{m}.inp"
-    
+def del_usermatfile(material,degree, law, protomodel, p=0, m=0):
+    usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}_{p}_{m}.inp"
     filepath = run_dir + sep + usermatfile
     subprocess.run(["rm", filepath])
 
@@ -507,7 +485,7 @@ def del_lck_file(test, input_type, p=0, m=0):
     test_filepath = run_dir + sep + test_file
     subprocess.run(['rm', test_filepath])
 
-def launch_run(tests, func, material, degree, law, protomodel, input_type, p=0, m=0):
+def run(tests, material, degree, law, protomodel, input_type, p=0, m=0):
     #Run les tests disponibles experimentalement
 
     time_limit = 600
@@ -518,13 +496,13 @@ def launch_run(tests, func, material, degree, law, protomodel, input_type, p=0, 
         change_paras(test, material)
 
         #Changing the user material file
-        change_usermat(test, func, material, degree, law, protomodel, input_type, p, m)
+        change_usermat(test, material, degree, law, protomodel, input_type, p, m)
 
     batchs = []
 
     #Launching simulations job
     for test in tests:
-        batch = simulate(test, func, input_type, law, p, m)
+        batch = simulate(test, input_type, law, p, m)
         batchs.append(batch)
 
     #Waiting for simulations to start
@@ -547,7 +525,7 @@ def launch_run(tests, func, material, degree, law, protomodel, input_type, p=0, 
 
     #Relaunch the failed simulations
     if len(tests_failure) != 0:
-        launch_run(tests_failure, func, material, degree, law, protomodel, input_type, p, m)
+        run(tests_failure, material, degree, law, protomodel, input_type, p, m)
     
     #Waiting for simulations to end
     for test in tests_success:
@@ -559,19 +537,18 @@ def launch_run(tests, func, material, degree, law, protomodel, input_type, p=0, 
             else :
                 del_lck_file(test, input_type, p, m)
 
-    #del_usermatfile(material, func, degree, law, protomodel, p, m)
 
-def create_csv(tests, material, input_type, p=0, m=0):
+def post_process(tests, material, input_type, p=0, m=0):
 
     #Tests post processing
     for test in tests:
-        post_process(test, material, input_type, p, m)
+        create_csv(test, material, input_type, p, m)
         del_temp_file(test, input_type, p, m)
 
 if __name__ == "__main__":
     p = read_param()
+
     material = p["material"]
-    func = p["func"]    
     gseed = int(p["gseed"])
     input_type = p["input_type"]
     enu = float(p["enu"])
@@ -581,10 +558,11 @@ if __name__ == "__main__":
     sh = int(p["sh"])
     nt6 = int(p["nt6"])
     weight_ut = float(p["weight_ut"])
-    weight_vir = float(p["weight_vir"])
+    weight_exp = float(p["weight_exp"])
     weight_e2 = float(p["weight_e2"])
     protomodel = p["protomodel"]
     law = p["law"]
+
     mat_exp = analyze_exp_data(material)
 
     tests = []
@@ -594,20 +572,11 @@ if __name__ == "__main__":
                 test = type_test + "_" + ori
                 tests.append(test)
 
-    coeff_polyN_mini = np.load(polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy")
-    coeff_law = np.load(polyN_cali_dir + sep + material + f"_{law}_mini_coeff.npy")
 
-    a = coeff_law[0]
-    b = coeff_law[1]
-    c = coeff_law[2]
-    ymod = coeff_law[3]
-    nmon = len(coeff_polyN_mini) - 2
-    powers = get_param_polyN_mini(degree)
+    coeff_mini = get_coeff_mini(material, degree)
+    coeff_law, ymod = get_coeff_law(material, law)
 
-    #write_coeff_abq_mini(coeff_polyN_mini, a, b, c, ymod, enu, protomodel, degree, material, law, density, powers, 10, 10)
-    #launch_run(["NT6_45"], func, material, degree, law, protomodel, input_type, 10, 10)
-
-    write_coeff_abq_mini(coeff_polyN_mini, coeff_law[:3], ymod, enu, protomodel, degree, material, law, density, powers, 10, 10)
-    launch_run(tests, func, material, degree, law, protomodel, input_type, 10, 10)
-    create_csv(tests, material, input_type, 10, 10)
-    compare_large_strain(material, func, degree, input_type, 10, 10)
+    write_coeff_abq_mini(coeff_mini, coeff_law, ymod, enu, protomodel, degree, material, law, density, 10, 10)
+    run(tests, material, degree, law, protomodel, input_type, 10, 10)
+    post_process(tests, material, input_type, 10, 10)
+    compare_large_strain(material, degree, input_type, 10, 10)

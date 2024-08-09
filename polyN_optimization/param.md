@@ -1,6 +1,5 @@
 # Framework polyN : Parameters guide
 
-
 ### Materials parameters
 
 **material** (str) : Name of the material given
@@ -10,7 +9,6 @@
 **density** (float) : Density of the material given
 
 **degree** (int) : Degree of the polyN function (not every degree available lack of starting points)
-
 
 ### First optimization based on yield stress points and r-values
 
@@ -34,7 +32,6 @@
 
 **gen_e_data** (0 or 1) : Generating calibration data (must be set to 1 after adding a material otherwise set it to 0 not to lose time)
 
-
 ### Second optimization using FEA
 
 **n_opti** (int) : Number of iterations maximum of the gradient descent in the framework
@@ -43,16 +40,5 @@
 
 **var_optim** (int separated by a comma !, ex : "1,4,5" not "1, 4,5")) : Variables of the yield function to optimize (starts at 1, 0 is the last coefficient, etc)
 
-
-
 opti = 1
 loadcoeff = 0
-adapt = 0
-
-export_coeff_abq = 1
-export_coeff_user = 1
-
-plot = 0
-savefigyr = 0
-savefigplane = 0
-savecoeff = 1

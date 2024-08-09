@@ -101,3 +101,39 @@ def readData_2d(material, protomodel):
     df["Norm"] = np.linalg.norm(df[["s11", "s22", "s33", "s12", "s13", "s23"]].values, axis=1)
 
     return(df)
+
+def get_coeff_mini(material, degree):
+    filename = f"{material}_poly{degree}_mini.npy"
+    filedir = polyN_dir + sep + "coeff"
+    filepath = filedir + sep + filename
+    coeff_mini = np.load(filepath)
+    return(coeff_mini)
+
+def get_coeff_mini_opti(material, degree, opti):
+    filename = f"{material}_poly{degree}_mini_{opti}.npy"
+    filedir = polyN_dir + sep + "coeff"
+    filepath = filedir + sep + filename
+    coeff_mini = np.load(filepath)
+    return(coeff_mini)
+
+def get_coeff_law(material, law):
+    filename = f"{material}_{law}.npy"
+    filedir = polyN_dir + sep + "coeff"
+    filepath = filedir + sep + filename
+    coeff = np.load(filepath)
+    coeff_law = coeff[:-1]
+    ymod = coeff[-1]
+    return(coeff_law, ymod)
+
+def get_coeff_mises(degree):
+    if degree==2:
+        C = np.array([1, -1, 1, 3, 3, 3])
+    elif degree==4:
+        C = np.array([1, -2, 3, -2, 1, 6, -6, 6, 9, 3, 3])
+    elif degree==6:
+        C = np.array([1, -3, 6, -7, 6, -3, 1, 12, -24, 30, -24, 12, 14, -2, 14, 30, 3, 3])
+    elif degree==8:
+        C = np.array([1, -4, 14, -30, 40, -30, 14, -4, 1, 11, -21, 17, -1, 17, -21, 11, 40, -4, 18, -4, 40, 42, -6, 42, 120, 3, 3])
+    else:
+        C = []
+    return(C)

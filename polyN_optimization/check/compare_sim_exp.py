@@ -92,7 +92,7 @@ def compare_ut_fd(material, degree, input_type, p=0, m=0):
 
     plt.savefig(filepath)
 
-def compare_ut_s(material, func, degree, input_type, p=0, m=0):
+def compare_ut_s(material, degree, input_type, p=0, m=0):
     """
         Plot Stress Strain curves for each UT except for EBT
     """
@@ -156,12 +156,12 @@ def compare_ut_s(material, func, degree, input_type, p=0, m=0):
     if not(os.path.exists(figdir)):
         os.makedirs(figdir)
     
-    filename = f"{material}_ut_{func}_{p}_{m}.png"
+    filename = f"{material}_ut_polyN_{p}_{m}.png"
     filepath = figdir + sep + filename
     print(filepath)
     plt.savefig(filepath)
 
-def compare_ut_s_2(material, func, degree, input_type, p=0, m=0):
+def compare_ut_s_2(material, degree, input_type, p=0, m=0):
     """
         Plot Stress Strain curves for UT on one and only plot
     """
@@ -186,10 +186,6 @@ def compare_ut_s_2(material, func, degree, input_type, p=0, m=0):
                 df_sim["S31"] = df_sim["S13"]
                 df_sim["S32"] = df_sim["S23"]
                 df_sim["S"] = np.linalg.norm(df_sim[["S11", "S22", "S33", "S12", "S21", "S13", "S31", "S23", "S32"]], axis=1)
-
-
-                
-
                 for k in range(min(type_tests_mat[ori], 1)):
                     exp_res_path = results_exp_dir + sep + "UT_" + ori + f"_{k+1}.csv"
                     df_exp = pd.read_csv(exp_res_path)
@@ -219,7 +215,7 @@ def compare_ut_s_2(material, func, degree, input_type, p=0, m=0):
     if not(os.path.exists(figdir)):
         os.makedirs(figdir)
     
-    filename = f"{material}_ut_{func}_{p}_{m}.png"
+    filename = f"{material}_ut_poly{degree}_{p}_{m}.png"
     filepath = figdir + sep + filename
     plt.savefig(filepath)
 
@@ -311,11 +307,7 @@ def compare_all(material, degree, input_type):
     plt.legend()
     plt.show()
 
-import os
-import pandas as pd
-import matplotlib.pyplot as plt
-
-def compare_large_strain(material, func, degree, input_type, p=0, m=0):
+def compare_large_strain(material, degree, input_type, p=0, m=0):
     """
         Plot Force Displacement for large strain test
     """
@@ -388,7 +380,7 @@ def compare_large_strain(material, func, degree, input_type, p=0, m=0):
     if not(os.path.exists(figdir)):
         os.makedirs(figdir)
     
-    filename = f"{material}_largestrain_{func}_{p}_{m}.png"
+    filename = f"{material}_largestrain_poly{degree}_{p}_{m}.png"
     filepath = figdir + sep + filename
     print(filepath)
     plt.savefig(filepath)
@@ -398,5 +390,4 @@ if __name__ == "__main__":
     material = p["material"]
     degree = int(p["degree"])
     input_type = p["input_type"]
-    func = p["func"]
-    compare_ut_s_2(material, func, degree, input_type, p=10, m=10)
+    compare_ut_s_2(material, degree, input_type, p=10, m=10)

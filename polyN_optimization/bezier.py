@@ -163,7 +163,7 @@ def param_data_dir(material):
 
     return(YS, mus_ys, mue_ys, lmax_ys, R, mus_r, mue_r, lmax_r, thetas, ys_ratio, r_val)
 
-def seg_data_dir(material, alpha):
+def seg_data_dir(material, s_seg_dir):
     """
         Returns the directionnal segments (yield stress ratios, r-values)
 
@@ -177,8 +177,8 @@ def seg_data_dir(material, alpha):
     """
 
     YS, mus_ys, mue_ys, lmax_ys, R, mus_r, mue_r, lmax_r, _, _, _ = param_data_dir(material)
-    l_ys = alpha * lmax_ys
-    l_r = alpha * lmax_r
+    l_ys = s_seg_dir * lmax_ys
+    l_r = s_seg_dir * lmax_r
     n_seg = len(mus_ys)
 
     B_ys = np.zeros((n_pt_seg_dir * n_seg, 2))
@@ -299,11 +299,11 @@ def param_bezier_section_plane(material, theta, ys, ys_s, r, r_s, r_tb=1, r_cb=1
     l_max = np.expand_dims(l_max, axis=0)
     return(P, mus, mue, l_max)
 
-def bezier(material, n_pt_curve):
+def bezier(material, n_pt_curve, s_seg_dir, s_section):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    B_ys, B_r = seg_data_dir(material, 0.6)
+    B_ys, B_r = seg_data_dir(material, s_seg_dir)
 
     thetas = B_ys[:,0]
     ys = B_ys[:,1]
@@ -324,8 +324,7 @@ def bezier(material, n_pt_curve):
         mue[i] = mue_new
         l_max[i] = l_max_new
     
-    s = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-    l = np.min(l_max, axis=0) * s
+    l = np.min(l_max, axis=0) * s_section
     B = np.zeros((n_curves * n_pt_curve * 6, 3))
 
     for i in range(n_curves):
@@ -342,9 +341,9 @@ def bezier(material, n_pt_curve):
 
     return(B)
 
-def bezier_3D(material, n_pt_total):
+def bezier_3D(material, n_pt_total, s_seg_dir, s_section):
     n_pt_curve = 200
-    B = bezier(material, n_pt_curve)
+    B = bezier(material, n_pt_curve, s_seg_dir, s_section)
     
     m = len(B)
 
@@ -357,6 +356,11 @@ def bezier_3D(material, n_pt_total):
     B_3D = B_3D[indexes]
 
     print(len(B_3D))
+    fig, ax = plt.subplots(nrows = 1, ncols = 1, subplot_kw={"projection":"3d"})
+
+
+    ax.scatter(B_3D[:,0], B_3D[:,1], B_3D[:,3])
+    plt.show()
     return(B_3D)
 
 """---------------------------------------------PLOT FUNCTIONS--------------------------------------------------------------------"""
@@ -400,7 +404,6 @@ def plot_seg_data_dir(material):
     ax[0].grid(1)
     ax[1].grid(1)
 
-    specific_xtick_labels = ['Zero', 'Two', 'Four']  # Labels for these ticks
 
     ax[0].set_xticks(thetas, thetas)
     ax[1].set_xticks(thetas, thetas)

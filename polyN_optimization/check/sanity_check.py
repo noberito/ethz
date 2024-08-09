@@ -13,9 +13,8 @@ sep = os.sep
 polyN_cali_dir = os.path.dirname(file_dir)
 sys.path.append(polyN_cali_dir)
 
-from read import read_param
+from read import read_param, get_coeff_mini, get_coeff_law
 from get_calibration_data import analyze_exp_data
-from optimize_polyN import get_param_polyN, polyN
 from optimize_polyN_mini import get_param_polyN_mini, f_min_squared
 
 
@@ -25,19 +24,14 @@ def swift(a, b, c, ep):
 def voce(a, b, c, ep):
     return(a - b * (1- np.exp(- c * ep)))
 
-def curve_theo_norm(func, degree, law, ori, polyN_coeff, law_coeff):
+def curve_theo_norm(degree, law, ori, coeff_mini, coeff_law, ymod):
     n = 1000
 
-    if func == "polyN":
-        powers = get_param_polyN(degree)
-        def f(S):
-            return polyN(S, polyN_coeff, powers)**(1/degree)
-    if func == "polyN_mini":
-        powers = get_param_polyN_mini(degree)
-        def f(S):
-            return np.sqrt(f_min_squared(S, polyN_coeff, powers))
+    powers = get_param_polyN_mini(degree)
+    def f(S):
+        return np.sqrt(f_min_squared(S, coeff_mini, powers))
     
-    a, b, c, ymod = law_coeff
+    a, b, c = coeff_law
     theta = float(ori) / 360 * 2 * np.pi
 
     if law == "swift":
@@ -87,20 +81,15 @@ def curve_theo_norm(func, degree, law, ori, polyN_coeff, law_coeff):
     S = np.concatenate((S_elastic, S_plastic))
     return(e, S)
 
-def curve_theo_ebt_norm(func, degree, law, polyN_coeff, law_coeff):
+def curve_theo_ebt_norm(degree, law, coeff_mini, coeff_law, ymod):
 
     n = 1000
 
-    if func == "polyN":
-        powers = get_param_polyN(degree)
-        def f(S):
-            return polyN(S, polyN_coeff, powers)**(1/degree)
-    if func == "polyN_mini":
-        powers = get_param_polyN_mini(degree)
-        def f(S):
-            return np.sqrt(f_min_squared(S, polyN_coeff, powers))
+    powers = get_param_polyN_mini(degree)
+    def f(S):
+        return np.sqrt(f_min_squared(S, coeff_mini, powers))
     
-    a, b, c, ymod = law_coeff
+    a, b, c = coeff_law
 
     if law == "swift":
         def hlaw(ep):
@@ -149,7 +138,7 @@ def curve_theo_ebt_norm(func, degree, law, polyN_coeff, law_coeff):
     S = np.concatenate((S_elastic, S_plastic))
     return(e, S)
 
-def compare_norm(material, func, degree, input_type, law, polyN_coeff, law_coeff, var_optim=0, n_try=0):
+def compare_norm(material, degree, input_type, law, coeff_mini, coeff_law, ymod, var_optim=0, n_try=0):
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
     ut_tests_mat = analyze_exp_data(material)["UT"]
     n = len(ut_tests_mat.keys())
@@ -175,9 +164,9 @@ def compare_norm(material, func, degree, input_type, law, polyN_coeff, law_coeff
         
         i = i + 1
         if ori != "EBT":
-            e, Y = curve_theo_norm(func, degree, law, ori, polyN_coeff, law_coeff)
+            e, Y = curve_theo_norm(degree, law, ori, coeff_mini, coeff_law, ymod)
         else:
-            e, Y = curve_theo_ebt_norm(func, degree, law, polyN_coeff, law_coeff)
+            e, Y = curve_theo_ebt_norm(degree, law, coeff_mini, coeff_law, ymod)
 
         ax[j,k].plot(e, Y, label = "Analytical model")
         ax[j,k].legend()
@@ -189,19 +178,14 @@ def compare_norm(material, func, degree, input_type, law, polyN_coeff, law_coeff
     plt.legend()
     plt.show()
 
-def curve_theo_comp(func, degree, law, ori, polyN_coeff, law_coeff):
+def curve_theo_comp(degree, law, ori, coeff_mini, coeff_law, ymod):
     n = 1000
 
-    if func == "polyN":
-        powers = get_param_polyN(degree)
-        def f(S):
-            return polyN(S, polyN_coeff, powers)**(1/degree)
-    if func == "polyN_mini":
-        powers = get_param_polyN_mini(degree)
-        def f(S):
-            return np.sqrt(f_min_squared(S, polyN_coeff, powers))
+    powers = get_param_polyN_mini(degree)
+    def f(S):
+        return np.sqrt(f_min_squared(S, coeff_mini, powers))
     
-    a, b, c, ymod = law_coeff
+    a, b, c = coeff_law
     theta = float(ori) / 360 * 2 * np.pi
 
     if law == "swift":
@@ -254,19 +238,14 @@ def curve_theo_comp(func, degree, law, ori, polyN_coeff, law_coeff):
     print(S)
     return(e, S)
 
-def curve_theo_ebt_comp(func, degree, law, polyN_coeff, law_coeff):
+def curve_theo_ebt_comp(degree, law, coeff_mini, coeff_law, ymod):
     n = 1000
 
-    if func == "polyN":
-        powers = get_param_polyN(degree)
-        def f(S):
-            return polyN(S, polyN_coeff, powers)**(1/degree)
-    if func == "polyN_mini":
-        powers = get_param_polyN_mini(degree)
-        def f(S):
-            return np.sqrt(f_min_squared(S, polyN_coeff, powers))
+    powers = get_param_polyN_mini(degree)
+    def f(S):
+        return np.sqrt(f_min_squared(S, coeff_mini, powers))
     
-    a, b, c, ymod = law_coeff
+    a, b, c = coeff_law
 
     if law == "swift":
         def hlaw(ep):
@@ -318,7 +297,7 @@ def curve_theo_ebt_comp(func, degree, law, polyN_coeff, law_coeff):
     S = np.matmul(S, u)
     return(e, S)
 
-def compare_comp(material, func, degree, input_type, law, polyN_coeff, law_coeff, var_optim=0, n_try=0):
+def compare_comp(material, degree, input_type, law, coeff_mini, coeff_law, ymod, var_optim=0, n_try=0):
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
     ut_tests_mat = analyze_exp_data(material)["UT"]
     n = len(ut_tests_mat.keys())
@@ -346,9 +325,9 @@ def compare_comp(material, func, degree, input_type, law, polyN_coeff, law_coeff
         
         i = i + 1
         if ori != "EBT":
-            e, Y = curve_theo_comp(func, degree, law, ori, polyN_coeff, law_coeff)
+            e, Y = curve_theo_comp(degree, law, ori, coeff_mini, coeff_law, ymod)
         else:
-            e, Y = curve_theo_ebt_comp(func, degree, law, polyN_coeff, law_coeff)
+            e, Y = curve_theo_ebt_comp(degree, law, coeff_mini, coeff_law, ymod)
 
         ax[j,k].plot(e, Y[:,0], label = "Analytical model sxx")
         ax[j,k].plot(e, Y[:,1], label = "Analytical model syy")
@@ -368,21 +347,9 @@ if __name__ == "__main__":
     degree = int(p["degree"])
     law = p["law"]
     input_type = p["input_type"]
-    func = p["func"]
 
-    if func == "polyN_mini":
-        polyN_coeff_path = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy"
-        polyN_coeff = np.load(polyN_coeff_path)
-
-        law_coeff_path = polyN_cali_dir + sep + material + f"_{law}_mini_coeff.npy"
-        law_coeff = np.load(law_coeff_path)
+    coeff_mini = get_coeff_mini(material, degree)
+    coeff_law, ymod = get_coeff_law(material, law)
     
-    if func == "polyN" :
-        polyN_coeff_path = polyN_cali_dir + sep + material + "_poly" + str(degree) + "_coeff.npy"
-        polyN_coeff = np.load(polyN_coeff_path)
-
-        law_coeff_path = polyN_cali_dir + sep + material + f"_{law}_polyN_coeff.npy"
-        law_coeff = np.load(law_coeff_path)       
-
-    compare_norm(material, func, degree, input_type, law, polyN_coeff, law_coeff)
-    compare_comp(material, func, degree, input_type, law, polyN_coeff, law_coeff)
+    compare_norm(material, degree, input_type, law, coeff_mini, coeff_law, ymod)
+    compare_comp(material, degree, input_type, law, coeff_mini, coeff_law, ymod)

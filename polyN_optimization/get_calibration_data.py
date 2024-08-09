@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 from bezier import bezier_3D
+from read import read_param
 
 polyN_dir = os.path.dirname(os.path.abspath(__file__)) 
 sep = os.sep
@@ -181,12 +182,17 @@ def export_virtual_data(protomodel, material, nb_virtual_pt):
             - material : string
             - nb_virtual_pt : integer
     """
+    
 
     if protomodel == "mises":
         data = data_yf_sphere(mises, itermax, nb_virtual_pt)
 
     if protomodel == "bezier":
-        data = bezier_3D(material, nb_virtual_pt)
+        p = read_param()
+        s_seg_dir = float(p["s_seg_dir"])
+        s_section = float(p["s_section"])
+
+        data = bezier_3D(material, nb_virtual_pt, s_seg_dir, s_section)
 
     df = pd.DataFrame(data, columns=["s11", "s22", "s33", "s12", "s13", "s23"])
     df["Rval"] = np.zeros(len(data))
@@ -199,3 +205,38 @@ def export_virtual_data(protomodel, material, nb_virtual_pt):
     if not os.path.exists(folderpath):
         os.makedirs(folderpath)
     df.to_csv(filepath, index=False)
+
+def export_hardening_data(material):
+    """
+        Generate the csv file "data_plasticlaw_{material}" used to calibrate the hardening law.
+        Based on the UT_00 tests from the given material
+        Input :
+            - material : string
+    """
+    
+    mat_tests = analyze_exp_data(material)
+    n_ut_00 = mat_tests["UT"]["00"]
+    df_out = pd.DataFrame(columns = ["PlasticStrain", "PlasticStress", "YoungModulus"])
+    ymod = 0
+    for i in range(1, n_ut_00 + 1):
+
+        filename_in = "UT_00_{}.csv".format(i)
+        foldername_in = polyN_dir + sep + "results_exp" + sep + material + sep
+
+        filepath = foldername_in + filename_in
+        
+        df = pd.read_csv(filepath, index_col=False)
+
+        ymod = ymod + df[" Young's Modulus [MPa]"][0]
+        df = df[df["PlasticStrain_longi"] > 0.002]
+
+        df["PlasticStrain"] = df["PlasticStrain_longi"] - df["PlasticStrain_longi"].iloc[0]
+        df["PlasticStress"] = df["PlasticStress[MPa]"]
+        df["YoungModulus"] = 0
+        df_out = pd.concat([df_out, df[["PlasticStrain", "PlasticStress", "YoungModulus"]]])
+
+    df_out.iloc[0, df_out.columns.get_loc('YoungModulus')] = ymod / n_ut_00
+
+    foldername_out = polyN_dir + sep + "calibration_data" + sep + material
+    filename_out = foldername_out + sep + f"data_plasticlaw_{material}.csv"
+    df_out.to_csv(filename_out, index=False)
