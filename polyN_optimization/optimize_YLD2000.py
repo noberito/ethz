@@ -193,7 +193,7 @@ def grad_yld2000(S, coeff, m):
 
     return(grad)
 
-def load_coeff_yld2000(material):
+def get_coeff_yld2000(material):
     filename = "_YLD2000_pre.csv"
     filepath = polyN_dir + sep + "results_exp" + sep + material + sep + filename
     try :
@@ -202,10 +202,11 @@ def load_coeff_yld2000(material):
         return coeff
     except:
         print("YLD2000 not calibrated")
+        return([])
 
 def test():
     material = "DP780"
-    coeff = load_coeff_yld2000(material)
+    coeff = get_coeff_yld2000(material)
     S = np.zeros(3)
     S[2] = 2
     print(grad_yld2000(S, coeff, 8))

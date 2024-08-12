@@ -106,8 +106,11 @@ def get_coeff_mini(material, degree):
     filename = f"{material}_poly{degree}_mini.npy"
     filedir = polyN_dir + sep + "coeff"
     filepath = filedir + sep + filename
-    coeff_mini = np.load(filepath)
-    return(coeff_mini)
+    try:
+        coeff_mini = np.load(filepath)
+        return(coeff_mini)
+    except :
+        return([])
 
 def get_coeff_mini_opti(material, degree, opti):
     filename = f"{material}_poly{degree}_mini_{opti}.npy"

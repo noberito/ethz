@@ -44,7 +44,6 @@ def grad_hill48(S, coeff):
     G[1,1] = g22
     G[2,2] = g33
 
-    print(G)
     GS = np.einsum("ik,jk->ji", G, S)
     GSS = np.einsum("ik, ik -> i", GS, S)
 
@@ -56,7 +55,7 @@ def grad_hill48(S, coeff):
 
     return(grad_h)
     
-def load_coeff_hill48(material):
+def get_coeff_hill48(material):
     filename = "_Hill48naFr_pre.csv"
     filepath = polyN_dir + sep + "results_exp" + sep + material + sep + filename
     try :
@@ -64,11 +63,12 @@ def load_coeff_hill48(material):
         coeff = df.loc[3].values
         return coeff
     except:
-        print("YLD2000 not calibrated")
+        print("Hill48 not calibrated")
+        return([])
 
 def test():
     material = "DP780"
-    coeff = load_coeff_hill48(material)
+    coeff = get_coeff_hill48(material)
     S = np.zeros(3)
     S[2] = 2
     print(grad_hill48(S, coeff))
