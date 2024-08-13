@@ -131,6 +131,7 @@ def framework_mini(material, degree, law, enu, protomodel, input_type, density, 
         new_coeff = np.copy(coeff_mini)
         new_coeff[var_optim] = new_coeff[var_optim] + x
 
+        print(new_coeff)
         write_coeff_abq_mini(new_coeff, coeff_law, ymod, enu, protomodel, degree, material, law, density, p=p, m=m)
         run(tests, material, degree, law, protomodel, input_type, p=p, m=m)
         run(ut_tests_ext, material, degree, law, protomodel, input_type, p=p, m=m)

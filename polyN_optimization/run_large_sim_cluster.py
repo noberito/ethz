@@ -16,11 +16,11 @@ run_dir = polyN_cali_dir + sep + "running"
 
 sys.path.append(polyN_cali_dir)
 
-from read import read_param, get_coeff_mini, get_coeff_law
+from read import read_param, get_coeff_mini, get_coeff_law, get_coeff_mini_opti
 from get_calibration_data import analyze_exp_data
-from tests_parameters import load_points, ext_points, ut_tests_ext
-from check.compare_sim_exp import compare_large_strain, compare_ut_s_2
-from optimize_polyN_mini import write_coeff_abq_mini, get_param_polyN_mini
+from tests_parameters import load_points, ext_points, ut_tests
+from check.compare_sim_exp import compare_large_strain
+from optimize_polyN_mini import write_coeff_abq_mini
 
 facs_displ = {"UT": 1, "NT6" : 2., "NT20": 2., "CH": 2., "SH": 1}
 facs_thick = {"UT": 1, "NT6" : 1., "NT20": 1., "CH": 0.5, "SH": 0.8}
@@ -30,12 +30,24 @@ facs_force = {"UT": 1, "NT6" : 4, "NT20": 4, "CH": 4, "SH": 2}
 dt = 1
 
 def change_paras(test, material):
+    """
+        Change the parameter file for the given test according to the material by
+        reading the experiment csv file number 1
+
+        Input :
+            - test : string (ex : UT_00)
+            - material : string
+    """
     type_test = test.split("_")[0]
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
 
-
     res_filename = results_exp_dir + sep + test + "_1.csv"
-    df_exp = pd.read_csv(res_filename, index_col=False)
+    try :
+        df_exp = pd.read_csv(res_filename, index_col=False)
+    except :
+        print(f"""You are trying to change the parameter file of a test {test} that hasn't been performed for the 
+              given material {material}""")
+        exit()
     dtime = np.max(df_exp.iloc[:,0])
 
     if type_test != "UT":
@@ -67,7 +79,7 @@ def change_paras(test, material):
 
 def change_usermat(test,material, degree, law, protomodel, input_type, p=0, m=0):
     """
-        Change the input user material file in the all the abaqus files of test in tests
+        Change the input user material file in the all the abaqus inp files of test in tests
         Input :
             - usermatfile : string, filename of the user material file
     """
@@ -549,17 +561,10 @@ if __name__ == "__main__":
     p = read_param()
 
     material = p["material"]
-    gseed = int(p["gseed"])
     input_type = p["input_type"]
     enu = float(p["enu"])
     density = float(p["density"])
-    nb_virtual_pt = int(p["nb_virtual_pt"])
     degree = int(p["degree"])
-    sh = int(p["sh"])
-    nt6 = int(p["nt6"])
-    weight_ut = float(p["weight_ut"])
-    weight_exp = float(p["weight_exp"])
-    weight_e2 = float(p["weight_e2"])
     protomodel = p["protomodel"]
     law = p["law"]
 
@@ -571,6 +576,7 @@ if __name__ == "__main__":
             if type_test != "UT":
                 test = type_test + "_" + ori
                 tests.append(test)
+
 
 
     coeff_mini = get_coeff_mini(material, degree)

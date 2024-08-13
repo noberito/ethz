@@ -90,6 +90,6 @@ LOAD, 2, 2, 1.
 *NODE OUTPUT, NSET=BASE
  U2, RF2
 *ELEMENT OUTPUT, ELSET=ONSET
- TRIAX, SDV, S, E
+ TRIAX, SDV, S, ER
 **------------------------------------------------------
 *End Step

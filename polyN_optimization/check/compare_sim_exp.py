@@ -329,7 +329,7 @@ def compare_large_strain(material, degree, input_type, p=0, m=0):
     ax = ax.flatten()  
 
     i = 0
-    for type_test in tests_mat.keys():
+    for type_test in ["CH"]:
         type_tests_mat = tests_mat[type_test]
         if type_test != "UT":
 
@@ -361,7 +361,8 @@ def compare_large_strain(material, degree, input_type, p=0, m=0):
                             s = df_exp["AxStrain_1"]
                             ax2.plot(e,s, color=colors[k])
                             ax2.set_ylim(top= 1.5 * np.max([np.max(s), np.max(df_sim["Strain_ext"])]))
-
+                    if "Strain_ext" in df_sim.columns:
+                        ax2.set_ylabel(r"$\epsilon$ [-]")
                     ax[i].set_title(f"{type_test}_{ori}")
                     ax[i].set_xlabel("Displacement[mm]")
                     ax[i].set_ylabel("Force[kN]")
@@ -373,8 +374,11 @@ def compare_large_strain(material, degree, input_type, p=0, m=0):
         fig.delaxes(ax[j])
 
     fig.suptitle(f"{material} with poly{degree} : Check Experiments vs Abaqus results\n variable {p}", fontsize=12)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])  
+    rect = np.array([0, 0.03, 1, 0.95])
+    
+    plt.tight_layout(rect=rect)  
     plt.subplots_adjust(hspace=0.5)
+    plt.show()
 
     figdir = file_dir + sep + material + sep + "var_" + str(p)
     if not(os.path.exists(figdir)):
@@ -390,4 +394,4 @@ if __name__ == "__main__":
     material = p["material"]
     degree = int(p["degree"])
     input_type = p["input_type"]
-    compare_ut_s_2(material, degree, input_type, p=10, m=10)
+    compare_large_strain(material, degree, input_type, p=10, m=10)

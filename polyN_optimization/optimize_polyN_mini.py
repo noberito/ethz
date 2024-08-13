@@ -1871,5 +1871,6 @@ def firstopti_mini():
     return(coeff)
 
 if __name__ == "__main__":
-    firstopti_mini() 
+    powers = get_param_polyN_mini(6)
+    print(len(powers))
     pass

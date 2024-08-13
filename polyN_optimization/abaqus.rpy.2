@@ -1,0 +1,45 @@
+# -*- coding: mbcs -*-
+#
+# Abaqus/Viewer Release 2023 replay file
+# Internal Version: 2022_09_28-20.11.55 183150
+# Run by cnober on Tue Aug 13 15:06:47 2024
+#
+
+# from driverUtils import executeOnCaeGraphicsStartup
+# executeOnCaeGraphicsStartup()
+#: Executing "onCaeGraphicsStartup()" in the site directory ...
+#: Warning: Permission was denied for "abaqus.rpy"; "abaqus.rpy.2" will be used for this session's replay file.
+from abaqus import *
+from abaqusConstants import *
+session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=297.310424804688, 
+    height=142.020004272461)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].maximize()
+from viewerModules import *
+from driverUtils import executeOnCaeStartup
+executeOnCaeStartup()
+o2 = session.openOdb(name='temp_SH_000_UMAT_106_1000.odb')
+#: Model: C:/temp/polyN_optimization/temp_SH_000_UMAT_106_1000.odb
+#: Number of Assemblies:         1
+#: Number of Assembly instances: 0
+#: Number of Part instances:     1
+#: Number of Meshes:             1
+#: Number of Element Sets:       12
+#: Number of Node Sets:          12
+#: Number of Steps:              1
+session.viewports['Viewport: 1'].setValues(displayedObject=o2)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    CONTOURS_ON_DEF, ))
+session.viewports['Viewport: 1'].view.setValues(width=53.4781, height=24.094, 
+    viewOffsetX=0.396476, viewOffsetY=-0.0584407)
+session.viewports['Viewport: 1'].view.setValues(session.views['Back'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Front'])
+session.viewports['Viewport: 1'].view.setValues(nearPlane=78.7058, 
+    farPlane=93.2003, width=53.008, height=23.8822, viewOffsetX=2.37789, 
+    viewOffsetY=0.824792)
+session.viewports['Viewport: 1'].view.setValues(nearPlane=70.5176, 
+    farPlane=103.655, width=47.4933, height=21.3976, cameraPosition=(24.4072, 
+    40.8504, 74.1175), cameraUpVector=(0.146503, 0.850912, -0.504465), 
+    cameraTarget=(0.416629, 1.85446, 1.37351), viewOffsetX=2.13051, 
+    viewOffsetY=0.738984)

@@ -1,0 +1,93 @@
+# -*- coding: mbcs -*-
+#
+# Abaqus/Viewer Release 2023 replay file
+# Internal Version: 2022_09_28-20.11.55 183150
+# Run by cnober on Tue Aug 13 15:07:27 2024
+#
+
+# from driverUtils import executeOnCaeGraphicsStartup
+# executeOnCaeGraphicsStartup()
+#: Executing "onCaeGraphicsStartup()" in the site directory ...
+#: Warning: Permission was denied for "abaqus.rpy"; "abaqus.rpy.3" will be used for this session's replay file.
+from abaqus import *
+from abaqusConstants import *
+session.Viewport(name='Viewport: 1', origin=(0.0, 0.0), width=297.310424804688, 
+    height=142.020004272461)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].maximize()
+from viewerModules import *
+from driverUtils import executeOnCaeStartup
+executeOnCaeStartup()
+o2 = session.openOdb(name='temp_NT6_90_UMAT_106_1000.odb')
+#: Model: C:/temp/polyN_optimization/temp_NT6_90_UMAT_106_1000.odb
+#: Number of Assemblies:         1
+#: Number of Assembly instances: 0
+#: Number of Part instances:     1
+#: Number of Meshes:             1
+#: Number of Element Sets:       3
+#: Number of Node Sets:          10
+#: Number of Steps:              1
+session.viewports['Viewport: 1'].setValues(displayedObject=o2)
+session.viewports['Viewport: 1'].makeCurrent()
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    CONTOURS_ON_DEF, ))
+session.viewports['Viewport: 1'].view.setValues(nearPlane=25.7473, 
+    farPlane=47.8357, width=23.8329, height=10.7376, viewOffsetX=-0.117284, 
+    viewOffsetY=-0.291931)
+session.viewports['Viewport: 1'].view.setValues(session.views['Top'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Back'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Front'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Left'])
+session.viewports['Viewport: 1'].view.setValues(session.views['Bottom'])
+session.viewports['Viewport: 1'].view.setValues(nearPlane=28.2753, 
+    farPlane=46.3418, width=8.06213, height=3.63231, viewOffsetX=-2.75, 
+    viewOffsetY=0.0928477)
+odb = session.odbs['C:/temp/polyN_optimization/temp_NT6_90_UMAT_106_1000.odb']
+xy1 = xyPlot.XYDataFromHistory(odb=odb, 
+    outputVariableName='Reaction force: RF2 at Node 7382 in NSET LOAD', steps=(
+    'Step-1', ), suppressQuery=True, __linkedVpName__='Viewport: 1')
+c1 = session.Curve(xyData=xy1)
+xyp = session.XYPlot('XYPlot-1')
+chartName = xyp.charts.keys()[0]
+chart = xyp.charts[chartName]
+chart.setValues(curvesToPlot=(c1, ), )
+session.charts[chartName].autoColor(lines=True, symbols=True)
+session.viewports['Viewport: 1'].setValues(displayedObject=xyp)
+session.viewports['Viewport: 1'].animationController.setValues(
+    animationType=TIME_HISTORY)
+session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
+session.viewports['Viewport: 1'].animationController.setValues(
+    animationType=NONE)
+odb = session.odbs['C:/temp/polyN_optimization/temp_NT6_90_UMAT_106_1000.odb']
+session.viewports['Viewport: 1'].setValues(displayedObject=odb)
+session.viewports['Viewport: 1'].odbDisplay.display.setValues(plotState=(
+    CONTOURS_ON_DEF, ))
+session.viewports['Viewport: 1'].animationController.setValues(
+    animationType=TIME_HISTORY)
+session.viewports['Viewport: 1'].animationController.play(duration=UNLIMITED)
+session.viewports['Viewport: 1'].animationController.stop()
+session.viewports['Viewport: 1'].animationController.showLastFrame()
+session.viewports['Viewport: 1'].view.setValues(nearPlane=28.0514, 
+    farPlane=46.5657, width=9.62972, height=4.33857, viewOffsetX=-3.04306, 
+    viewOffsetY=0.171175)
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='U', outputPosition=NODAL, refinement=(INVARIANT, 
+    'Magnitude'), )
+session.viewports['Viewport: 1'].odbDisplay.setPrimaryVariable(
+    variableLabel='U', outputPosition=NODAL, refinement=(COMPONENT, 'U3'), )
+session.viewports['Viewport: 1'].view.setValues(nearPlane=28.2753, 
+    farPlane=46.3418, width=9.12419, height=4.1108, viewOffsetX=-2.91075, 
+    viewOffsetY=0.137001)
+session.viewports['Viewport: 1'].view.setValues(nearPlane=27.6367, 
+    farPlane=46.493, width=8.91811, height=4.01796, cameraPosition=(7.4676, 
+    -28.9887, 3.32897), cameraUpVector=(0.0438155, 0.0873141, 0.995217), 
+    cameraTarget=(4.96216, 8.1027, 0.185113), viewOffsetX=-2.84501, 
+    viewOffsetY=0.133906)
+session.viewports['Viewport: 1'].view.setValues(nearPlane=27.4306, 
+    farPlane=46.6992, width=10.0176, height=4.51334, viewOffsetX=-2.78444, 
+    viewOffsetY=0.405152)
+session.viewports['Viewport: 1'].view.setValues(nearPlane=27.274, 
+    farPlane=46.5573, width=9.96049, height=4.48759, cameraPosition=(9.79085, 
+    -27.5385, 9.63527), cameraUpVector=(0.0897983, 0.273902, 0.957556), 
+    cameraTarget=(4.88543, 8.1392, -0.11003), viewOffsetX=-2.76855, 
+    viewOffsetY=0.402841)

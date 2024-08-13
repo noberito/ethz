@@ -100,7 +100,7 @@ def rval_ut_mini(thetas, coeff_mini, degree):
         r_val[i] = - np.dot(grad_f_plane[i], v2[i]) / (grad_f_plane[i,0] + grad_f_plane[i,1])
     return(r_val)
 
-def plot_rval_mini(df, material, degree):
+def plot_rval_mini(df, material, degree, suf=""):
     """
         Plot the rvalues for UTs for polyN mini
         Input :
@@ -108,7 +108,10 @@ def plot_rval_mini(df, material, degree):
             - material : string
             - degree : int, degree of the polyN function
     """
-    coeff_mini = get_coeff_mini(material, degree)
+    if suf=="":
+        coeff_mini = get_coeff_mini(material, degree)
+    else:
+        coeff_mini = get_coeff_mini_opti(material, degree, suf)
 
     n_thetas = 100
     thetas_theo = np.linspace(0, np.pi/2, n_thetas)
@@ -1163,7 +1166,7 @@ def plot_all_opti(df, material, degree, suf):
     plt.yticks(fontsize=12)
     plt.legend()
     plt.grid(1)
-    plt.suptitle(f"{material} : Yield Stresses from UT tests", size=12)
+    plt.suptitle(f"{material} : R-values from UT tests", size=12)
     plt.title(f"Influence of protomodel's weight", size=12)
 
     plt.show()  
