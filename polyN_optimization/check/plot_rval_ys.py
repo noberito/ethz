@@ -7,10 +7,11 @@ from matplotlib.lines import Line2D
 import sys
 import os
 
-file_dir = os.path.dirname(os.path.abspath(__file__))
-polyN_dir = os.path.dirname(file_dir)
+check_dir = os.path.dirname(os.path.abspath(__file__))
+polyN_dir = os.path.dirname(check_dir)
 sep = os.sep
 sys.path.append(polyN_dir)
+pres_dir = polyN_dir + sep + "plots" + sep + "presentation"
 
 from read import read_param, readData_2d, get_coeff_mini, get_coeff_mini_opti
 from get_calibration_data import mises
@@ -699,22 +700,16 @@ def plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
     #plt.plot(thetas_theo, r_vals_model, c="red", label="R_val model")
     if len(coeff_hill) > 0:
         ys_hill = ys_ut_hill48(thetas_theo, coeff_hill)
-        r_vals_hill = rval_ut_hill48(thetas_theo, coeff_hill)
-        plt.plot(thetas_theo / (2 * np.pi) * 360, ys_hill, color="black", linewidth=1, label="Hill'48")
+        plt.plot(thetas_theo / (2 * np.pi) * 360, ys_hill, color="green", linewidth=1, label="Hill'48")
     if len(coeff_yld) > 0:
         ys_yld = ys_ut_yld2000(thetas_theo, coeff_yld, m)
-        r_vals_yld2000 = rval_ut_yld2000(thetas_theo, coeff_yld, m)
         plt.plot(thetas_theo / (2 * np.pi) * 360, ys_yld, color="red", linewidth=1, label="Yld2000")
     if len(coeff_mini) > 0:
         ys_polyN = ys_ratio_ut_mini(thetas_theo, coeff_mini, degree)
-        r_vals_polyN = rval_ut_mini(thetas_theo, coeff_mini, degree)
         plt.plot(thetas_theo / (2 * np.pi) * 360, ys_polyN, color="blue", linewidth=1, label=f"Poly{degree}")
 
-    #plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
-    plt.scatter(thetas_exp, ys_exp/sigma0, color="blue", label="Exp.", linewidths=1, marker="x")
-    if len(ys_ratio_exp2) > 0:
-        pass
-        #plt.scatter(thetas_exp, ys_ratio_exp2, color="red", label="Exp. 2", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, ys_exp/sigma0, color="black", label="Exp.", linewidths=1, marker="x")
+
     plt.title("Check poly")
     plt.xlabel(r"$\theta$[°]", size=12)
     plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
@@ -723,6 +718,8 @@ def plot_ys_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
     plt.legend()
     plt.grid(1)
     plt.title(f"{material} : Yield Stresses from UT tests", size=12)
+    filename = f"{material}_ys_func.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
     plt.show()  
 
 def plot_rval_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
@@ -755,7 +752,7 @@ def plot_rval_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
     if len(coeff_hill) > 0:
         ys_hill = ys_ut_hill48(thetas_theo, coeff_hill)
         r_vals_hill = rval_ut_hill48(thetas_theo, coeff_hill)
-        plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_hill, color="black", linestyle="dashed", linewidth=1,  label="Hill'48")
+        plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_hill, color="green", linestyle="dashed", linewidth=1,  label="Hill'48")
     if len(coeff_yld) > 0:
         ys_yld = ys_ut_yld2000(thetas_theo, coeff_yld, m)
         r_vals_yld2000 = rval_ut_yld2000(thetas_theo, coeff_yld, m)
@@ -766,10 +763,8 @@ def plot_rval_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
         plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_polyN, color="blue", linestyle="dashed", linewidth=1, label=f"Poly{degree}")
 
     #plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
-    plt.scatter(thetas_exp, r_vals_exp, color="blue",label="Exp.", linewidths=1, marker="x")
-    if len(ys_ratio_exp2) > 0:
-        pass
-        #plt.scatter(thetas_exp, ys_ratio_exp2, color="red", label="Exp. 2", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, r_vals_exp, color="black",label="Exp.", linewidths=1, marker="x")
+
     plt.title("Check poly")
     plt.xlabel(r"$\theta$[°]", size=12)
     plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
@@ -778,6 +773,8 @@ def plot_rval_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
     plt.legend()
     plt.grid(1)
     plt.title(f"{material} : R-values from UT tests", size=12)
+    filename = f"{material}_rval_func.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
     plt.show()  
 
 def plot_all_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
@@ -809,8 +806,9 @@ def plot_all_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
     if len(coeff_hill) > 0:
         ys_hill = ys_ut_hill48(thetas_theo, coeff_hill)
         r_vals_hill = rval_ut_hill48(thetas_theo, coeff_hill)
-        plt.plot(thetas_theo / (2 * np.pi) * 360, ys_hill, color="black", linewidth=1, label="Hill'48")
-        plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_hill, color="black", linestyle="dashed", linewidth=1)
+        label = "Hill'48"
+        plt.plot(thetas_theo / (2 * np.pi) * 360, ys_hill, color="green", linewidth=1, label=label)
+        plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_hill, color="green", linestyle="dashed", linewidth=1)
     if len(coeff_yld) > 0:
         ys_yld = ys_ut_yld2000(thetas_theo, coeff_yld, m)
         r_vals_yld2000 = rval_ut_yld2000(thetas_theo, coeff_yld, m)
@@ -822,13 +820,9 @@ def plot_all_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
         plt.plot(thetas_theo / (2 * np.pi) * 360, ys_polyN, color="blue", linewidth=1, label=f"Poly{degree} ys ratio")
         plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_polyN, color="blue", linestyle="dashed", label=f"Poly{degree} r-values", linewidth=1)
 
-    #plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
-    plt.scatter(thetas_exp, ys_exp/sigma0, color="blue", label="Exp.", linewidths=1, marker="x")
-    plt.scatter(thetas_exp, r_vals_exp, color="blue", linewidths=1, marker="x")
-    if len(ys_ratio_exp2) > 0:
-        pass
-        #plt.scatter(thetas_exp, ys_ratio_exp2, color="red", label="Exp. 2", linewidths=1, marker="x")
-        #plt.scatter(thetas_exp, r_vals_exp2, color="red", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, ys_exp/sigma0, color="black", label="Exp.", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, r_vals_exp, color="black", linewidths=1, marker="x")
+
     plt.title("Check poly")
     plt.xlabel(r"$\theta$[°]", size=12)
     plt.ylabel(r'$\sigma$ / $\sigma_0$[-]', size=12)
@@ -837,6 +831,8 @@ def plot_all_all(df, material, coeff_hill, coeff_yld, coeff_mini, m, degree):
     plt.legend()
     plt.grid(1)
     plt.title(f"{material} : Yield Stresses and R-values from UT tests", size=12)
+    filename = f"{material}_all_func.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
     plt.show()  
 
 def plot_planestress_all(material, coeff_hill, coeff_yld, coeff_mini, m, degree):
@@ -887,14 +883,14 @@ def plot_planestress_all(material, coeff_hill, coeff_yld, coeff_mini, m, degree)
 
         if 1:
             ys_mises = mises_plane(sx, sy)
-            cs1 = ax.contour(sx, sy, ys_mises, levels=[1], linewidths=1, colors="green")
-            handles.append(Line2D([0], [0], color="green", lw=1))
+            cs1 = ax.contour(sx, sy, ys_mises, levels=[1], linewidths=1, colors="orange")
+            handles.append(Line2D([0], [0], color="orange", lw=1))
             labels.append("Mises")
 
         if len(coeff_hill) > 0:
             ys_hill = hill48_plane(sx, sy)
             cs2 = ax.contour(sx, sy, ys_hill, levels=[1], linewidths=1, colors="black")
-            handles.append(Line2D([0], [0], color="black", lw=1))
+            handles.append(Line2D([0], [0], color="green", lw=1))
             labels.append("Hill48")
 
         if len(coeff_yld) > 0:
@@ -919,6 +915,8 @@ def plot_planestress_all(material, coeff_hill, coeff_yld, coeff_mini, m, degree)
     ax.set_title(rf'{material} Yield surface in the $\sigma_{{xx}},\sigma_{{yy}}$ plane', size=12)
 
     plt.yticks(fontsize=12)
+    filename = f"{material}_yieldlocus_func.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
     plt.show()
 
 def plot_ys_degree(df, material):
@@ -957,7 +955,7 @@ def plot_ys_degree(df, material):
             #plt.plot(thetas_theo, r_vals_polyN, color="blue", linewidth=1)
         i = i + 1
     #plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
-    plt.scatter(thetas_exp, ys_exp/sigma0, color="blue", label="Exp.", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, ys_exp/sigma0, color="black", label="Exp.", linewidths=1, marker="x")
     if len(ys_ratio_exp2) > 0:
         pass
         #plt.scatter(thetas_exp, ys_ratio_exp2, color="red", label="Exp. 2", linewidths=1, marker="x")
@@ -970,6 +968,8 @@ def plot_ys_degree(df, material):
     plt.legend()
     plt.grid(1)
     plt.title(f"{material} : Yield Stresses from UT tests", size=12)
+    filename = f"{material}_ys_degree.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
     plt.show()  
 
 def plot_rval_degree(df, material):
@@ -1005,7 +1005,7 @@ def plot_rval_degree(df, material):
             #plt.plot(thetas_theo, ys_polyN, color="blue", linewidth=1, label=f"Poly{d}")
             plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_polyN, color=colors[i], linewidth=1, label=f"Poly{d}")
         i = i + 1
-    plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
+    plt.scatter(thetas_exp, r_vals_exp, c="black", marker="x", label="R_val exp")
    # plt.scatter(thetas_exp, ys_exp/sigma0, color="blue", label="Exp.", linewidths=1, marker="x")
     if len(ys_ratio_exp2) > 0:
         pass
@@ -1018,6 +1018,8 @@ def plot_rval_degree(df, material):
     plt.legend()
     plt.grid(1)
     plt.title(f"{material} : R-values from UT tests", size=12)
+    filename = f"{material}_rval_degree.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
     plt.show()  
 
 def plot_all_degree(df, material):
@@ -1066,6 +1068,8 @@ def plot_all_degree(df, material):
     plt.legend()
     plt.grid(1)
     plt.title(f"{material} : Yield Stresses and R-values from UT tests", size=12)
+    filename = f"{material}_all_degree.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
     plt.show()  
 
 def plot_planestress_degree(material):
@@ -1115,6 +1119,8 @@ def plot_planestress_degree(material):
 
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
+    filename = f"{material}_yieldlocus_degree.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
     plt.show()
 
 def plot_all_opti(df, material, degree, suf):
@@ -1148,16 +1154,16 @@ def plot_all_opti(df, material, degree, suf):
 
     ys_polyN_0 = ys_ratio_ut_mini(thetas_theo, coeff_mini_0, degree)
     r_vals_polyN_0 = rval_ut_mini(thetas_theo, coeff_mini_0, degree)
-    #plt.plot(thetas_theo / (2 * np.pi) * 360, ys_polyN_0, color="blue", linewidth=1, label=f"w = 0.9")
-    plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_polyN_0, color="red", linewidth=1, label=f"w = 0.9")
+    plt.plot(thetas_theo / (2 * np.pi) * 360, ys_polyN_0, color="blue", linewidth=1, label=f"Before FEA")
+    plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_polyN_0, color="red", linewidth=1)
 
     ys_polyN_opti = ys_ratio_ut_mini(thetas_theo, coeff_mini_opti, degree)
     r_vals_polyN_opti = rval_ut_mini(thetas_theo, coeff_mini_opti, degree)
-    #plt.plot(thetas_theo / (2 * np.pi) * 360, ys_polyN_opti, color="blue", linewidth=1, linestyle="dashed", label=f"w = 0.6")
-    plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_polyN_opti, color="red", linewidth=1, linestyle="dashed", label=f"w = 0.6")
+    plt.plot(thetas_theo / (2 * np.pi) * 360, ys_polyN_opti, color="blue", linewidth=1, linestyle="dashed", label=f"After FEA")
+    plt.plot(thetas_theo / (2 * np.pi) * 360, r_vals_polyN_opti, color="red", linewidth=1, linestyle="dashed")
 
-    plt.scatter(thetas_exp, r_vals_exp, c="red", marker="x", label="R_val exp")
-    #plt.scatter(thetas_exp, ys_exp/sigma0, color="blue", label="Ys ratio Exp.", linewidths=1, marker="x")
+    plt.scatter(thetas_exp, r_vals_exp, c="black", marker="x", label="R_val exp")
+    plt.scatter(thetas_exp, ys_exp/sigma0, color="black", label="Ys ratio Exp.", linewidths=1, marker="x")
 
     plt.title("Check poly")
     plt.xlabel(r"$\theta$[°]", size=12)
@@ -1166,8 +1172,10 @@ def plot_all_opti(df, material, degree, suf):
     plt.yticks(fontsize=12)
     plt.legend()
     plt.grid(1)
-    plt.suptitle(f"{material} : R-values from UT tests", size=12)
-    plt.title(f"Influence of protomodel's weight", size=12)
+    plt.suptitle(f"{material} : Yield Stresses and R-values from UT tests", size=12)
+    plt.title(r"Optimization on $a_5$", size=12)
+    filename = f"{material}_protomodelinfluence.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
 
     plt.show()  
 
@@ -1234,8 +1242,15 @@ def main():
         plot_rval_degree(df, material)
         plot_planestress_degree(material)
 
+    elif 0:
+        coeff_mini = get_coeff_mini(material, degree)
+        coeff_hill = get_coeff_hill48(material)
+        coeff_yld = get_coeff_yld2000(material)
+        plot_rval_all(df, material, coeff_hill, coeff_yld, [], 8, degree)
+        plot_ys_all(df, material, coeff_hill, coeff_yld, [], 8, degree)
+    
     else:
-        error_to_all(df, material)
+        plot_all_opti(df, material, 6, 5)
 
 
 main()

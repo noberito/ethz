@@ -80,6 +80,8 @@ def bezier_seg(bs, be, us, ue, ls, le, n):
 
     return(Y)
 
+
+
 def param_data_dir(material):
     """
         Returns all the parameters needed to create the segment containing
@@ -662,5 +664,88 @@ def plot_bezier_alloutput(material):
 
     plt.show()
 
+def print_bezier_seg(bs, be, us, ue, ls, le, n):
+    """
+        Returns a Bezier segment of order 5 between bs and be. us (resp. ue) being the tangent
+        at bs (resp. be) and ls (resp. le) a parameter on bs (resp. be)
+
+        Input :
+            - bs : ndarray of shape(m,), start segment
+            - be : ndarray of shape(m,), end segment
+            - us : ndarray of shape(m,), tangent at bs
+            - ue : ndarray of shape(m,), tangent at be
+            - ls : float, parameter at bs
+            - le : float, parameter at be
+            - n : int, number of points from the segment
+        
+        Output :
+            - Y : ndarray of shape (n, m), segment
+    """
+    b0 = bs
+    b1 = bs + ls * us
+    b2 = bs + 2 * ls * us
+    b3 = be - 2 * le * ue
+    b4 = be - le * ue
+    b5 = be
+
+    def y(t):
+        p = phi0(t) * b0 + phi1(t) * b1 + phi2(t) * b2 + phi3(t) * b3 + phi4(t) * b4 + phi5(t) * b5
+        return(p)
+
+    T = np.linspace(0, 1, n)
+    Y = np.array([y(t) for t in T])
+
+    return(b0, b1, b2, b3, b4, b5, Y)    
+
+def seg_data_dir(material):
+    """
+        Returns the directionnal segments (yield stress ratios, r-values)
+
+        Input :
+            - material : string
+            - alpha : float between 0 and 1, 0 : Lowest curvature, 1: Highest curvature
+
+        Output :
+            - B_ys : ndarray of shape ((n * n_seg, 2)), yield stress directionnal segment in space (theta, ys_ratio)
+            - B_r : ndarray of shape ((n * n_seg, 2)), r-values directionnal segment in space (theta, r-values)
+    """
+
+    YS, mus_ys, mue_ys, lmax_ys, R, mus_r, mue_r, lmax_r, _, _, _ = param_data_dir(material)
+    fig, ax = plt.subplots()
+    s_seg = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    blues = plt.cm.Blues(np.linspace(0.3, 1, len(s_seg)))
+    for i in range(4,5):
+        j = 0
+        for s in s_seg:
+            l_ys = s * lmax_ys
+            b0, b1, b2, b3, b4, b5, Y = print_bezier_seg(YS[i], YS[i + 1], mus_ys[i], mue_ys[i], l_ys, l_ys, 100)
+            ax.scatter(b0[0], b0[1], marker="x", color="black", linewidths=1)
+            ax.scatter(b1[0], b1[1], marker="x",color=blues[j], linewidths=1)
+            ax.scatter(b2[0], b2[1], marker="x",color=blues[j], linewidths=1)
+            ax.scatter(b3[0], b3[1], marker="x",color=blues[j], linewidths=1)
+            ax.scatter(b4[0], b4[1], marker="x",color=blues[j], linewidths=1)
+            ax.scatter(b5[0], b5[1], marker="x",color="black", linewidths=1)
+
+            ax.plot(Y[:,0], Y[:,1], color=blues[j], linewidth=1)
+
+            ax.quiver(b0[0], b0[1], mus_ys[i][0], mus_ys[i][1], scale=8, angles="xy")
+            ax.quiver(b5[0], b5[1], - mue_ys[i][0], - mue_ys[i][1], scale=8, angles="xy")
+
+            j = j + 1
+    
+    plt.title("Shape control")
+    n = 0
+    pre_dir = polyN_dir + sep + "plots" + sep + "presentation"
+    filename = f"bezier_{n}.png"
+    filepath = pre_dir + sep + filename
+    while os.path.exists(filepath):
+        n = n + 1
+        filename = f"bezier_{n}.png"
+        filepath = pre_dir + sep + filename
+    
+    plt.savefig(filepath, dpi=1200)
+    plt.show()
+
+
 if __name__ == "__main__":
-    plot_seg_data_dir("DP600")
+    seg_data_dir("DP600")

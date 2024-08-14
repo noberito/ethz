@@ -329,7 +329,7 @@ def compare_large_strain(material, degree, input_type, p=0, m=0):
     ax = ax.flatten()  
 
     i = 0
-    for type_test in ["CH"]:
+    for type_test in tests_mat:
         type_tests_mat = tests_mat[type_test]
         if type_test != "UT":
 
@@ -346,28 +346,32 @@ def compare_large_strain(material, degree, input_type, p=0, m=0):
                 
                 if plot:
                     df_sim = pd.read_csv(sim_res_path)
-                    ax[i].plot(df_sim["U2"], df_sim["RF2"], label="abaqus", c="red")
+                    ax[i].plot(df_sim["U2"], df_sim["RF2"], c="red")
+                    
                     if "Strain_ext" in df_sim.columns:
                         ax2 = ax[i].twinx()
-                        ax2.plot(df_sim["U2"], df_sim["Strain_ext"], label="abaqus", c="red")
+                        ax2.plot(df_sim["U2"], df_sim["Strain_ext"], c="red")
                     colors = plt.cm.viridis(np.linspace(0, 0.2, type_tests_mat[ori]))
-                    for k in range(type_tests_mat[ori]):
+                    for k in range(1):
                         exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{k+1}.csv"
                         df_exp = pd.read_csv(exp_res_path)
                         e = df_exp["Displacement longi[mm]"] if type_test == "SH" else df_exp["Displacement[mm]"]
                         s = df_exp["Force[kN]"]
                         ax[i].plot(e, s, color=colors[k])
+                        
+                        indexes = {"CH": 1300, "SH":300, "NT6" : 1000, "NT20":1000}
+                        ax[i].text(e[indexes[type_test]], 0.92 * s[indexes[type_test]], s="Exp.", color=colors[k])
                         if "Strain_ext" in df_sim.columns:
                             s = df_exp["AxStrain_1"]
                             ax2.plot(e,s, color=colors[k])
                             ax2.set_ylim(top= 1.5 * np.max([np.max(s), np.max(df_sim["Strain_ext"])]))
                     if "Strain_ext" in df_sim.columns:
                         ax2.set_ylabel(r"$\epsilon$ [-]")
+                    ax[i].text(df_sim["U2"].iloc[20], 1.08 * df_sim["RF2"].iloc[20], s="FEA", color="red")
                     ax[i].set_title(f"{type_test}_{ori}")
                     ax[i].set_xlabel("Displacement[mm]")
                     ax[i].set_ylabel("Force[kN]")
                     ax[i].grid(True)
-                    ax[i].legend()
                     i = i + 1
 
     for j in range(i, nrows * ncols):
@@ -378,7 +382,6 @@ def compare_large_strain(material, degree, input_type, p=0, m=0):
     
     plt.tight_layout(rect=rect)  
     plt.subplots_adjust(hspace=0.5)
-    plt.show()
 
     figdir = file_dir + sep + material + sep + "var_" + str(p)
     if not(os.path.exists(figdir)):
@@ -387,7 +390,7 @@ def compare_large_strain(material, degree, input_type, p=0, m=0):
     filename = f"{material}_largestrain_poly{degree}_{p}_{m}.png"
     filepath = figdir + sep + filename
     print(filepath)
-    plt.savefig(filepath)
+    plt.savefig(filepath, dpi=600)
 
 if __name__ == "__main__":
     p = read_param()

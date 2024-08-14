@@ -579,7 +579,7 @@ if __name__ == "__main__":
 
 
 
-    coeff_mini = get_coeff_mini(material, degree)
+    coeff_mini = get_coeff_mini_opti(material, degree, "5")
     coeff_law, ymod = get_coeff_law(material, law)
 
     write_coeff_abq_mini(coeff_mini, coeff_law, ymod, enu, protomodel, degree, material, law, density, 10, 10)
