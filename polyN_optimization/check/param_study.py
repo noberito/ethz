@@ -11,7 +11,7 @@ sep = os.sep
 
 sys.path.append(polyN_dir)
 
-from get_calibration_data import analyze_exp_data
+from get_calibration_data import get_tests_ori
 
 def test_evolution(test, input_type, material, var_optim):
     results_sim_dir = polyN_dir + sep + "results_sim" + sep + material + sep + "param_study"
@@ -24,7 +24,7 @@ def test_evolution(test, input_type, material, var_optim):
         Y = df["RF2"]
         ax.plot(X, Y, label=f"{i}", linestyle="dashed")
     
-    tests_mat = analyze_exp_data(material)
+    tests_mat = get_tests_ori(material)
     type_test = test.split("_")[0]
     ori = test.split("_")[1]
     type_tests_mat = tests_mat[type_test]
@@ -78,7 +78,7 @@ def opti_evolution(test, input_type, material, var_optim):
             except :
                 pass
     
-    tests_mat = analyze_exp_data(material)
+    tests_mat = get_tests_ori(material)
     type_test = test.split("_")[0]
     ori = test.split("_")[1]
     type_tests_mat = tests_mat[type_test]
@@ -127,7 +127,7 @@ def var_evolution(test, input_type, material):
             pass
         i = i + 1
     
-    tests_mat = analyze_exp_data(material)
+    tests_mat = get_tests_ori(material)
     type_test = test.split("_")[0]
     ori = test.split("_")[1]
     type_tests_mat = tests_mat[type_test]

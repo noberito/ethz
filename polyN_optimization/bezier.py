@@ -439,7 +439,7 @@ def plot_bezier(material):
         mue[i] = mue_new
         l_max[i] = l_max_new
 
-    s = 0
+    s = 1
     l = np.min(l_max, axis=0) * s
     B = np.zeros((n_curves * n_pt_curve * 6, 3))
 
@@ -454,6 +454,9 @@ def plot_bezier(material):
             le = l[j]
             B_new = bezier_seg(bs, be, us, ue, ls, le, n_pt_curve)
             B[i * 6 * n_pt_curve + j * n_pt_curve : i * 6 * n_pt_curve + (j + 1) * n_pt_curve] = B_new
+            ax.scatter(B_new[0,0], B_new[0,1], B_new[0,2], color = "blue", s=5)
+            if i == 2:
+                ax.scatter(B_new[:,0], B_new[:,1], B_new[:,2], color = "black", s=5)
 
     X = B[:,0]
     Y = B[:,1]
@@ -464,8 +467,18 @@ def plot_bezier(material):
     ax.set_ylabel(r"$\sigma_{yy}/\sigma_0[-]$")
     ax.set_zlabel(r"$\sigma_{xy}/\sigma_0[-]$")
     plt.suptitle(f"Bezier model {material}, s = {s}")
-
+    n = 0
+    pre_dir = polyN_dir + sep + "plots"
+    filename = f"bezier_{n}.png"
+    filepath = pre_dir + sep + filename
+    while os.path.exists(filepath):
+        n = n + 1
+        filename = f"bezier_{n}.png"
+        filepath = pre_dir + sep + filename
+    
+    plt.savefig(filepath, dpi=1200)
     plt.show()
+
 
 def bezier_section_plane_alloutput(material, theta, ys, ys_s, n_pt_curve, r, r_s, r_tb=1, r_cb=1, tc_sym=1):
     df = readdata_exp(material)
@@ -714,8 +727,6 @@ def print_seg_data_dir(material):
     fig, ax = plt.subplots()
     s_seg = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     blues = plt.cm.Blues(np.linspace(0.3, 1, len(s_seg)))
-    xs = []
-    ys = []
     for i in range(4,5):
         j = 0
         for s in s_seg:
@@ -732,16 +743,10 @@ def print_seg_data_dir(material):
 
             ax.quiver(b0[0], b0[1], mus_ys[i][0], mus_ys[i][1], scale=8, angles="xy")
             ax.quiver(b5[0], b5[1], - mue_ys[i][0], - mue_ys[i][1], scale=8, angles="xy")
-            xs.append(round(b0[0],2))
-            ys.append(round(b0[1], 3))
+
             j = j + 1
-    xs.append(round(b5[0],2))
-    ys.append(round(b5[1], 3))
-    plt.xlabel(r"$\theta$[rad]")
-    plt.ylabel(r"$\sigma/\sigma_0$[-]")
-    plt.xticks(xs) 
-    plt.yticks(ys) 
-    plt.title("Control over the shape")
+    
+    plt.title("Shape control")
     n = 0
     pre_dir = polyN_dir + sep + "plots" + sep + "presentation"
     filename = f"bezier_{n}.png"
@@ -752,7 +757,8 @@ def print_seg_data_dir(material):
         filepath = pre_dir + sep + filename
     
     plt.savefig(filepath, dpi=1200)
+    plt.show()
 
 
 if __name__ == "__main__":
-    print_seg_data_dir("DP600")
+    plot_bezier("DP600")

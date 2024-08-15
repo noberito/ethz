@@ -7,7 +7,6 @@ import time
 import numpy as np
 import glob
 
-
 # Get the directory where the Python exec is located
 
 sep = os.sep
@@ -17,7 +16,7 @@ run_dir = polyN_cali_dir + sep + "running"
 sys.path.append(polyN_cali_dir)
 
 from read import read_param, get_coeff_mini, get_coeff_law, get_coeff_mini_opti
-from get_calibration_data import analyze_exp_data
+from get_calibration_data import get_tests_ori
 from tests_parameters import load_points, ext_points, ut_tests
 from check.compare_sim_exp import compare_large_strain
 from optimize_polyN_mini import write_coeff_abq_mini
@@ -568,7 +567,7 @@ if __name__ == "__main__":
     protomodel = p["protomodel"]
     law = p["law"]
 
-    mat_exp = analyze_exp_data(material)
+    mat_exp = get_tests_ori(material)
 
     tests = []
     for type_test in mat_exp.keys():
@@ -576,8 +575,6 @@ if __name__ == "__main__":
             if type_test != "UT":
                 test = type_test + "_" + ori
                 tests.append(test)
-
-
 
     coeff_mini = get_coeff_mini_opti(material, degree, "5")
     coeff_law, ymod = get_coeff_law(material, law)

@@ -15,7 +15,7 @@ import sklearn
 import sklearn.preprocessing
 from sklearn.linear_model import LinearRegression
 from read import read_param, readData_2d, get_coeff_mises
-from get_calibration_data import export_exp_data, export_virtual_data, analyze_exp_data, export_hardening_data
+from get_calibration_data import export_exp_data, export_virtual_data, get_tests_ori, export_hardening_data
 import shutil
 import random
 
@@ -1075,7 +1075,7 @@ def get_yield_stress_NT6(sigma0, material):
         Output :
             - ys_ratio_nt6 : dict, {"ori": ys_ratio}, yield stress ratio for the given orientation
     """
-    mat_tests = analyze_exp_data(material)
+    mat_tests = get_tests_ori(material)
     results_exp_dir = polyN_dir + sep + "results_exp" + sep + material
     ys_ratio_nt6 = {}
 
@@ -1120,7 +1120,7 @@ def get_yield_stress_SH(sigma0, material):
         Output :
             - ys_ratio_sh : dict, {"ori": ys_ratio}, yield stress ratio for the given orientation
     """
-    mat_tests = analyze_exp_data(material)
+    mat_tests = get_tests_ori(material)
     results_exp_dir = polyN_dir + sep + "results_exp" + sep + material
     ys_ratio_SH = {}
 
@@ -1482,19 +1482,14 @@ def optiCoeff_polyN_mini(df, degree, weight_ut, weight_e2, weight_exp, init_gues
         res = res + n
 
     a0 = init_guess[1:]
-    b = b[1:]
-    I = np.eye(len(a0))
-    cons_hypercube = scipy.optimize.LinearConstraint(I, lb = a0 - b, ub= a0 + b, keep_feasible=True)
-    #constraints.append(cons_hypercube)
-
     options = {"verbose" : 3, "maxiter" : 1000}
 
-    opt = scipy.optimize.minimize(J, x0=a0, jac=grad_J, constraints=constraints, tol=10e-25, options=options)
+    opt = scipy.optimize.minimize(J, x0=a0 , jac=grad_J, constraints=constraints, tol=10e-25, options=options)
 
     while (not opt.success and opt.nit == options['maxiter']):
         new_a0 = a0 + 0.1 * np.random.uniform(low= - np.ones(len(a0)), high=np.ones(len(a0)))
         try :
-            opt = scipy.optimize.minimize(J, x0=new_a0, jac=grad_J, method="trust-constr", constraints=constraints, options=options)
+            opt = scipy.optimize.minimize(J, x0=new_a0, jac=grad_J, constraints=constraints, options=options)
         except ValueError:
             pass
 
@@ -1715,7 +1710,7 @@ def test_remove():
     p = read_param()
     material = p["material"]
 
-    mat_tests = analyze_exp_data(material)
+    mat_tests = get_tests_ori(material)
     results_exp_dir = polyN_dir + sep + "results_exp" + sep + material
 
     for type_test in mat_tests:
@@ -1755,7 +1750,7 @@ def test_slope_study():
     p = read_param()
     material = p["material"]
 
-    mat_tests = analyze_exp_data(material)
+    mat_tests = get_tests_ori(material)
     results_exp_dir = polyN_dir + sep + "results_exp" + sep + material
 
     for type_test in mat_tests:
@@ -1871,6 +1866,5 @@ def firstopti_mini():
     return(coeff)
 
 if __name__ == "__main__":
-    powers = get_param_polyN_mini(6)
-    print(len(powers))
+    firstopti_mini()
     pass

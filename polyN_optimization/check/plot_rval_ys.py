@@ -192,7 +192,7 @@ def plot_all_mini(df, material, degree):
     plt.title(f"Poly{degree}_mini model on {material} : Yield Stresses and R-values from UT tests", size=12)
     plt.show()
 
-def plot_planestress_mini(material, degree):
+def plot_planestress_mini(material, degree, suf=""):
     """
         Plot the yield surface in the plane sx sy for different sxy
         Input :
@@ -202,9 +202,13 @@ def plot_planestress_mini(material, degree):
     zs = [0.0, 0.3, 0.4, 0.5, 0.6, 0.63]
     powers = get_param_polyN_mini(degree)
     mises_plot = False
-    coeff = get_coeff_mini(material, degree)
-    fig, ax = plt.subplots()
 
+    if len(suf) > 0:
+        coeff = get_coeff_mini_opti(material, degree, suf)
+    else:
+        coeff = get_coeff_mini(material, degree)
+
+    fig, ax = plt.subplots()
 
     sx = np.linspace(-1.5, 1.5, 100)
     sy = np.linspace(-1.5, 1.5, 100)
@@ -245,6 +249,8 @@ def plot_planestress_mini(material, degree):
         plt.legend(nm2, ["Mises"])
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
+    filename = f"{material}_poly{degree}_yieldlocus.png"
+    plt.savefig(pres_dir + sep + filename, dpi=1200)
     plt.show()
 
 def check_pst_points_mini(df, material, degree):
@@ -1250,7 +1256,7 @@ def main():
         plot_ys_all(df, material, coeff_hill, coeff_yld, [], 8, degree)
     
     else:
-        plot_all_opti(df, material, 6, 5)
+        plot_planestress_mini(material, degree, "WAOUH")
 
 
 main()

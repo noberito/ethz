@@ -13,7 +13,7 @@ from scipy.interpolate import interp1d
 
 
 from optimize_polyN_mini import firstopti_mini, write_coeff_abq_mini, get_param_polyN_mini, write_coeff_abq_mini
-from get_calibration_data import analyze_exp_data
+from get_calibration_data import get_tests_ori
 from tests_parameters import ut_tests_ext
 from check.compare_sim_exp import compare_large_strain, compare_ut_s_2
 from read import read_param, get_coeff_mini, get_coeff_law
@@ -24,7 +24,7 @@ polyN_dir = os.path.dirname(os.path.abspath(__file__))
 exec_dir = polyN_dir + sep + "running"
 
 def mean_square_error_fd(material, test, input_type, p=0, m=0):
-    mat_exp = analyze_exp_data(material)
+    mat_exp = get_tests_ori(material)
     results_sim_dir = polyN_dir + sep + "results_sim" + sep + material
     sim_res_path = results_sim_dir + sep + test + "_" + input_type + "_" + str(p) + "_" + str(m) + ".csv"
     df_sim = pd.read_csv(sim_res_path)
@@ -62,7 +62,7 @@ def mean_square_error_fd(material, test, input_type, p=0, m=0):
     return(area_between_curves)
 
 def mean_square_error_str(material, test, input_type, p=0, m=0):
-    mat_exp = analyze_exp_data(material)
+    mat_exp = get_tests_ori(material)
     results_sim_dir = polyN_dir + sep + "results_sim" + sep + material
     sim_res_path = results_sim_dir + sep + test + "_" + input_type + "_" + str(p) + "_" + str(m) + ".csv"
     df_sim = pd.read_csv(sim_res_path)
@@ -126,7 +126,6 @@ def framework_mini(material, degree, law, enu, protomodel, input_type, density, 
         p = p + "0" + str(var)
 
     def f_cost(x, m=1000):
-        powers = get_param_polyN_mini(degree)
 
         new_coeff = np.copy(coeff_mini)
         new_coeff[var_optim] = new_coeff[var_optim] + x
@@ -179,7 +178,7 @@ if __name__ == "__main__":
     enu = p["enu"]
     results_sim_dir = polyN_dir + sep + "results_sim" + sep + material
 
-    mat_exp = analyze_exp_data(material)
+    mat_exp = get_tests_ori(material)
 
     tests = []
     for type_test in mat_exp.keys():

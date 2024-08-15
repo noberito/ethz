@@ -14,7 +14,7 @@ polyN_cali_dir = os.path.dirname(file_dir)
 sys.path.append(polyN_cali_dir)
 
 from read import read_param, get_coeff_mini, get_coeff_law
-from get_calibration_data import analyze_exp_data
+from get_calibration_data import get_tests_ori
 from optimize_polyN_mini import get_param_polyN_mini, f_min_squared
 
 
@@ -140,7 +140,7 @@ def curve_theo_ebt_norm(degree, law, coeff_mini, coeff_law, ymod):
 
 def compare_norm(material, degree, input_type, law, coeff_mini, coeff_law, ymod, var_optim=0, n_try=0):
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
-    ut_tests_mat = analyze_exp_data(material)["UT"]
+    ut_tests_mat = get_tests_ori(material)["UT"]
     n = len(ut_tests_mat.keys())
     nrows = n // 3 + 1
 
@@ -299,7 +299,7 @@ def curve_theo_ebt_comp(degree, law, coeff_mini, coeff_law, ymod):
 
 def compare_comp(material, degree, input_type, law, coeff_mini, coeff_law, ymod, var_optim=0, n_try=0):
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
-    ut_tests_mat = analyze_exp_data(material)["UT"]
+    ut_tests_mat = get_tests_ori(material)["UT"]
     n = len(ut_tests_mat.keys())
     nrows = n // 3 + 1
 

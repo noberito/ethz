@@ -83,19 +83,6 @@ def readData_2d(material, protomodel):
     except:
         print(f"protomodel {protomodel} not available for the moment")
         df_v = pd.DataFrame()
-    
-    if 0:
-        if protomodel == "bezier":
-            data = df_v[["s11", "s22", "s12"]].values
-
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-            X = data[:,0]
-            Y = data[:,1]
-            Z = data[:,2]
-            ax.scatter(X, Y, Z, marker="o", s=1)
-
-            plt.show()
 
     df = pd.concat([df_e, df_v])
     df["Norm"] = np.linalg.norm(df[["s11", "s22", "s33", "s12", "s13", "s23"]].values, axis=1)
@@ -116,17 +103,23 @@ def get_coeff_mini_opti(material, degree, opti):
     filename = f"{material}_poly{degree}_mini_{opti}.npy"
     filedir = polyN_dir + sep + "coeff"
     filepath = filedir + sep + filename
-    coeff_mini = np.load(filepath)
-    return(coeff_mini)
+    try:
+        coeff_mini = np.load(filepath)
+        return(coeff_mini)
+    except :
+        return([])
 
 def get_coeff_law(material, law):
     filename = f"{material}_{law}.npy"
     filedir = polyN_dir + sep + "coeff"
     filepath = filedir + sep + filename
-    coeff = np.load(filepath)
-    coeff_law = coeff[:-1]
-    ymod = coeff[-1]
-    return(coeff_law, ymod)
+    try:
+        coeff = np.load(filepath)
+        coeff_law = coeff[:-1]
+        ymod = coeff[-1]
+        return(coeff_law, ymod)
+    except :
+        return([], [])
 
 def get_coeff_mises(degree):
     if degree==2:
@@ -140,3 +133,51 @@ def get_coeff_mises(degree):
     else:
         C = []
     return(C)
+
+def get_tests_ori(material):
+    """
+        Returns a dictionnary of the different tests led for the given material /(in the results_exp/material folder, files
+        not to read must start with "_")
+        Input :
+            - material : string
+        Output :
+            - d : dictionnary (d[test][orientation][number])
+
+    """
+    d = {}
+    folder = polyN_dir + sep + "results_exp" + sep + material
+    files = os.listdir(folder)
+    for f in files:
+        if not(f[0] == "_"):
+            test, ori, n = f.strip(".csv").split("_")
+            if d.get(test)==None:
+                d[test] = {}
+            if d[test].get(ori) == None :
+                d[test][ori] = 1
+            else:
+                d[test][ori] = d[test][ori] + 1
+    return(d)
+
+def get_ori_tests(material):
+    """
+        Returns a dictionnary of the different tests led for the given material /(in the results_exp/material folder, files
+        not to read must start with "_")
+        Input :
+            - material : string
+        Output :
+            - d : dictionnary (d[ori][test][number])
+
+    """
+    d = {}
+    folder = polyN_dir + sep + "results_exp" + sep + material
+    files = os.listdir(folder)
+    for f in files:
+        if not(f[0] == "_"):
+            test, ori, n = f.strip(".csv").split("_")
+            if d.get(ori)==None:
+                d[ori] = {}
+            if d[ori].get(test) == None :
+                d[ori][test] = 1
+            else:
+                d[ori][test] = d[ori][test] + 1
+    return(d)

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 from bezier import bezier_3D
-from read import read_param
+from read import read_param, get_tests_ori, get_ori_tests
 
 polyN_dir = os.path.dirname(os.path.abspath(__file__)) 
 sep = os.sep
@@ -10,64 +10,20 @@ sep = os.sep
 tol_yf = 0.01
 itermax = 20
 
-
-def analyze_exp_data(material):
-    """
-        Returns a dictionnary of the different tests led for the given material /(in the results_exp/material folder, files
-        not to read must start with "_")
-        Input :
-            - material : string
-        Output :
-            - d : dictionnary (d[test][orientation][number])
-
-    """
-    d = {}
-    folder = polyN_dir + sep + "results_exp" + sep + material
-    files = os.listdir(folder)
-    for f in files:
-        if not(f[0] == "_"):
-            test, ori, n = f.strip(".csv").split("_")
-            if d.get(test)==None:
-                d[test] = {}
-            if d[test].get(ori) == None :
-                d[test][ori] = 1
-            else:
-                d[test][ori] = d[test][ori] + 1
-    return(d)
-
-def analyze_exp_data2(material):
-    """
-        Returns a dictionnary of the different tests led for the given material /(in the results_exp/material folder, files
-        not to read must start with "_")
-        Input :
-            - material : string
-        Output :
-            - d : dictionnary (d[test][orientation][number])
-
-    """
-    d = {}
-    folder = polyN_dir + sep + "results_exp" + sep + material
-    files = os.listdir(folder)
-    for f in files:
-        if not(f[0] == "_"):
-            test, ori, n = f.strip(".csv").split("_")
-            if d.get(ori)==None:
-                d[ori] = {}
-            if d[ori].get(test) == None :
-                d[ori][test] = 1
-            else:
-                d[ori][test] = d[ori][test] + 1
-    return(d)
-
 def export_exp_data(material):
     """
-        Generate the csv file data_exp_{material} needed to optimize.
-        For the moment, only the UT files are checked: Must have a column "PlasticStrain_longi" and "PlasticStress[MPa]"
-        and if available a column "R-value" containing the r-val
+        Generate the csv file calibration_data/data_exp_{material}.csv
+        For UT tests : Must have a column "PlasticStrain_longi" and "PlasticStress[MPa]"
+        and if available a column "R-value" containing the r-val. 
+        For the EBT test : The first column must be PlasticStrain and the second one must be PlasticStress.
+        The r-value is set to 0 on the line 45 (0 means r-value not available)
+
         Input :
             - material : string
+        
+
     """
-    mat_dic = analyze_exp_data(material)
+    mat_dic = get_tests_ori(material)
     ut_data = pd.DataFrame(columns=["q", "LoadAngle", "YieldStress", "Rval", "Type", "YoungMod", "Width", "Thickness"])
     dirname_in = f"{polyN_dir}{sep}results_exp{sep}{material}"
 
@@ -206,7 +162,6 @@ def export_virtual_data(protomodel, material, nb_virtual_pt):
             - material : string
             - nb_virtual_pt : integer
     """
-    
 
     if protomodel == "mises":
         data = data_yf_sphere(mises, itermax, nb_virtual_pt)
@@ -232,13 +187,15 @@ def export_virtual_data(protomodel, material, nb_virtual_pt):
 
 def export_hardening_data(material):
     """
-        Generate the csv file "data_plasticlaw_{material}" used to calibrate the hardening law.
-        Based on the UT_00 tests from the given material
+        Generate the csv file "data_plasticlaw_{material}.csv" used to calibrate the hardening law.
+        Based on the UT_00 tests from the given material.  Must have a column "PlasticStrain_longi" and "PlasticStress[MPa]"
+        and " Young's Modulus [MPa]".
+        
         Input :
             - material : string
     """
     
-    mat_tests = analyze_exp_data(material)
+    mat_tests = get_tests_ori(material)
     n_ut_00 = mat_tests["UT"]["00"]
     df_out = pd.DataFrame(columns = ["PlasticStrain", "PlasticStress", "YoungModulus"])
     ymod = 0

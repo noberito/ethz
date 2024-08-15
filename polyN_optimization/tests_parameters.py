@@ -1,4 +1,4 @@
-
+"""File containg different arrays of different tests"""
 
 tests = ["UT_00", "UT_15", "UT_30", "UT_45", "UT_60", "UT_75","UT_90", "UT_EBT",
             "CH_00", "CH_45",
