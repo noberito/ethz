@@ -22,8 +22,3 @@ weight_e2 = 0
 
 input_type = UMAT
 var_optim = 1,2,3,4,5,6
-
-opti = 1
-loadcoeff = 0
-
-gseed = 6

@@ -1,8 +1,6 @@
 !DIR$ FREEFORM
 !CC*******************************************************************************
-!C  UMAT: developed by S.C. Soare. 
-!C  IT USES ISOTROPIC ELASTICITY COUPLED WITH AN ANISOTROPIC YIELD FUNCTION. 
-!C  THE SUBROUTINE IS DESIGNED FOR PLANE (2D) STRESS STATES. 
+!C  THE SUBROUTINE IS DESIGNED FOR (3D) STRESS STATES. 
 !C  IT IS BASED ON THE FULLY IMPLICIT RETURN MAPPING ALGORITHM (with quadratic line search) 
 !C  ONE STATE VARIABLE : HARDENING PARAMETER (THE EQUIVALENT PLASTIC STRAIN).
 !C  IT IS ASSUMED THAT THE USER HAS DEFINED (USING THE *ORIENTATION OPTION IN ABAQUS)
@@ -18,10 +16,14 @@
 !C  Voce (exp-)law: sigma^bar = a - b*exp(-c*ep^bar)  (default)
 !C  Read further naming/renaming convention in the HARDENING section of this code 
 !C  (more specific hardening laws can be implemented in the same section) 
-!C  PROPS(3) = a 
-!C  PROPS(4) = b
-!C  PROPS(5) = c
-!C  PROPS(6),...,PROPS(NPROPS): PARAMETERS OF YIELD FUNCTION
+!C	EMOD = PROPS(1)
+!C  ENU = PROPS(2)
+!C  PROPS(3) = A
+!C  PROPS(4) = B
+!C  PROPS(5) = C
+!C	PROPS(6) = DEGREE
+!C	PROPS(7) = NCOEFF
+!C  PROPS(8),...,PROPS(NPROPS): PARAMETERS OF YIELD FUNCTION
 !C  Yield func implemented: PolyN
 !C  Note: The first two parameters are the degree and number of coefficients
 !C!************************************************************************************** 

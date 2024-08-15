@@ -76,11 +76,19 @@ def change_paras(test, material):
         f.write("MAXDT = DTIME * 1e-2")
         f.close()
 
-def change_usermat(test,material, degree, law, protomodel, input_type, p=0, m=0):
+def change_usermat(test, material, degree, law, protomodel, input_type, p=0, m=0):
     """
         Change the input user material file in the all the abaqus inp files of test in tests
+
         Input :
-            - usermatfile : string, filename of the user material file
+            - test : string (ex : UT_00)
+            - material : string
+            - degree : int
+            - law : string
+            - protomodel : string, bezier or Mises
+            - input_type : string, only UMAT works
+            - p : int
+            - m : int
     """
     usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}_{p}_{m}.inp"
             
@@ -102,9 +110,13 @@ def change_usermat(test,material, degree, law, protomodel, input_type, p=0, m=0)
 
 def simulate(test, input_type, law,  p=0, m=0):
     """
-        Run the abaqus simulation of the test_polyN.inp and generate a csv file in results_sim folder
+        Launch the abaqus simulation of the test_polyN.inp
+
         Input :
             - test : string, name of the test (ex : UT_00)
+
+        Output :
+            - n_batch : number of the batch
     """
     print(f"Simulating {test}")
 
@@ -135,9 +147,16 @@ def simulate(test, input_type, law,  p=0, m=0):
 
 def create_csv(test, material, input_type, p=0, m=0):
     """
-        Run the abaqus simulation of the test_polyN.inp and generate a csv file in results_sim folder
+        Generate a csv file in results_sim folder if the simulations are completed.
+        For UT test : The csv file contains [Time	S11	S22	S33	S12	S13	S23	LE11	LE22	LE33	LE12	LE13	LE23	SDV_EPBAR	E11	E12	E13	E22	E23	E33]
+        For others : Time	U2	RF2	(if there is the extensometer in the experiments : Time	U2_ext	Strain_eng	Strain_ext)
+
         Input :
-            - test : string, name of the test (ex : UT_00)
+            - test : string (ex : UT_00)
+            - material : string
+            - input_type : string, only UMAT works
+            - p : int
+            - m : int
     """
 
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
@@ -454,6 +473,16 @@ def create_csv(test, material, input_type, p=0, m=0):
         df.to_csv(filepath)
 
 def del_temp_file(test, input_type, p=0, m=0):
+    """
+        Delete temporary files for the given test.
+
+        Input :
+            - test : string (ex : UT_00)
+            - input_type : string, only UMAT works
+            - p : int
+            - m : int
+
+    """
     pattern = f"temp_{test}_{input_type}_{p}_{m}*"
     os.chdir(run_dir)
     files_to_delete = glob.glob(pattern)
@@ -464,13 +493,34 @@ def del_temp_file(test, input_type, p=0, m=0):
         else:
             subprocess.run(['rm', file])
 
-def del_usermatfile(material,degree, law, protomodel, p=0, m=0):
+def del_usermatfile(material, degree, law, protomodel, p=0, m=0):
+    """
+        Delete the usermatfile for the given material...
+
+        Input :
+            - material : string
+            - degree : int
+            - law : string
+            - protomodel : string
+            - p : int
+            - m : int    
+    """
     usermatfile = f"{material}_abq_deg{degree}mini_{law}_{protomodel}_{p}_{m}.inp"
     filepath = run_dir + sep + usermatfile
     subprocess.run(["rm", filepath])
 
 
 def sim_finished(test, input_type, p=0, m=0):
+    """
+        Check if the simulation is finished
+
+        Input :
+            - test : string (ex : UT_00)
+            - input_type : string, only UMAT works
+            - p : int
+            - m : int
+    """
+
     test_file = f"temp_{test}_{input_type}_{p}_{m}.lck"
     test_filepath = run_dir + sep + test_file
     if os.path.exists(test_filepath):
@@ -478,6 +528,13 @@ def sim_finished(test, input_type, p=0, m=0):
     return(True)
 
 def has_failed(batch):
+    """
+        Check if the simulation has failed for the issue just below
+
+        Input :
+            - batch : int, batch number
+    
+    """
     out_file = "slurm-" + batch + ".out"
     out_filepath = run_dir + sep + out_file
     with open(out_filepath, "r") as f :
@@ -487,19 +544,48 @@ def has_failed(batch):
         return(False)
     
 def batch_running(batch):
+    """
+        Check if the simulation is currently running.
+
+        Input :
+            - batch : int, batch number
+    
+    """
     out_file = "slurm-" + batch + ".out"
     out_filepath = run_dir + sep + out_file
     return(os.path.exists(out_filepath))
 
 def del_lck_file(test, input_type, p=0, m=0):
+    """
+        Delete the lck file (used if time limit has cancelled the simulation)
+
+        Input :
+            - test : string (ex : UT_00)
+            - input_type : string, only UMAT works
+            - p : int
+            - m : int
+    """
     test_file = f"temp_{test}_{input_type}_{p}_{m}.lck"
     test_filepath = run_dir + sep + test_file
     subprocess.run(['rm', test_filepath])
 
 def run(tests, material, degree, law, protomodel, input_type, p=0, m=0):
-    #Run les tests disponibles experimentalement
+    """
+        Run the simulations for the given tests.
 
-    time_limit = 600
+        Input :
+            - test : string (ex : UT_00)
+            - material : string
+            - degree : int
+            - law : string
+            - protomodel : string, bezier or Mises
+            - input_type : string, only UMAT works
+            - p : int
+            - m : int
+
+    """
+
+    time_limit = 600 #TO CHANGE IF YOU CHANGE THE TIME LIMIT IN THE COMMAND WHERE YOU LAUNCH LARGE STRAIN TEST ON LINE 142 IN SIMULATE
     n = len(tests)
     
     for test in tests:
@@ -550,7 +636,16 @@ def run(tests, material, degree, law, protomodel, input_type, p=0, m=0):
 
 
 def post_process(tests, material, input_type, p=0, m=0):
+    """
+        Create the csv for the given tests (details in create_csv)
 
+        Input :
+            - test : string (ex : UT_00)
+            - material : string
+            - input_type : string, only UMAT works
+            - p : int
+            - m : ints
+    """
     #Tests post processing
     for test in tests:
         create_csv(test, material, input_type, p, m)
@@ -569,6 +664,7 @@ if __name__ == "__main__":
 
     mat_exp = get_tests_ori(material)
 
+    #Reading all the expriments performed to run the same in abaqus
     tests = []
     for type_test in mat_exp.keys():
         for ori in mat_exp[type_test]:
@@ -576,7 +672,7 @@ if __name__ == "__main__":
                 test = type_test + "_" + ori
                 tests.append(test)
 
-    coeff_mini = get_coeff_mini_opti(material, degree, "5")
+    coeff_mini = get_coeff_mini_opti(material, degree)
     coeff_law, ymod = get_coeff_law(material, law)
 
     write_coeff_abq_mini(coeff_mini, coeff_law, ymod, enu, protomodel, degree, material, law, density, 10, 10)

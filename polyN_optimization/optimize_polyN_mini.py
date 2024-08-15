@@ -1815,9 +1815,6 @@ def firstopti_mini():
     weight_exp = float(p["weight_exp"])
     weight_e2 = float(p["weight_e2"])
 
-    opti = int(p["opti"])
-    loadcoeff = int(p["loadcoeff"])
-
     print(material)
 
     export_exp_data(material)
@@ -1829,28 +1826,22 @@ def firstopti_mini():
 
     powers = get_param_polyN_mini(degree)
     C = get_coeff_mises(degree)
-    print(C)
 
     if sh:
         ys_ratio_sh = get_yield_stress_SH(sigma0, material)
         df = add_sh(df, ys_ratio_sh)
 
-    if opti:
-        new_df = df.copy(deep=True)
+    new_df = df.copy(deep=True)
 
-        if nt6:
-            ys_ratio_nt6 = get_yield_stress_NT6(sigma0, material)
-            for i in range(3):
-                coeff = optiCoeff_polyN_mini(new_df, degree,  weight_ut, weight_e2, weight_exp, C)
-                dir_pst = get_dir_pst(coeff, powers)
-                new_df = add_nt6(df, ys_ratio_nt6, dir_pst)
-        else : 
+    if nt6:
+        ys_ratio_nt6 = get_yield_stress_NT6(sigma0, material)
+        for i in range(3):
             coeff = optiCoeff_polyN_mini(new_df, degree,  weight_ut, weight_e2, weight_exp, C)
+            dir_pst = get_dir_pst(coeff, powers)
+            new_df = add_nt6(df, ys_ratio_nt6, dir_pst)
+    else : 
+        coeff = optiCoeff_polyN_mini(new_df, degree,  weight_ut, weight_e2, weight_exp, C)
 
-    elif loadcoeff:
-        coeff = np.load(polyN_dir + sep + material + "_poly" + str(degree) + "_mini_coeff.npy")
-    else :
-        coeff = C
 
     coeff_law, ymod = optiCoeff_pflow_mini(law, coeff, material, powers)
 

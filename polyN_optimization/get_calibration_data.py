@@ -17,7 +17,7 @@ def export_exp_data(material):
         and if available a column "R-value" containing the r-val. 
         For the EBT test : The first column must be PlasticStrain and the second one must be PlasticStress.
         The r-value is set to 0 on the line 45 (0 means r-value not available)
-
+        The type given is "e" for experiments
         Input :
             - material : string
         
@@ -156,11 +156,13 @@ def data_yf_sphere(f, itermax, nb_pt_check):
 def export_virtual_data(protomodel, material, nb_virtual_pt):
     """
         Generate the csv file data_exp_{material} needed to optimize the polyN function.
-        Based on the protomodel given.
+        Based on the protomodel given. No r-val for virtual data so r-values set to 0
+        The type given is "v" for virtual.
+
         Input :
             - protomodel : string, must be in ["mises", "tresca", "Hill48", "Yld2000"]
             - material : string
-            - nb_virtual_pt : integer
+            - nb_virtual_pt : integer, number of virtual points
     """
 
     if protomodel == "mises":

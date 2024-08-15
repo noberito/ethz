@@ -31,7 +31,6 @@ def readdata_exp(material):
     """
         Returns a dataframe containing the experimental points from UT from the given material 
         and virtual points using the given protomodel.
-        df.columns = [#TODO]
     
         Input :
             - material : string

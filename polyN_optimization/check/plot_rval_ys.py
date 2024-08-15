@@ -927,7 +927,7 @@ def plot_planestress_all(material, coeff_hill, coeff_yld, coeff_mini, m, degree)
 
 def plot_ys_degree(df, material):
     """
-        Plot the ys ratios for the different degrees of polyN available.
+        Plot the ys ratios for the different degrees of all degree of polyN available
 
         Input :
             - df : dataFrame, data extracted from the experimental file with readData2D
@@ -980,7 +980,7 @@ def plot_ys_degree(df, material):
 
 def plot_rval_degree(df, material):
     """
-        Plot the r-values for the different degrees of polyN available.
+        Plot the r-values for the different degrees of all degree of polyN available
         Input :
 
             - df : dataFrame, data extracted from the experimental file with readData2D
@@ -1030,7 +1030,7 @@ def plot_rval_degree(df, material):
 
 def plot_all_degree(df, material):
     """
-        Plot the ys ratios and r-values for the different degrees of polyN available.
+        Plot the ys ratios and r-values for the different degrees of all degree of polyN available
         Input :
 
             - df : dataFrame, data extracted from the experimental file with readData2D
@@ -1080,7 +1080,7 @@ def plot_all_degree(df, material):
 
 def plot_planestress_degree(material):
     """
-        Plot yield surfaces of polyN available in the plane sx sy for sxy = 0
+        Plot yield surfaces of all degree of polyN available in the plane sx sy for sxy = 0
 
         Input :
             - material : string
@@ -1188,6 +1188,7 @@ def plot_all_opti(df, material, degree, suf):
 def error_to_all(df, material):
     """
         Calculate the geometric mean of the model error compared to the experimental data.
+
         Input :
 
             - df : dataFrame, data extracted from the experimental file with readData2D
@@ -1256,7 +1257,7 @@ def main():
         plot_ys_all(df, material, coeff_hill, coeff_yld, [], 8, degree)
     
     else:
-        plot_planestress_mini(material, degree, "WAOUH")
+        plot_planestress_mini(material, degree)
 
 
 main()
