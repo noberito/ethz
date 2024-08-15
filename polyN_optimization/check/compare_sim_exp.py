@@ -11,7 +11,7 @@ polyN_cali_dir = os.path.dirname(file_dir)
 sys.path.append(polyN_cali_dir)
 
 from read import read_param
-from get_calibration_data import analyze_exp_data
+from get_calibration_data import analyze_exp_data, analyze_exp_data2
 
 facs_displ = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 2., "SH": 1.}
 facs_thick = {"UT": 20, "NT6" : 2., "NT20": 2., "CH": 1., "SH": 8/5}
@@ -309,7 +309,7 @@ def compare_all(material, degree, input_type):
 
 def compare_large_strain(material, degree, input_type, p=0, m=0):
     """
-        Plot Force Displacement for large strain test
+        Plot Force Displacement for large strain test ordered by test name
     """
     results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
     results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
@@ -392,9 +392,97 @@ def compare_large_strain(material, degree, input_type, p=0, m=0):
     print(filepath)
     plt.savefig(filepath, dpi=600)
 
+def compare_large_strain2(material, degree, input_type, p=0, m=0):
+    """
+        Plot Force Displacement for large strain test ordered by orientation
+    """
+    results_exp_dir = polyN_cali_dir + sep + "results_exp" + sep + material
+    results_sim_dir = polyN_cali_dir + sep + "results_sim" + sep + material
+
+    ori_mat = analyze_exp_data2(material)
+
+    n = 0
+    for ori in ori_mat:
+        for type_test in ori_mat[ori]:
+            if type_test != "UT":
+                n += 1
+    
+    ncols = 3
+    nrows = (n + ncols - 1) // ncols 
+
+    fig, ax = plt.subplots(nrows, ncols, figsize=(15, 5 * nrows))
+    ax = ax.flatten()  
+
+    i = 0
+    ori_mat_keys = sorted(list(ori_mat.keys()))
+    print(ori_mat_keys)
+    for ori in ori_mat_keys:
+        for type_test in ori_mat[ori]:
+            if type_test != "UT":
+                sim_res_path = results_sim_dir + sep + f"{type_test}_{ori}_{input_type}_{p}_{m}.csv"
+                plot = 1
+
+                if not os.path.exists(sim_res_path):
+                    plot = 0
+                for k in range(ori_mat[ori][type_test]):
+                    exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{k+1}.csv"
+                    if not os.path.exists(exp_res_path):
+                        plot = 0
+                
+                if plot:
+                    df_sim = pd.read_csv(sim_res_path)
+                    ax[i].plot(df_sim["U2"], df_sim["RF2"], c="red")
+                    
+                    if "Strain_ext" in df_sim.columns:
+                        ax2 = ax[i].twinx()
+                        ax2.plot(df_sim["U2"], df_sim["Strain_ext"], c="red")
+                    colors = plt.cm.viridis(np.linspace(0, 0.2, 1))
+                    for k in range(1):
+                        exp_res_path = results_exp_dir + sep + type_test + "_" + ori + f"_{k+1}.csv"
+                        df_exp = pd.read_csv(exp_res_path)
+                        e = df_exp["Displacement longi[mm]"] if type_test == "SH" else df_exp["Displacement[mm]"]
+                        s = df_exp["Force[kN]"]
+                        ax[i].plot(e, s, color=colors[k])
+                        
+                        indexes = {"CH": 1300, "SH":300, "NT6" : 1000, "NT20":1000}
+                        
+                        facs_exp = {"CH": 0.92, "SH":1.08, "NT6" : 0.92, "NT20":0.92}
+                        ax[i].text(e[indexes[type_test]], facs_exp[type_test] * s[indexes[type_test]], s="Exp.", color=colors[k])
+                        if "Strain_ext" in df_sim.columns:
+                            s = df_exp["AxStrain_1"]
+                            ax2.plot(e,s, color=colors[k])
+                            ax2.set_ylim(top= 1.5 * np.max([np.max(s), np.max(df_sim["Strain_ext"])]))
+                    if "Strain_ext" in df_sim.columns:
+                        ax2.set_ylabel(r"$\epsilon$ [-]")
+                    facs_sim = {"CH": 1.08, "SH": 0.92, "NT6" : 1.08, "NT20": 1.08}
+                    ax[i].text(df_sim["U2"].iloc[20], facs_sim[type_test] * df_sim["RF2"].iloc[20], s="FEA", color="red")
+                    ax[i].set_title(f"{type_test}_{ori}")
+                    ax[i].set_xlabel("Displacement[mm]")
+                    ax[i].set_ylabel("Force[kN]")
+                    ax[i].grid(True)
+                    i = i + 1
+
+    for j in range(i, nrows * ncols):
+        fig.delaxes(ax[j])
+
+    fig.suptitle(f"{material} with poly{degree} : Check Experiments vs Abaqus results\n variable {p}", fontsize=12)
+    rect = np.array([0, 0.03, 1, 0.95])
+    
+    plt.tight_layout(rect=rect)  
+    plt.subplots_adjust(hspace=0.5)
+
+    figdir = file_dir + sep + material + sep + "var_" + str(p)
+    if not(os.path.exists(figdir)):
+        os.makedirs(figdir)
+    
+    filename = f"{material}_largestrain2_poly{degree}_{p}_{m}.png"
+    filepath = figdir + sep + filename
+    print(filepath)
+    plt.savefig(filepath, dpi=600)
+
 if __name__ == "__main__":
     p = read_param()
     material = p["material"]
     degree = int(p["degree"])
     input_type = p["input_type"]
-    compare_large_strain(material, degree, input_type, p=10, m=10)
+    compare_large_strain2(material, degree, input_type, p=10, m=10)

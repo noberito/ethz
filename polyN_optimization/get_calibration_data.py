@@ -35,6 +35,30 @@ def analyze_exp_data(material):
                 d[test][ori] = d[test][ori] + 1
     return(d)
 
+def analyze_exp_data2(material):
+    """
+        Returns a dictionnary of the different tests led for the given material /(in the results_exp/material folder, files
+        not to read must start with "_")
+        Input :
+            - material : string
+        Output :
+            - d : dictionnary (d[test][orientation][number])
+
+    """
+    d = {}
+    folder = polyN_dir + sep + "results_exp" + sep + material
+    files = os.listdir(folder)
+    for f in files:
+        if not(f[0] == "_"):
+            test, ori, n = f.strip(".csv").split("_")
+            if d.get(ori)==None:
+                d[ori] = {}
+            if d[ori].get(test) == None :
+                d[ori][test] = 1
+            else:
+                d[ori][test] = d[ori][test] + 1
+    return(d)
+
 def export_exp_data(material):
     """
         Generate the csv file data_exp_{material} needed to optimize.

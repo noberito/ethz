@@ -697,7 +697,7 @@ def print_bezier_seg(bs, be, us, ue, ls, le, n):
 
     return(b0, b1, b2, b3, b4, b5, Y)    
 
-def seg_data_dir(material):
+def print_seg_data_dir(material):
     """
         Returns the directionnal segments (yield stress ratios, r-values)
 
@@ -714,6 +714,8 @@ def seg_data_dir(material):
     fig, ax = plt.subplots()
     s_seg = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     blues = plt.cm.Blues(np.linspace(0.3, 1, len(s_seg)))
+    xs = []
+    ys = []
     for i in range(4,5):
         j = 0
         for s in s_seg:
@@ -730,10 +732,16 @@ def seg_data_dir(material):
 
             ax.quiver(b0[0], b0[1], mus_ys[i][0], mus_ys[i][1], scale=8, angles="xy")
             ax.quiver(b5[0], b5[1], - mue_ys[i][0], - mue_ys[i][1], scale=8, angles="xy")
-
+            xs.append(round(b0[0],2))
+            ys.append(round(b0[1], 3))
             j = j + 1
-    
-    plt.title("Shape control")
+    xs.append(round(b5[0],2))
+    ys.append(round(b5[1], 3))
+    plt.xlabel(r"$\theta$[rad]")
+    plt.ylabel(r"$\sigma/\sigma_0$[-]")
+    plt.xticks(xs) 
+    plt.yticks(ys) 
+    plt.title("Control over the shape")
     n = 0
     pre_dir = polyN_dir + sep + "plots" + sep + "presentation"
     filename = f"bezier_{n}.png"
@@ -744,8 +752,7 @@ def seg_data_dir(material):
         filepath = pre_dir + sep + filename
     
     plt.savefig(filepath, dpi=1200)
-    plt.show()
 
 
 if __name__ == "__main__":
-    seg_data_dir("DP600")
+    print_seg_data_dir("DP600")
